@@ -1,8 +1,10 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using UnityEditor.Compilation;
+using UnityEditorInternal;
+using UnityEngine;
 
 namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
 {
@@ -37,8 +39,7 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
         protected AssemblyInfo[] GetRelevantAssemblyInfo()
         {
             var packagePath = Path.GetFullPath(Context.ProjectPackageInfo.path);
-            var files = new HashSet<string>(Directory.GetFiles(packagePath, "*", SearchOption.AllDirectories)
-                .Select(Path.GetFullPath));
+            var files = new HashSet<string>(Directory.GetFiles(packagePath, "*", SearchOption.AllDirectories));
 
             var allAssemblyInfo = CompilationPipeline.GetAssemblies().Select(AssemblyInfoFromAssembly).Where(a => a != null)
                 .ToArray();
@@ -54,7 +55,7 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
             if (IncludePrecompiledAssemblies)
             {
                 relevantAssemblyInfo = relevantAssemblyInfo.Concat(
-                    files.Where(f => string.Equals(Path.GetExtension(f), ".dll", StringComparison.OrdinalIgnoreCase))
+                    files.Where(f => string.Equals(Path.GetExtension(f), ".dll", StringComparison.OrdinalIgnoreCase) && IsManagedDll(f))
                         .Select(f => new AssemblyInfo(f)))
                     .ToArray();
             }
@@ -62,10 +63,18 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
             return relevantAssemblyInfo.ToArray();
         }
 
-        private AssemblyInfo AssemblyInfoFromAsmdefPath(string asmdefPath, AssemblyInfo[] allAssemblyInfo)
+        private static bool IsManagedDll(string f)
         {
-            AssemblyInfo existingInfo = allAssemblyInfo.FirstOrDefault(ai => ai.asmdefPath == asmdefPath);
-            return existingInfo ?? new AssemblyInfo(null, asmdefPath);
+            var dllType = InternalEditorUtility.DetectDotNetDll(f);
+            switch (dllType)
+            {
+                case DllType.ManagedNET35:
+                case DllType.ManagedNET40:
+                case DllType.UnknownManaged:
+                    return true;
+                default:
+                    return false;
+            }
         }
 
         private AssemblyInfo AssemblyInfoFromAssembly(Assembly assembly)

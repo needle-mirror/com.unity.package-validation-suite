@@ -1,8 +1,9 @@
 using System;
+using System.Collections.Generic;
 
 namespace UnityEditor.PackageManager.ValidationSuite
 {
-    internal class TemplateCIUtils: CIUtils
+    internal class TemplateCIUtils : CIUtils
     {
         public static void ConvertProjectToTemplate(string projectPath = null, string destinationPath = null, bool forceReplace = true)
         {
@@ -30,7 +31,7 @@ namespace UnityEditor.PackageManager.ValidationSuite
                 launcher.Launch();
                 return true;
             }
-            catch(Exception)
+            catch (Exception)
             {
                 if (launcher.Process.HasExited && launcher.Process.ExitCode != 0)
                 {
@@ -45,7 +46,7 @@ namespace UnityEditor.PackageManager.ValidationSuite
             return false;
         }
 
-        public static string Pack(string path, string destinationPath)
+        public static List<string> Pack(string path, string destinationPath)
         {
             return _Pack("template", path, destinationPath);
         }

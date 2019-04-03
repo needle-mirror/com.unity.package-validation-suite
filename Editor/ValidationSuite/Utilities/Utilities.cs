@@ -3,7 +3,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Semver;
-using UnityEditor.Sprites;
 using UnityEngine;
 
 #if UNITY_2018_1_OR_NEWER
@@ -172,7 +171,7 @@ namespace UnityEditor.PackageManager.ValidationSuite
 
                 throw;
             }
-            
+
             Directory.Move(extractedPackagePath, outputDirectory);
             return outputDirectory;
         }
@@ -189,7 +188,6 @@ namespace UnityEditor.PackageManager.ValidationSuite
         /// </summary>
         public static IEnumerable<Assembly> AssembliesForPackage(string packageRootPath)
         {
-
             var projectPath = Path.GetDirectoryName(Application.dataPath);
             var filesInPackage = Directory.GetFiles(packageRootPath, "*", SearchOption.AllDirectories);
             filesInPackage = filesInPackage.Select(p => p.Substring(projectPath.Length + 1).Replace('\\', '/')).ToArray();
@@ -226,7 +224,6 @@ namespace UnityEditor.PackageManager.ValidationSuite
                     {
                         return assembly;
                     }
-
                 }
             }
 

@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Runtime.Remoting.Contexts;
@@ -24,22 +24,28 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
             // If the package has c# files, it should have tests.
             List<string> matchingFiles = new List<string>();
             DirectorySearch(Context.PublishPackageInfo.path, "*.cs", matchingFiles);
+            Information("Package path is at " + Context.PublishPackageInfo.path);
 
             if (!matchingFiles.Any())
                 return;
 
+            
             var testDir = Path.Combine(Context.PublishPackageInfo.path, "Tests");
             if (!Directory.Exists(testDir) && !Context.relatedPackages.Any())
             {
+                Error("Related packages " + Context.relatedPackages + " does not exist");
+                Error("Test directory " + testDir + " does not exist");
                 AddMissingTestsErrors();
                 return;
             }
-            
+
             // let's look for files in the "test" directory.
             matchingFiles.Clear();
             DirectorySearch(testDir, "*.cs", matchingFiles);
             if (!matchingFiles.Any() && !Context.relatedPackages.Any())
             {
+                Error("Related packages " + Context.relatedPackages + " does not exist");
+                Error("No .cs files found at " + testDir);
                 AddMissingTestsErrors();
                 return;
             }
@@ -49,9 +55,10 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
             {
                 if (!Directory.Exists(relatedPackage.Path))
                 {
-                    if (Context.ValidationType == ValidationType.Publishing || 
-                              Context.ValidationType == ValidationType.VerifiedSet)
+                    if (Context.ValidationType == ValidationType.Publishing ||
+                        Context.ValidationType == ValidationType.VerifiedSet)
                     {
+                        Error("Cannot find directory " + relatedPackage.Path);
                         AddMissingTestsErrors();
                     }
                     else
@@ -62,7 +69,7 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
                 }
 
                 var relatedPackageTestDir = Path.Combine(relatedPackage.Path, "Tests");
-            
+
                 // let's look for files in the "test" directory.
                 matchingFiles.Clear();
                 DirectorySearch(relatedPackageTestDir, "*.cs", matchingFiles);
@@ -76,9 +83,7 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
             // TODO: Go through files, make sure they have actual tests.
 
             // TODO: Can we evaluate coverage imperically for now, until we have code coverage numbers?
-
         }
-
 
         private void AddMissingTestsErrors()
         {

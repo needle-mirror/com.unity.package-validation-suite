@@ -38,20 +38,20 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
                 return;
             }
 
-            var asmdefAssemblies = info.Where(i=>i.assemblyKind == AssemblyInfo.AssemblyKind.Asmdef).ToArray();
+            var asmdefAssemblies = info.Where(i => i.assemblyKind == AssemblyInfo.AssemblyKind.Asmdef).ToArray();
             if (asmdefAssemblies.Length > 0)
             {
-                var asmdefAssemblyPaths = asmdefAssemblies.Select(i => i.assembly.outputPath);
-                var references = new HashSet<string>(asmdefAssemblies.SelectMany(i => i.assembly.allReferences));
+                var asmdefAssemblyPaths = asmdefAssemblies.Select(i => Path.GetFullPath(i.assembly.outputPath));
+                var references = new HashSet<string>(asmdefAssemblies.SelectMany(i => i.assembly.allReferences).Select(Path.GetFullPath));
                 RunValidator(references, validatorPath, asmdefAssemblyPaths);
             }
 
             var precompiledAssemlbyInfo = info.Where(i => i.assemblyKind == AssemblyInfo.AssemblyKind.PrecompiledAssembly).ToArray();
             if (precompiledAssemlbyInfo.Length > 0)
             {
-                var precompiledDllPaths = precompiledAssemlbyInfo.Select(i => i.precompiledDllPath);
+                var precompiledDllPaths = precompiledAssemlbyInfo.Select(i => Path.GetFullPath(i.precompiledDllPath));
                 var precompiledAssemblyPaths = CompilationPipeline.GetPrecompiledAssemblyPaths(CompilationPipeline.PrecompiledAssemblySources.All);
-                 
+
                 RunValidator(precompiledAssemblyPaths, validatorPath, precompiledDllPaths);
             }
         }
@@ -64,11 +64,11 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
             var monoPath = Path.Combine(EditorApplication.applicationContentsPath, "MonoBleedingEdge/bin", Application.platform == RuntimePlatform.WindowsEditor ? "mono.exe" : "mono");
 
             var processStartInfo =
-                new ProcessStartInfo(monoPath, $@"{validatorPath} {responseFilePath} -a {string.Join(",", assemblyPaths.Select(p => $"\"{p}\""))}")
-                {
-                    UseShellExecute = false,
-                    RedirectStandardError = true
-                };
+                new ProcessStartInfo(monoPath, $@"""{validatorPath}"" ""{responseFilePath}"" -a {string.Join(",", assemblyPaths.Select(p => $"\"{Path.GetFullPath(p)}\""))}")
+            {
+                UseShellExecute = false,
+                RedirectStandardError = true
+            };
             var process = Process.Start(processStartInfo);
             process.WaitForExit();
             var standardError = process.StandardError.ReadToEnd();

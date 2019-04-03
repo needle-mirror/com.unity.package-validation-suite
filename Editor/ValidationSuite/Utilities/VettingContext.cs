@@ -125,13 +125,13 @@ internal class VettingContext
         if (context.ValidationType == ValidationType.LocalDevelopment)
         {
             var publishPackagePath = PublishPackage(context);
-            context.PublishPackageInfo = GetManifest(publishPackagePath);    
+            context.PublishPackageInfo = GetManifest(publishPackagePath);
         }
         else
         {
             context.PublishPackageInfo = GetManifest(packageInfo.resolvedPath);
         }
-        
+
 
 #if UNITY_2019_1_OR_NEWER
         foreach (var relatedPackage in context.PublishPackageInfo.relatedPackages)
@@ -153,7 +153,7 @@ internal class VettingContext
 
 #if UNITY_2018_1_OR_NEWER
         // No need to compare against the previous version of the package if we're testing out the verified set.
-        if (context.ValidationType == ValidationType.VerifiedSet)
+        if (context.ValidationType != ValidationType.VerifiedSet)
         {
             var previousPackagePath = GetPreviousPackage(context.ProjectPackageInfo);
             if (!string.IsNullOrEmpty(previousPackagePath))
@@ -261,15 +261,15 @@ internal class VettingContext
         {
             var tempPath = System.IO.Path.GetTempPath();
             string packageName = context.ProjectPackageInfo.Id.Replace("@", "-") + ".tgz";
-            
+
             //Use upm-template-tools package-ci
             PackageCIUtils.Pack(packagePath, tempPath);
-            
+
             // Create a NodeLauncher object that will handle the installation of the
             // package to validate
             NodeLauncher launcher;
 
-            if (GetDependencyPackages(context.ProjectPackageInfo.dependencies, packagePath, tempPath, false))
+            if (GetDependencyPackages(context.ProjectPackageInfo.dependencies, tempPath, false))
             {
                 //Create a new launcher without an npmPrefix to use installed dependencies
                 launcher = new NodeLauncher(tempPath, npmPrefix: "", npmRegistry: "");
@@ -285,14 +285,13 @@ internal class VettingContext
         }
     }
 
-    private static bool GetDependencyPackages(Dictionary<string, string> packages, string packagePath, string workingDirectory = "", bool runValidation = false)
+    private static bool GetDependencyPackages(Dictionary<string, string> packages, string workingDirectory = "", bool runValidation = false)
     {
         NodeLauncher launcher = new NodeLauncher(workingDirectory);
         bool createdLocalDependencies = false;
 
         foreach (var package in packages)
         {
-            var relatedPackagePath = "";
             var offlineFoundPackages = Utilities.UpmListOffline(package.Key);
             if (offlineFoundPackages.Any())
             {
@@ -315,25 +314,7 @@ internal class VettingContext
                     string packageFilePath = Path.Combine(workingDirectory, packageId.Replace("@", "-") + ".tgz");
                     launcher.NpmInstall(packageFilePath);
                     createdLocalDependencies = true;
-                    continue;
                 }
-                else
-                {
-                    continue;
-                }
-            }
-            
-            if (Utilities.PackageExistsOnProduction(package.Key))
-            {
-                var tempPath = Path.GetTempPath();
-                var packageFileName = Utilities.DownloadPackage(package.Key, tempPath);
-                var packagesPath = Path.Combine(Directory.GetParent(packagePath).ToString(), package.Key);
-                relatedPackagePath = Utilities.ExtractPackage(packageFileName, tempPath, packagesPath, package.Key);
-            }
-
-            if (relatedPackagePath.Equals(""))
-            {
-                Debug.Log("Cannot find the package " + package.Key + " locally or remotely");
             }
         }
 
@@ -430,7 +411,7 @@ internal class VettingContext
         var packageCoDependencies = new Dictionary<string, List<PackageDependencyInfo>>();
 
         var foundPackages =  Utilities.UpmSearch(string.Empty, true);
-        
+
 
         // Fill in the dictionary
         if (foundPackages != null && foundPackages.Length > 0)
@@ -491,5 +472,6 @@ internal class VettingContext
             ParentIsPreview = semVer.Prerelease.Contains("preview") || semVer.Major == 0
         };
     }
+
 #endif
 }

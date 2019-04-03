@@ -1,8 +1,10 @@
-﻿namespace UnityEditor.PackageManager.ValidationSuite
+using System.Collections.Generic;
+
+namespace UnityEditor.PackageManager.ValidationSuite
 {
-    internal class PackageCIUtils: CIUtils
+    internal class PackageCIUtils : CIUtils
     {
-        internal static string Pack(string path, string destinationPath)
+        internal static List<string> Pack(string path, string destinationPath)
         {
             return _Pack("package", path, destinationPath);
         }

@@ -1,8 +1,0 @@
-{
-    "name": "Unity.PackageValidationSuite.EditorTests.TestPackage_WithGoodRenameConfig",
-    "references": [],
-    "optionalUnityReferences": [
-        "TestAssemblies"
-    ],
-    "allowUnsafeCode": false
-}

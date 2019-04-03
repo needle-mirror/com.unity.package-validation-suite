@@ -1,8 +1,0 @@
-{
-    "name": "TestPackage With Good Rename Config In Dll",
-    "references": [],
-    "optionalUnityReferences": [
-        "TestAssemblies"
-    ],
-    "allowUnsafeCode": false
-}

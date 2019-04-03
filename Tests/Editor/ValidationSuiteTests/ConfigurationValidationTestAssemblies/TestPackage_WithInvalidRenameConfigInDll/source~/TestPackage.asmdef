@@ -1,8 +1,0 @@
-{
-    "name": "TestPackage_WithInvalidRenameConfigInDll",
-    "references": [],
-    "optionalUnityReferences": [
-        "TestAssemblies"
-    ],
-    "allowUnsafeCode": false
-}

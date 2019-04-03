@@ -1,5 +1,5 @@
+#if PACKMAN_UI_INSTALLED
 #if UNITY_2018_2_OR_NEWER
-
 using System;
 using System.Diagnostics;
 using System.IO;
@@ -64,7 +64,7 @@ namespace UnityEditor.PackageManager.ValidationSuite.UI
         {
             if (root == null)
                 return;
-            
+
             var isAvailable = packageInfo != null && (packageInfo.status == PackageStatus.Available || packageInfo.status == PackageStatus.Error);
             var showValidationUI = packageInfo != null && isAvailable && SourceSupported(packageInfo);
             UIUtils.SetElementDisplay(this, showValidationUI);
@@ -91,7 +91,7 @@ namespace UnityEditor.PackageManager.ValidationSuite.UI
                 EditorUtility.DisplayDialog("", "Validation suite requires network access and cannot be used offline.", "Ok");
                 return;
             }
-            
+
             var validationType = CurrentPackageinfo.source == PackageSource.Registry ? ValidationType.Publishing : ValidationType.LocalDevelopment;
             var results = ValidationSuite.ValidatePackage(PackageId, validationType);
             ValidationResults.text = results ? "Success" : "Failed";
@@ -123,7 +123,6 @@ namespace UnityEditor.PackageManager.ValidationSuite.UI
             {
                 EditorUtility.DisplayDialog("Validation Results", "Results are missing", "Ok");
             }
-
         }
 
         private void ViewDiffs()
@@ -173,4 +172,5 @@ namespace UnityEditor.PackageManager.ValidationSuite.UI
     }
 }
 
+#endif
 #endif
