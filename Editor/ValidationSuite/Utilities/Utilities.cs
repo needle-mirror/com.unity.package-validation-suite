@@ -21,7 +21,7 @@ namespace UnityEditor.PackageManager.ValidationSuite
         internal const string RuntimeAssemblyDefintionSuffix = ".Runtime.asmdef";
         internal const string RuntimeTestsAssemblyDefintionSuffix = ".RuntimeTests.asmdef";
 
-        public static bool NetworkNotReachable{ get { return Application.internetReachability == NetworkReachability.NotReachable; } }
+        public static bool NetworkNotReachable { get { return Application.internetReachability == NetworkReachability.NotReachable; } }
 
         public static string CreatePackageId(string name, string version)
         {
@@ -126,10 +126,10 @@ namespace UnityEditor.PackageManager.ValidationSuite
             return !string.IsNullOrEmpty(packageData);
         }
 
-        internal static string ExtractPackage(string packageFileName, string workingPath, string outputDirectory, string packageName)
+        internal static string ExtractPackage(string packageFileName, string workingPath, string outputDirectory, string packageName, NodeLauncher launcher = null)
         {
             //verify if package exists
-            if(!packageFileName.EndsWith(".tgz"))
+            if (!packageFileName.EndsWith(".tgz"))
                 throw new ArgumentException("Package should be a .tgz file");
 
             var fullPackagePath = Path.Combine(workingPath, packageFileName);
@@ -140,29 +140,41 @@ namespace UnityEditor.PackageManager.ValidationSuite
             //Clean node_modules if it exists
             if (File.Exists(modulePath))
             {
-                try{
+                try
+                {
                     Directory.Delete(modulePath, true);
-                } catch(Exception e) {
+                }
+                catch (Exception e)
+                {
                     throw e;
                 }
             }
-            
-            var launcher = new NodeLauncher();
-            launcher.NpmLogLevel = "error";
-            launcher.NpmRegistry = NodeLauncher.ProductionRepositoryUrl;
-            launcher.WorkingDirectory = workingPath;
-            launcher.NpmInstall(packageFileName);
-            
+
+            //Create the NodeLauncher object unless it has been provided already.
+            if (launcher == null)
+                launcher = new NodeLauncher(workingPath);
+
+            launcher.NpmInstall(fullPackagePath);
+
             var extractedPackagePath = Path.Combine(modulePath, packageName);
-            if(!Directory.Exists(extractedPackagePath))
+            if (!Directory.Exists(extractedPackagePath))
                 throw new DirectoryNotFoundException(extractedPackagePath + " was not found.");
 
-            if (Directory.Exists(outputDirectory))
-                Directory.Delete(outputDirectory, true);
+            try
+            {
+                if (Directory.Exists(outputDirectory))
+                    Directory.Delete(outputDirectory, true);
+            }
+            catch (IOException e)
+            {
+                if (e.Message.ToLowerInvariant().Contains("1921"))
+                    throw new ApplicationException("Failed to remove previous module in " + outputDirectory + ". Directory might be in use.");
 
+                throw;
+            }
+            
             Directory.Move(extractedPackagePath, outputDirectory);
             return outputDirectory;
-
         }
 
 #if UNITY_2018_1_OR_NEWER
@@ -175,29 +187,52 @@ namespace UnityEditor.PackageManager.ValidationSuite
         /// <summary>
         /// Returns the Assembly instances which contain one or more scripts in a package, given the list of files in the package.
         /// </summary>
-        public static IEnumerable<Assembly> AssembliesForPackage(Assembly[] assemblies, IEnumerable<string> filesInPackage)
+        public static IEnumerable<Assembly> AssembliesForPackage(string packageRootPath)
         {
-            var assemblyNames = new HashSet<string>();
+
+            var projectPath = Path.GetDirectoryName(Application.dataPath);
+            var filesInPackage = Directory.GetFiles(packageRootPath, "*", SearchOption.AllDirectories);
+            filesInPackage = filesInPackage.Select(p => p.Substring(projectPath.Length + 1).Replace('\\', '/')).ToArray();
+
+            var projectAssemblies = CompilationPipeline.GetAssemblies();
+            var assemblyHash = new HashSet<Assembly>();
+
             foreach (var path in filesInPackage)
             {
                 if (!string.Equals(Path.GetExtension(path), ".cs", StringComparison.OrdinalIgnoreCase))
                     continue;
 
-                var assemblyName = CompilationPipeline.GetAssemblyNameFromScriptPath(path);
-                if (assemblyName != null)
-                    assemblyNames.Add(assemblyName.Replace(".dll", ""));
-
-                if (string.Equals(".asmdef", Path.GetExtension(path), StringComparison.OrdinalIgnoreCase))
+                var assembly = GetAssemblyFromScriptPath(projectAssemblies, path);
+                if (assembly != null && !Utilities.IsTestAssembly(assembly))
                 {
-                    var assemblyDefinition = GetDataFromJson<AssemblyDefinition>(path);
-                    if (string.IsNullOrEmpty(assemblyDefinition.name))
-                        throw new ArgumentException(path + " does not have a name field");
-
-                    assemblyNames.Add(assemblyDefinition.name);
+                    assemblyHash.Add(assembly);
                 }
             }
-            return assemblies.Where(a => assemblyNames.Contains(a.name));
+
+            return assemblyHash;
         }
+
+        private static Assembly GetAssemblyFromScriptPath(Assembly[] assemblies, string scriptPath)
+        {
+            var fullScriptPath = Path.GetFullPath(scriptPath);
+
+            foreach (var assembly in assemblies)
+            {
+                foreach (var packageSourceFile in assembly.sourceFiles)
+                {
+                    var fullSourceFilePath = Path.GetFullPath(packageSourceFile);
+
+                    if (fullSourceFilePath == fullScriptPath)
+                    {
+                        return assembly;
+                    }
+
+                }
+            }
+
+            return null;
+        }
+
 #endif
     }
 }
