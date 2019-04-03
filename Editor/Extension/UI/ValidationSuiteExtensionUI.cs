@@ -4,8 +4,12 @@ using System;
 using System.Diagnostics;
 using System.IO;
 using UnityEngine;
-using UnityEngine.Experimental.UIElements;
 using Debug = UnityEngine.Debug;
+#if UNITY_2019_1_OR_NEWER
+	using UnityEngine.UIElements;
+#else
+	using UnityEngine.Experimental.UIElements;
+#endif
 
 namespace UnityEditor.PackageManager.ValidationSuite.UI
 {
@@ -30,10 +34,15 @@ namespace UnityEditor.PackageManager.ValidationSuite.UI
 
         private ValidationSuiteExtensionUI(VisualTreeAsset asset)
         {
-
+#if UNITY_2019_1_OR_NEWER
+            root = asset.CloneTree();
+            string path = EditorGUIUtility.isProSkin ? DarkStylePath : LightStylePath;
+            var styleSheet = EditorGUIUtility.Load(path) as StyleSheet;
+            root.styleSheets.Add(styleSheet);
+#else
             root = asset.CloneTree(null);
-
             root.AddStyleSheetPath(EditorGUIUtility.isProSkin ? DarkStylePath : LightStylePath);
+#endif
             Add(root);
 
             ValidateButton.clickable.clicked += Validate;
@@ -51,7 +60,8 @@ namespace UnityEditor.PackageManager.ValidationSuite.UI
             if (root == null)
                 return;
 
-            var showValidationUI = packageInfo != null && packageInfo.status == PackageStatus.Available && SourceSupported(packageInfo.source);
+            var isAvailable = packageInfo.status == PackageStatus.Available || packageInfo.status == PackageStatus.Error;
+            var showValidationUI = packageInfo != null && isAvailable && SourceSupported(packageInfo.source);
             UIUtils.SetElementDisplay(this, showValidationUI);
             if (!showValidationUI)
                 return;
