@@ -2,6 +2,7 @@ using System.IO;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Linq.Expressions;
 using Semver;
 using UnityEngine;
 
@@ -125,54 +126,107 @@ namespace UnityEditor.PackageManager.ValidationSuite
             return !string.IsNullOrEmpty(packageData);
         }
 
-        internal static string ExtractPackage(string packageFileName, string workingPath, string outputDirectory, string packageName, NodeLauncher launcher = null)
+        internal static string ExtractPackage(string fullPackagePath, string workingPath, string outputDirectory, string packageName, bool deleteOutputDir = true)
         {
             //verify if package exists
-            if (!packageFileName.EndsWith(".tgz"))
+            if (!fullPackagePath.EndsWith(".tgz"))
                 throw new ArgumentException("Package should be a .tgz file");
 
-            var fullPackagePath = Path.Combine(workingPath, packageFileName);
-            var modulePath = Path.Combine(workingPath, "node_modules");
             if (!File.Exists(fullPackagePath))
                 throw new FileNotFoundException(fullPackagePath + " was not found.");
 
-            //Clean node_modules if it exists
-            if (File.Exists(modulePath))
+            if (deleteOutputDir)
             {
                 try
                 {
-                    Directory.Delete(modulePath, true);
+                    if (Directory.Exists(outputDirectory))
+                        Directory.Delete(outputDirectory, true);
+
+                    Directory.CreateDirectory(outputDirectory);
                 }
-                catch (Exception e)
+                catch (IOException e)
                 {
-                    throw e;
+                    if (e.Message.ToLowerInvariant().Contains("1921"))
+                        throw new ApplicationException("Failed to remove previous module in " + outputDirectory + ". Directory might be in use.");
+
+                    throw;
                 }
             }
 
-            //Create the NodeLauncher object unless it has been provided already.
-            if (launcher == null)
-                launcher = new NodeLauncher(workingPath);
-
-            launcher.NpmInstall(fullPackagePath);
-
-            var extractedPackagePath = Path.Combine(modulePath, packageName);
-            if (!Directory.Exists(extractedPackagePath))
-                throw new DirectoryNotFoundException(extractedPackagePath + " was not found.");
-
-            try
+            var tarPath = fullPackagePath.Replace(".tgz", ".tar");
+            if (File.Exists(tarPath))
             {
-                if (Directory.Exists(outputDirectory))
-                    Directory.Delete(outputDirectory, true);
-            }
-            catch (IOException e)
-            {
-                if (e.Message.ToLowerInvariant().Contains("1921"))
-                    throw new ApplicationException("Failed to remove previous module in " + outputDirectory + ". Directory might be in use.");
-
-                throw;
+                File.Delete(tarPath);
             }
 
-            Directory.Move(extractedPackagePath, outputDirectory);
+            //Unpack the tgz into temp. This should leave us a .tar file
+            PackageBinaryZipping.Unzip(fullPackagePath, workingPath);
+
+            //See if the tar exists and unzip that
+            var tgzFileName = Path.GetFileName(fullPackagePath);
+            var targetTarPath = Path.Combine(workingPath, packageName +"-tar");
+            if (Directory.Exists(targetTarPath))
+            {
+                Directory.Delete(targetTarPath, true);
+            }
+
+            if (File.Exists(tarPath))
+            {
+                PackageBinaryZipping.Unzip(tarPath, targetTarPath);
+            }
+
+            //Move the contents of the tar file into outputDirectory
+            var packageFolderPath = Path.Combine(targetTarPath, "package");
+            if (Directory.Exists(packageFolderPath))
+            {
+                //Move directories and meta files
+                foreach (var dir in Directory.GetDirectories(packageFolderPath))
+                {
+                    var dirName = Path.GetFileName(dir);
+                    if (dirName != null)
+                    {
+                        Directory.Move(dir, Path.Combine(outputDirectory, dirName));
+                    }
+                }
+
+                foreach (var file in Directory.GetFiles(packageFolderPath))
+                {
+                    if (file.Contains("package.json") &&
+                        !fullPackagePath.Contains(".tests") &&
+                        !fullPackagePath.Contains(".samples") ||
+                        !file.Contains("package.json"))
+                    {
+                        File.Move(file, Path.Combine(outputDirectory, Path.GetFileName(file)));
+                    }
+                }
+            }
+
+            //Remove the .tgz and .tar artifacts from temp
+            List<string> cleanupPaths = new List<string>();
+            cleanupPaths.Add(fullPackagePath);
+            cleanupPaths.Add(tarPath);
+            cleanupPaths.Add(targetTarPath);
+
+            foreach (var p in cleanupPaths)
+            {
+                try
+                {
+                    FileAttributes attr = File.GetAttributes(p);
+                    if ((attr & FileAttributes.Directory) == FileAttributes.Directory)
+                    {
+                        // This is a directory
+                        Directory.Delete(targetTarPath, true);
+                        continue;
+                    }
+
+                    File.Delete(p);
+                }
+                catch (DirectoryNotFoundException)
+                {
+                    //Pass since there is nothing to delete
+                }
+            }
+
             return outputDirectory;
         }
 

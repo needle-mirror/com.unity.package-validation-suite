@@ -20,6 +20,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Support UI Element out of experimental
 - Added support for validating packages' local dependencies during Local Development
 - Removed ProjectTemplateValidation test
+- Add validation to check that API Updater configurations are not added outside major releases.
 
 ## [0.3.0] - 2018-06-05
 - Hide validation suite when packages are not available

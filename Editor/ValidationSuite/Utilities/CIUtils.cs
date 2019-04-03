@@ -69,11 +69,11 @@ namespace UnityEditor.PackageManager.ValidationSuite
                         File.Delete(finalPackagePath);
                     }
 
-                    var packagePath = Path.Combine(path, "upm-ci~/packages", line);
+                    var packagePath = Path.Combine(path, "upm-ci~", "packages", line);
 
                     Debug.LogFormat("Moving {0} to {1}", packagePath, finalPackagePath);
                     File.Move(packagePath, finalPackagePath);
-                    packagePaths.Add(packagePath);
+                    packagePaths.Add(finalPackagePath);
                 }
             }
             

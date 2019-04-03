@@ -1,4 +1,3 @@
-#if PACKMAN_UI_INSTALLED
 #if UNITY_2018_2_OR_NEWER
 #define NEW_PACKMAN
 
@@ -52,5 +51,4 @@ namespace UnityEditor.PackageManager.ValidationSuite.UI
         }
     }
 }
-#endif
 #endif

@@ -1,4 +1,3 @@
-#if PACKMAN_UI_INSTALLED
 #if UNITY_2018_2_OR_NEWER
 using System;
 using System.Diagnostics;
@@ -172,5 +171,4 @@ namespace UnityEditor.PackageManager.ValidationSuite.UI
     }
 }
 
-#endif
 #endif

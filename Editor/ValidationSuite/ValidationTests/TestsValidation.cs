@@ -24,17 +24,13 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
             // If the package has c# files, it should have tests.
             List<string> matchingFiles = new List<string>();
             DirectorySearch(Context.PublishPackageInfo.path, "*.cs", matchingFiles);
-            Information("Package path is at " + Context.PublishPackageInfo.path);
 
             if (!matchingFiles.Any())
                 return;
 
-            
             var testDir = Path.Combine(Context.PublishPackageInfo.path, "Tests");
             if (!Directory.Exists(testDir) && !Context.relatedPackages.Any())
             {
-                Error("Related packages " + Context.relatedPackages + " does not exist");
-                Error("Test directory " + testDir + " does not exist");
                 AddMissingTestsErrors();
                 return;
             }
@@ -44,8 +40,6 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
             DirectorySearch(testDir, "*.cs", matchingFiles);
             if (!matchingFiles.Any() && !Context.relatedPackages.Any())
             {
-                Error("Related packages " + Context.relatedPackages + " does not exist");
-                Error("No .cs files found at " + testDir);
                 AddMissingTestsErrors();
                 return;
             }
@@ -58,12 +52,11 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
                     if (Context.ValidationType == ValidationType.Publishing ||
                         Context.ValidationType == ValidationType.VerifiedSet)
                     {
-                        Error("Cannot find directory " + relatedPackage.Path);
-                        AddMissingTestsErrors();
+                        Error("All Packages must include tests.  The specified test package (package.json->relatedPackages) is missing in " + relatedPackage.Path);
                     }
                     else
                     {
-                        Warning(string.Format("Related Package is missing in {0}", relatedPackage.Path));
+                        Warning(string.Format("All Packages must include tests.  The specified test package (package.json->relatedPackages) is missing in {0}", relatedPackage.Path));
                     }
                     return;
                 }
@@ -75,7 +68,7 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
                 DirectorySearch(relatedPackageTestDir, "*.cs", matchingFiles);
                 if (!matchingFiles.Any())
                 {
-                    Error("Related Packages must include test for automated testing.");
+                    Error("All Packages must include tests.  The specified test package (package.json->relatedPackages) contains no tests.");
                     return;
                 }
             }
@@ -87,7 +80,7 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
 
         private void AddMissingTestsErrors()
         {
-            Error("Preview and Production quality packages must include test for automated testing.");
+            Error("All Packages must include tests for automated testing.  No tests were found for this package.");
         }
     }
 }

@@ -133,7 +133,7 @@ internal class VettingContext
         }
 
 
-#if UNITY_2019_1_OR_NEWER
+#if UNITY_2018_3_OR_NEWER
         foreach (var relatedPackage in context.PublishPackageInfo.relatedPackages)
         {
             // Check to see if the package is available locally
@@ -263,62 +263,18 @@ internal class VettingContext
             string packageName = context.ProjectPackageInfo.Id.Replace("@", "-") + ".tgz";
 
             //Use upm-template-tools package-ci
-            PackageCIUtils.Pack(packagePath, tempPath);
-
-            // Create a NodeLauncher object that will handle the installation of the
-            // package to validate
-            NodeLauncher launcher;
-
-            if (GetDependencyPackages(context.ProjectPackageInfo.dependencies, tempPath, false))
-            {
-                //Create a new launcher without an npmPrefix to use installed dependencies
-                launcher = new NodeLauncher(tempPath, npmPrefix: "", npmRegistry: "");
-            }
-            else
-            {
-                //Create the launcher with an npmPrefix so that modules are installed correctly
-                launcher = new NodeLauncher(tempPath, npmPrefix: ".");
-            }
+            var packagesGenerated = PackageCIUtils.Pack(packagePath, tempPath);
 
             var publishPackagePath = Path.Combine(tempPath, "publish-" + context.ProjectPackageInfo.Id);
-            return Utilities.ExtractPackage(packageName, tempPath, publishPackagePath, context.ProjectPackageInfo.name, launcher);
-        }
-    }
-
-    private static bool GetDependencyPackages(Dictionary<string, string> packages, string workingDirectory = "", bool runValidation = false)
-    {
-        NodeLauncher launcher = new NodeLauncher(workingDirectory);
-        bool createdLocalDependencies = false;
-
-        foreach (var package in packages)
-        {
-            var offlineFoundPackages = Utilities.UpmListOffline(package.Key);
-            if (offlineFoundPackages.Any())
+            var deleteOutput = true;
+            foreach(var packageTgzName in packagesGenerated)
             {
-                if (offlineFoundPackages[0].source == PackageSource.Embedded)
-                {
-                    string packageId = offlineFoundPackages[0].name + "@" + offlineFoundPackages[0].version;
-                    //Create the context of the package, this also publishes (packages) the package
-                    VettingContext packageContext = CreatePackmanContext(packageId, ValidationType.LocalDevelopment);
-
-                    if (runValidation)
-                    {
-                        if (!ValidationSuite.ValidatePackage(packageContext, ValidationType.LocalDevelopment))
-                        {
-                            //Package is invalid.
-                            throw new ApplicationException("Validation check failed for dependent package " + packageId);
-                        }
-                    }
-
-                    // Since the packge is local, we need to install it.
-                    string packageFilePath = Path.Combine(workingDirectory, packageId.Replace("@", "-") + ".tgz");
-                    launcher.NpmInstall(packageFilePath);
-                    createdLocalDependencies = true;
-                }
+                Utilities.ExtractPackage(packageTgzName, tempPath, publishPackagePath, context.ProjectPackageInfo.name, deleteOutput);
+                deleteOutput = false;
             }
-        }
 
-        return createdLocalDependencies;
+            return publishPackagePath;
+        }
     }
 
     private static string GetPreviousPackage(ManifestData projectPackageInfo)
