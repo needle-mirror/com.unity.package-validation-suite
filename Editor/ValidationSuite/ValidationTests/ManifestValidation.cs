@@ -58,6 +58,18 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
             foreach (var dependency in Context.ProjectPackageInfo.dependencies)
             {
                 var packageId = Utilities.CreatePackageId(dependency.Key, dependency.Value);
+
+#if UNITY_2019_2_OR_NEWER
+                var dependencyInfo = Utilities.UpmListOffline(dependency.Key).FirstOrDefault();
+
+                // Built in packages are shipped with the editor, and will therefore never by published to production.
+                if (dependencyInfo != null && dependencyInfo.source == PackageSource.BuiltIn)
+                {
+                    continue;
+                }
+#endif
+
+                // Check if this package's dependencies are in production.  That is a requirement for publishing.
                 if (!Utilities.PackageExistsOnProduction(packageId))
                 {
                     if (Context.ValidationType == ValidationType.Publishing || Context.ValidationType == ValidationType.AssetStore)
@@ -103,6 +115,16 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
                 else
                 {
                     this.TestOutput.Add(string.Format(@"New dependency: ""{0}"": ""{1}""", projectRef.Key, projectRef.Value));
+
+#if UNITY_2019_2_OR_NEWER
+                    var dependencyInfo = Utilities.UpmListOffline(projectRef.Key).FirstOrDefault();
+
+                    // Built in packages are shipped with the editor, and will therefore never by published to production.
+                    if (dependencyInfo != null && dependencyInfo.source == PackageSource.BuiltIn)
+                    {
+                        continue;
+                    }
+#endif
                     if (versionChangeType == VersionChangeType.Patch ||
                         versionChangeType == VersionChangeType.Minor)
                         Error("Adding package dependencies requires a new major version.");
@@ -205,7 +227,7 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
             {
                 if (string.IsNullOrEmpty(packageVersionNumber.Prerelease) || packageVersionNumber.Prerelease.Split('.')[0] != "preview")
                 {
-                    Error("In package.json, \"version\" < 1, which makes it a preview version, please tag the package as " + packageVersionNumber + "-preview");
+                    Error("In package.json, \"version\" < 1, which makes it a preview version, please tag the package as " + packageVersionNumber.VersionOnly() + "-preview");
                     return;
                 }
             }

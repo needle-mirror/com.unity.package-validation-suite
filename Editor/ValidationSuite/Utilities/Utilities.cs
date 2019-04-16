@@ -71,7 +71,12 @@ namespace UnityEditor.PackageManager.ValidationSuite
 
         internal static PackageManager.PackageInfo[] UpmListOffline(string packageIdOrName = null)
         {
+#if UNITY_2019_2_OR_NEWER
+            var request = Client.List(true, true);
+#else
             var request = Client.List(true);
+#endif
+
             while (!request.IsCompleted)
                 System.Threading.Thread.Sleep(100);
             var result = new List<PackageManager.PackageInfo>();

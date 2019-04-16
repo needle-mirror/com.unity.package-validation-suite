@@ -15,7 +15,7 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
             TestName = "Unity Version Validation";
             TestDescription = "Validate that the package was developed on the right version of Unity.";
             TestCategory = TestCategory.DataValidation;
-            SupportedValidations = new[] { ValidationType.LocalDevelopment };
+            SupportedValidations = new[] { ValidationType.LocalDevelopment, ValidationType.CI };
         }
 
         // This method is called synchronously during initialization,
@@ -30,14 +30,16 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
             TestState = TestState.Succeeded;
 
             // Check Unity Version, make sure it's valid given current version of Unity
-            double unityVersionNumber, packageUnityVersionNumber;
-
+            double unityVersionNumber = 0;
+            double packageUnityVersionNumber = 0;
+            
             if (!double.TryParse(unityVersion.Substring(0, unityVersion.LastIndexOf(".")), out unityVersionNumber) ||
                 !double.TryParse(Context.ProjectPackageInfo.unity, out packageUnityVersionNumber) ||
                 unityVersionNumber < packageUnityVersionNumber)
             {
                 TestState = TestState.Failed;
-                TestOutput.Add("In package.json, \"unity\" is pointing to a version different from the editor you are using.  Validation needs to happen on the right version of the editor.");
+                TestOutput.Add($"In package.json, \"unity\" is pointing to a version higher ({packageUnityVersionNumber}) than the editor you are currently using ({unityVersionNumber}). " +
+                               $"Validation needs to happen on a version of the editor that is supported by the package.");
             }
         }
     }

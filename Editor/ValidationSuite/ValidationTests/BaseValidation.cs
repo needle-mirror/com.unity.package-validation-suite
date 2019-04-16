@@ -60,18 +60,33 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
         protected abstract void Run();
         protected void Error(string message, params object[] args)
         {
-            TestOutput.Add(string.Format("Error: " + message, args));
+            Error(string.Format(message, args));
+        }
+
+        protected void Error(string message)
+        {
+            TestOutput.Add("Error: " + message);
             TestState = TestState.Failed;
         }
 
         protected void Warning(string message, params object[] args)
         {
-            TestOutput.Add(string.Format("Warning: " + message, args));
+            Warning(string.Format(message, args));
+        }
+
+        protected void Warning(string message)
+        {
+            TestOutput.Add("Warning: " + message);
         }
 
         protected void Information(string message, params object[] args)
         {
-            TestOutput.Add(string.Format(message, args));
+            Information(string.Format(message, args));
+        }
+
+        protected void Information(string message)
+        {
+            TestOutput.Add(message);
         }
 
         protected void DirectorySearch(string path, string searchPattern, List<string> matches)

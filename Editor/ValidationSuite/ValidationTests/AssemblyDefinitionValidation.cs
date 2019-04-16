@@ -63,7 +63,7 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
             }
             catch (Exception e)
             {
-                Error("Can't read assembly definition: " + e.Message);
+                Error(string.Format("Can't read assembly definition {0}: {1}", simplifiedPath, e.Message));
             }
         }
 

@@ -8,7 +8,7 @@ namespace UnityEditor.PackageManager.ValidationSuite
 {
     internal class CIUtils
     {
-        internal const string UpmCIUtilsId = "upm-ci-utils@0.8.7";
+        internal const string UpmCIUtilsId = "upm-ci-utils@stable";
 
         internal static string GetCIUtilsScript()
         {
@@ -51,30 +51,22 @@ namespace UnityEditor.PackageManager.ValidationSuite
             launcher.Args = command + " pack --npm-path \"" + NodeLauncher.NpmScriptPath + "\"";
             launcher.Launch();
 
-            var outputLines = launcher.OutputLog.ToString().Trim().Split(Environment.NewLine.ToCharArray());
             List<string> packagePaths = new List<string>();
 
-            Regex packageNameRegex = new Regex(@"^com.*tgz$",
-                RegexOptions.CultureInvariant | RegexOptions.ExplicitCapture);
+            var paths = Directory.GetFiles(Path.Combine(path, "upm-ci~", "packages"), "*tgz");
 
-            foreach (var line in outputLines)
-            {
-                var match = packageNameRegex.Match(line);
-                if (match.Success) {
-                    //Copy the file to the destinationPath
-                    string finalPackagePath = Path.Combine(destinationPath, line);
+            foreach (var packagePath in paths) {
+                //Copy the file to the destinationPath
+                string packageName = Path.GetFileName(packagePath);
+                string finalPackagePath = Path.Combine(destinationPath, packageName);
 
-                    if (File.Exists(finalPackagePath))
-                    {
-                        File.Delete(finalPackagePath);
-                    }
-
-                    var packagePath = Path.Combine(path, "upm-ci~", "packages", line);
-
-                    Debug.LogFormat("Moving {0} to {1}", packagePath, finalPackagePath);
-                    File.Move(packagePath, finalPackagePath);
-                    packagePaths.Add(finalPackagePath);
+                if (File.Exists(finalPackagePath))
+                {
+                    File.Delete(finalPackagePath);
                 }
+
+                File.Move(packagePath, finalPackagePath);
+                packagePaths.Add(finalPackagePath);
             }
             
             // TODO: Remove this part when we switch to Packman API pack function

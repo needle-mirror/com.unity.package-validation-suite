@@ -4,7 +4,8 @@ All notable changes to this package will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
-## [0.4.0] - 2019-01-24
+## [0.4.0] - 2019-04-03
+- Properly handle dependencies on built-in packages, which aren't in the production registry.
 - Fix unit tests
 - Added support for local validation of packages with unpublished dependencies.
 - Add new public API to test all embedded packages.
@@ -21,6 +22,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Added support for validating packages' local dependencies during Local Development
 - Removed ProjectTemplateValidation test
 - Add validation to check that API Updater configurations are not added outside major releases.
+- Add unit tests to Unity Version Validation
 
 ## [0.3.0] - 2018-06-05
 - Hide validation suite when packages are not available
