@@ -34,7 +34,7 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
             double packageUnityVersionNumber = 0;
             
             if (!double.TryParse(unityVersion.Substring(0, unityVersion.LastIndexOf(".")), out unityVersionNumber) ||
-                !double.TryParse(Context.ProjectPackageInfo.unity, out packageUnityVersionNumber) ||
+                (!string.IsNullOrEmpty(Context.ProjectPackageInfo.unity) && !double.TryParse(Context.ProjectPackageInfo.unity, out packageUnityVersionNumber)) ||
                 unityVersionNumber < packageUnityVersionNumber)
             {
                 TestState = TestState.Failed;

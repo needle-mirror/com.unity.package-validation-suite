@@ -57,7 +57,7 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
 
         private readonly string[] internalExceptionFileList =
         {
-            "vswhere.exe",  // required for com.unity.ide.visualstudio
+            "vswhere.exe",            // required for com.unity.ide.visualstudio
             "bcl.exe",                // required for com.unity.burst
             "lld.exe",                // required for com.unity.burst
             "burst-llvm.lib",         // required for com.unity.burst
@@ -69,7 +69,8 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
             "Unity.Cecil.Mdb.dll",    // required for com.unity.burst
             "Unity.Cecil.Pdb.dll",    // required for com.unity.burst
             "Unity.Cecil.Rocks.dll",  // required for com.unity.burst
-            "uncrustify.exe"          // required for com.unity.coding
+            "uncrustify.exe",         // required for com.unity.coding
+            "arcoreimg.exe"           // required for com.unity.xr.arcore
         };
 
         private readonly string[] restrictedFileList =

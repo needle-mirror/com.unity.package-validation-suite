@@ -23,6 +23,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Removed ProjectTemplateValidation test
 - Add validation to check that API Updater configurations are not added outside major releases.
 - Add unit tests to Unity Version Validation
+- Fixing bug PAI-637 : searches for word "test" in path and finds it in file name rather than searching only folder names.
 
 ## [0.3.0] - 2018-06-05
 - Hide validation suite when packages are not available

@@ -36,10 +36,10 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
         {
             var simplifiedPath = assemblyDefinitionPath.Replace(Context.PublishPackageInfo.path, "{Package-Root}");
 
-            var isRuntime = simplifiedPath.IndexOf("Runtime") >= 0;
-            var isEditor = simplifiedPath.IndexOf("Editor") >= 0;
-            var isTest = simplifiedPath.IndexOf("Test") >= 0;
-
+            var isRuntime = Path.GetDirectoryName(assemblyDefinitionPath).IndexOf("Runtime") >= 0;
+            var isEditor = Path.GetDirectoryName(assemblyDefinitionPath).IndexOf("Editor") >= 0;
+            var isTest = Path.GetDirectoryName(assemblyDefinitionPath).IndexOf("Tests") >= 0;
+            
             try
             {
                 var assemblyDefinitionData = Utilities.GetDataFromJson<AssemblyDefinition>(assemblyDefinitionPath);
@@ -57,6 +57,11 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
                 }
 
                 if (isTestAssembly != isTest)
+                {
+                    Error(string.Format("Test assemblies should only be in the Tests folder and not in {0}", simplifiedPath));
+                }
+
+                if (!isTestAssembly && isTest)
                 {
                     Error(string.Format("'TestAssemblies'{0} should be present in 'optionalUnityReferences' in: [{1}]", isTest ? "" : " not", simplifiedPath));
                 }
