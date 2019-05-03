@@ -70,12 +70,13 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
             "Unity.Cecil.Pdb.dll",    // required for com.unity.burst
             "Unity.Cecil.Rocks.dll",  // required for com.unity.burst
             "uncrustify.exe",         // required for com.unity.coding
-            "arcoreimg.exe"           // required for com.unity.xr.arcore
+            "coding-cli.exe",         // required for com.unity.coding
+            "arcoreimg.exe",          // required for com.unity.xr.arcore
+            "bee.exe",                // required for com.unity.tiny
         };
 
         private readonly string[] restrictedFileList =
         {
-            "*.js",
             "*.jpg",
             "*.jpeg",
             "*.exe",
@@ -92,7 +93,8 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
             "*.zip",
             "*.rar",
             "*.lib",
-            "*.dll"
+            "*.dll",
+            "*.js",
         };
     }
 }
