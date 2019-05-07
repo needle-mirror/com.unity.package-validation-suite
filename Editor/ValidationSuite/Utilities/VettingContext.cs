@@ -394,9 +394,14 @@ internal class VettingContext
                 }
 
                 // Is there a verified version?  If so, if it is different than the returned version, let's make a call to retrieve it's data.
-                if (!string.IsNullOrEmpty(packageInfo.versions.recommended) && packageInfo.versions.recommended != packageInfo.version)
+#if UNITY_2019_3_OR_NEWER
+                var verifiedVersion = packageInfo.versions.verified;
+#else
+                var verifiedVersion = packageInfo.versions.recommended;
+#endif
+                if (!string.IsNullOrEmpty(verifiedVersion) && verifiedVersion != packageInfo.version)
                 {
-                    var foundVerifiedPackages = Utilities.UpmSearch(packageInfo.name + "@" + packageInfo.versions.recommended);
+                    var foundVerifiedPackages = Utilities.UpmSearch(packageInfo.name + "@" + verifiedVersion);
                     if (foundVerifiedPackages.Length > 0)
                     {
                         foreach (var dependency in packageCoDependencies)
@@ -424,7 +429,11 @@ internal class VettingContext
             DependencyVersion = version,
             ParentName = packageInfo.name,
             ParentVersion = packageInfo.version,
+#if UNITY_2019_3_OR_NEWER
+            ParentIsVerified = packageInfo.versions.verified == packageInfo.version,
+#else
             ParentIsVerified = packageInfo.versions.recommended == packageInfo.version,
+#endif
             ParentIsPreview = semVer.Prerelease.Contains("preview") || semVer.Major == 0
         };
     }

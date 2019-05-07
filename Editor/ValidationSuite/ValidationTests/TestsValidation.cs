@@ -21,28 +21,12 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
             // Start by declaring victory
             TestState = TestState.Succeeded;
 
-            // If the package has c# files, it should have tests.
-            List<string> matchingFiles = new List<string>();
-            DirectorySearch(Context.PublishPackageInfo.path, "*.cs", matchingFiles);
-
-            if (!matchingFiles.Any())
-                return;
-
-            var testDir = Path.Combine(Context.PublishPackageInfo.path, "Tests");
-            if (!Directory.Exists(testDir) && !Context.relatedPackages.Any())
+            if (!PackageHasTests(Context.PublishPackageInfo.path) && !Context.relatedPackages.Any())
             {
                 AddMissingTestsErrors();
                 return;
             }
-
-            // let's look for files in the "test" directory.
-            matchingFiles.Clear();
-            DirectorySearch(testDir, "*.cs", matchingFiles);
-            if (!matchingFiles.Any() && !Context.relatedPackages.Any())
-            {
-                AddMissingTestsErrors();
-                return;
-            }
+           
 
             //Check if there are relatedPackages that may contain the tests
             foreach (var relatedPackage in Context.relatedPackages)
@@ -61,12 +45,7 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
                     return;
                 }
 
-                var relatedPackageTestDir = Path.Combine(relatedPackage.Path, "Tests");
-
-                // let's look for files in the "test" directory.
-                matchingFiles.Clear();
-                DirectorySearch(relatedPackageTestDir, "*.cs", matchingFiles);
-                if (!matchingFiles.Any())
+                if (!PackageHasTests(relatedPackage.Path))
                 {
                     Error("All Packages must include tests.  The specified test package (package.json->relatedPackages) contains no tests.");
                     return;
@@ -76,6 +55,24 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
             // TODO: Go through files, make sure they have actual tests.
 
             // TODO: Can we evaluate coverage imperically for now, until we have code coverage numbers?
+        }
+
+        bool PackageHasTests(string packagePath)
+        {
+            
+            foreach (var dir in Directory.GetDirectories(packagePath))
+            {
+                if (!dir.EndsWith("Tests"))
+                    continue;
+                // If the package has c# files, it should have tests.
+                var matchingFiles = new List<string>();
+                DirectorySearch(dir, "*.cs", ref matchingFiles);
+                if (!matchingFiles.Any())
+                    continue;
+                return true;
+            }
+
+            return false;
         }
 
         private void AddMissingTestsErrors()

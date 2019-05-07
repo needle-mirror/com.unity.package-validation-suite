@@ -41,7 +41,7 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
 
             var samplesDir = samplesDirExists ? "Samples" : "Samples~";
             var matchingFiles = new List<string>();
-            DirectorySearch(Path.Combine(Context.PublishPackageInfo.path, samplesDir), ".sample.json", matchingFiles);
+            DirectorySearch(Path.Combine(Context.PublishPackageInfo.path, samplesDir), ".sample.json", ref matchingFiles);
 
             if (matchingFiles.Count == 0)
             {

@@ -22,7 +22,7 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
             foreach (var fileType in restrictedFileList)
             {
                 List<string> matchingFiles = new List<string>();
-                DirectorySearch(Context.PublishPackageInfo.path, fileType, matchingFiles);
+                DirectorySearch(Context.PublishPackageInfo.path, fileType, ref matchingFiles);
 
                 if (matchingFiles.Any())
                 {
@@ -44,7 +44,7 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
             foreach (var fileType in unapprovedFileList)
             {
                 List<string> matchingFiles = new List<string>();
-                DirectorySearch(Context.PublishPackageInfo.path, fileType, matchingFiles);
+                DirectorySearch(Context.PublishPackageInfo.path, fileType, ref matchingFiles);
 
                 if (matchingFiles.Any())
                 {

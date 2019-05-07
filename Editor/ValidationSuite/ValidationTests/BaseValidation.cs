@@ -89,7 +89,7 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
             TestOutput.Add(message);
         }
 
-        protected void DirectorySearch(string path, string searchPattern, List<string> matches)
+        protected void DirectorySearch(string path, string searchPattern, ref List<string> matches)
         {
             if (!Directory.Exists(path))
                 return;
@@ -99,7 +99,7 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
                 matches.AddRange(files);
 
             foreach (string subDir in Directory.GetDirectories(path))
-                DirectorySearch(subDir, searchPattern, matches);
+                DirectorySearch(subDir, searchPattern, ref matches);
         }
     }
 }
