@@ -59,17 +59,21 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
 
         bool PackageHasTests(string packagePath)
         {
-            
+            var matchingFiles = Directory.GetFiles(packagePath, "*.cs", SearchOption.AllDirectories);
+            //DirectorySearch(packagePath, "*.cs", ref matchingFiles);
+
+            if (matchingFiles.Length == 0)
+                return true;
+
             foreach (var dir in Directory.GetDirectories(packagePath))
             {
                 if (!dir.EndsWith("Tests"))
                     continue;
-                // If the package has c# files, it should have tests.
-                var matchingFiles = new List<string>();
-                DirectorySearch(dir, "*.cs", ref matchingFiles);
-                if (!matchingFiles.Any())
-                    continue;
-                return true;
+
+                var testFiles = Directory.GetFiles(dir, "*.cs", SearchOption.AllDirectories);
+
+                if (testFiles.Any())
+                    return true;
             }
 
             return false;
