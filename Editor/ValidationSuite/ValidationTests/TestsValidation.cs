@@ -18,6 +18,13 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
 
         protected override void Run()
         {
+            // In the case where we are testing a template, let's not expect tests yet.
+            if (Context.PublishPackageInfo.IsProjectTemplate)
+            {
+                TestState = TestState.NotRun;
+                return;
+            }
+
             // Start by declaring victory
             TestState = TestState.Succeeded;
 
