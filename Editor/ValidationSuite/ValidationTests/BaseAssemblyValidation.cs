@@ -15,6 +15,18 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
     {
         protected virtual bool IncludePrecompiledAssemblies => false;
 
+        public BaseAssemblyValidation(ValidationAssemblyInformation validationAssemblyInformation)
+        {
+            this.validationAssemblyInformation = validationAssemblyInformation;
+        }
+
+        public BaseAssemblyValidation()
+            : this(new ValidationAssemblyInformation())
+        {
+        }
+
+        public ValidationAssemblyInformation validationAssemblyInformation { get; private set; }
+
         protected sealed override void Run()
         {
             //does it compile?

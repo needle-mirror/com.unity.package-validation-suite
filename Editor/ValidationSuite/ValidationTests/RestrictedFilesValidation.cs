@@ -1,3 +1,4 @@
+using System;
 using System.IO;
 using System.Collections.Generic;
 using System.Linq;
@@ -31,7 +32,7 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
                         // For asset store packages, no exceptions.
                         // Internally, let's allow a specific set of exceptions.
                         if (Context.ValidationType == ValidationType.AssetStore ||
-                            !internalExceptionFileList.Contains(Path.GetFileName(file).ToLowerInvariant()))
+                            !internalExceptionFileList.Any(ex => ex.Equals(Path.GetFileName(file), StringComparison.OrdinalIgnoreCase)))
                         {
                             TestOutput.Add(file + " cannot be included in a package.");
                             TestState = TestState.Failed;
@@ -70,7 +71,9 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
             "Unity.Cecil.Pdb.dll",    // required for com.unity.burst
             "Unity.Cecil.Rocks.dll",  // required for com.unity.burst
             "uncrustify.exe",         // required for com.unity.coding
+            "FindMissingDocs.exe",    // required for com.unity.package-validation-suite
             "coding-cli.exe",         // required for com.unity.coding
+            "ApiScraper.exe",         // required for com.unity.coding
             "arcoreimg.exe",          // required for com.unity.xr.arcore
             "bee.exe",                // required for com.unity.tiny
         };

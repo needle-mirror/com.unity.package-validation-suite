@@ -13,26 +13,17 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
 {
     internal class ApiValidation : BaseAssemblyValidation
     {
-        private readonly ApiValidationAssemblyInformation assemblyInformation;
-
         public ApiValidation()
         {
             TestName = "API Validation";
             TestDescription = "Checks public API for style and changest that conflict with Semantic Versioning.";
             TestCategory = TestCategory.ApiValidation;
-            assemblyInformation = new ApiValidationAssemblyInformation();
             SupportedValidations = new[] { ValidationType.CI, ValidationType.LocalDevelopment, ValidationType.Publishing };
         }
 
-        public ApiValidation(ApiValidationAssemblyInformation apiValidationAssemblyInformation)
-            : this()
+        public ApiValidation(ValidationAssemblyInformation validationAssemblyInformation)
+            : base(validationAssemblyInformation)
         {
-            assemblyInformation = apiValidationAssemblyInformation;
-        }
-
-        public ApiValidationAssemblyInformation ApiValidationAssemblyInformation
-        {
-            get { return assemblyInformation; }
         }
 
         private AssemblyInfo[] GetAndCheckAsmdefs()
@@ -82,7 +73,7 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
 
         private bool DoAssembliesMatch(AssemblyDefinition assemblyDefinition1, AssemblyDefinition assemblyDefinition2)
         {
-            return assemblyInformation.GetAssemblyName(assemblyDefinition1, true).Equals(assemblyInformation.GetAssemblyName(assemblyDefinition2, false));
+            return validationAssemblyInformation.GetAssemblyName(assemblyDefinition1, true).Equals(validationAssemblyInformation.GetAssemblyName(assemblyDefinition2, false));
         }
 
         private void CheckForAsmdefsNotIncludedInEditor()
@@ -167,7 +158,7 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
         private void CheckApiDiff(AssemblyInfo[] assemblyInfo)
         {
             var diff = new ApiDiff();
-            var assembliesForPackage = assemblyInfo.Where(a => !assemblyInformation.IsTestAssembly(a)).ToArray();
+            var assembliesForPackage = assemblyInfo.Where(a => !validationAssemblyInformation.IsTestAssembly(a)).ToArray();
             if (Context.PreviousPackageBinaryDirectory == null)
             {
                 TestState = TestState.NotRun;

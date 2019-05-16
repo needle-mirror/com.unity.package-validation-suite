@@ -223,7 +223,7 @@ namespace UnityEditor.PackageManager.ValidationSuite
         {
             // Use reflection to discover all Validation Tests in the project with base type == BaseValidationTest.
             validationTests = (from t in Assembly.GetExecutingAssembly().GetTypes()
-                where t.BaseType == (typeof(BaseValidation)) && t.GetConstructor(Type.EmptyTypes) != null
+                where typeof(BaseValidation).IsAssignableFrom(t) && t.GetConstructor(Type.EmptyTypes) != null && !t.IsAbstract
                 select(BaseValidation) Activator.CreateInstance(t)).ToList();
         }
 

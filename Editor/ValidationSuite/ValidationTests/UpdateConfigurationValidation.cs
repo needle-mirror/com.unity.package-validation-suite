@@ -61,7 +61,7 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
             var responseFilePath = Path.GetTempFileName();
             File.WriteAllLines(responseFilePath, references);
 
-            var monoPath = Path.Combine(EditorApplication.applicationContentsPath, "MonoBleedingEdge/bin", Application.platform == RuntimePlatform.WindowsEditor ? "mono.exe" : "mono");
+            var monoPath = Utilities.GetMonoPath();
 
             var processStartInfo =
                 new ProcessStartInfo(monoPath, $@"""{validatorPath}"" ""{responseFilePath}"" -a {string.Join(",", assemblyPaths.Select(p => $"\"{Path.GetFullPath(p)}\""))}")
@@ -70,11 +70,11 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
                 RedirectStandardError = true
             };
             var process = Process.Start(processStartInfo);
+            var stderr = new ProcessOutputStreamReader(process, process.StandardError);
             process.WaitForExit();
-            var standardError = process.StandardError.ReadToEnd();
             if (process.ExitCode != 0)
             {
-                Error(standardError);
+                Error(string.Join("\n", stderr.GetOutput()));
             }
             else
             {

@@ -7,7 +7,7 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
     /// <summary>
     /// Used by tests to override assembly information for ApiValidation
     /// </summary>
-    internal class ApiValidationAssemblyInformation
+    internal class ValidationAssemblyInformation
     {
         public bool? isPreviousPackageTestOverride;
         public bool? isProjectPackageTestOverride;
@@ -15,10 +15,10 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
         public string previousAssemblyNameOverride { get; private set; }
         public string projectAssemblyNameOverride { get; private set; }
 
-        public ApiValidationAssemblyInformation()
+        public ValidationAssemblyInformation()
         {}
 
-        public ApiValidationAssemblyInformation(bool? isPreviousPackageTestOverride, bool? isProjectPackageTestOverride, string previousAssemblyNameOverride, string projectAssemblyNameOverride)
+        public ValidationAssemblyInformation(bool? isPreviousPackageTestOverride, bool? isProjectPackageTestOverride, string previousAssemblyNameOverride, string projectAssemblyNameOverride)
         {
             this.isPreviousPackageTestOverride = isPreviousPackageTestOverride;
             this.isProjectPackageTestOverride = isProjectPackageTestOverride;
@@ -26,7 +26,7 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
             this.projectAssemblyNameOverride = projectAssemblyNameOverride;
         }
 
-        public bool IsTestAssembly(AssemblyInfo assembly)
+        public virtual bool IsTestAssembly(AssemblyInfo assembly)
         {
             if (isProjectPackageTestOverride.HasValue)
                 return isProjectPackageTestOverride.Value;

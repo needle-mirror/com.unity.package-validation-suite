@@ -235,6 +235,12 @@ namespace UnityEditor.PackageManager.ValidationSuite
             return outputDirectory;
         }
 
+        public static string GetMonoPath()
+        {
+            var monoPath = Path.Combine(EditorApplication.applicationContentsPath, "MonoBleedingEdge/bin", Application.platform == RuntimePlatform.WindowsEditor ? "mono.exe" : "mono");
+            return monoPath;
+        }
+
 #if UNITY_2018_1_OR_NEWER
 
         public static bool IsTestAssembly(Assembly assembly)
