@@ -18,13 +18,13 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
         protected override bool IncludePrecompiledAssemblies => true;
         protected override void Run(AssemblyInfo[] info)
         {
+            this.TestState = TestState.Succeeded;
             if (Context.ProjectPackageInfo?.name == "com.unity.package-validation-suite")
             {
                 Information("PackageValidationSuite update configurations tested by editor tests.");
                 return;
             }
-
-            this.TestState = TestState.Running;
+            
             if (info.Length == 0)
             {
                 TestState = TestState.Succeeded;
@@ -67,18 +67,20 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
                 new ProcessStartInfo(monoPath, $@"""{validatorPath}"" ""{responseFilePath}"" -a {string.Join(",", assemblyPaths.Select(p => $"\"{Path.GetFullPath(p)}\""))}")
             {
                 UseShellExecute = false,
-                RedirectStandardError = true
+                RedirectStandardError = true,
+                RedirectStandardOutput = true,
             };
             var process = Process.Start(processStartInfo);
             var stderr = new ProcessOutputStreamReader(process, process.StandardError);
+            var stdout = new ProcessOutputStreamReader(process, process.StandardOutput);
             process.WaitForExit();
             if (process.ExitCode != 0)
             {
-                Error(string.Join("\n", stderr.GetOutput()));
-            }
-            else
-            {
-                this.TestState = TestState.Succeeded;
+                var stdContent = string.Join("\n", stderr.GetOutput().Concat(stdout.GetOutput()));
+                if (stdContent.Contains("Mono.Cecil.AssemblyResolutionException"))
+                    Warning(stdContent);
+                else
+                    Error(stdContent);
             }
         }
     }
