@@ -76,6 +76,7 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
             "ApiScraper.exe",         // required for com.unity.coding
             "arcoreimg.exe",          // required for com.unity.xr.arcore
             "bee.exe",                // required for com.unity.tiny
+            "Unity.CollabProxy.Server.exe"  // required for com.unity.collab-proxy
         };
 
         private readonly string[] restrictedFileList =

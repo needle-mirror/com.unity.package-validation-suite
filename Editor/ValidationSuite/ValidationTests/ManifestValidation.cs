@@ -187,7 +187,7 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
                 Error("In package.json, \"description\" must be fleshed out and informative, as it is used in the user interface.");
             }
 
-            if (Context.ValidationType == ValidationType.Publishing)
+            if (Context.ValidationType == ValidationType.Publishing || Context.ValidationType == ValidationType.CI)
             {
                 // Check if `repository.url` and `repository.revision` exist and the content is valid
                 string value;

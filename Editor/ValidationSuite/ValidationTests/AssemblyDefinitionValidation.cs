@@ -36,35 +36,34 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
         {
             var simplifiedPath = assemblyDefinitionPath.Replace(Context.PublishPackageInfo.path, "{Package-Root}");
 
-            var isRuntime = Path.GetDirectoryName(assemblyDefinitionPath).IndexOf("Runtime") >= 0;
-            var isEditor = Path.GetDirectoryName(assemblyDefinitionPath).IndexOf("Editor") >= 0;
-            var isTest = Path.GetDirectoryName(assemblyDefinitionPath).IndexOf("Tests") >= 0;
+            var isInEditorFolder = assemblyDefinitionPath.IndexOf(Path.DirectorySeparatorChar+"Editor"+Path.DirectorySeparatorChar) >= 0;
+            var isInTestFolder = assemblyDefinitionPath.IndexOf(Path.DirectorySeparatorChar+"Tests"+Path.DirectorySeparatorChar) >= 0;
             
             try
             {
                 var assemblyDefinitionData = Utilities.GetDataFromJson<AssemblyDefinition>(assemblyDefinitionPath);
                 var editorInIncludePlatforms = FindValueInArray(assemblyDefinitionData.includePlatforms, "Editor");
 
-                var isTestAssembly = FindValueInArray(assemblyDefinitionData.optionalUnityReferences, "TestAssemblies");
-                if (!isTestAssembly && isEditor && assemblyDefinitionData.includePlatforms.Length > 1)
+                var isTestAssembly = FindValueInArray(assemblyDefinitionData.optionalUnityReferences, "TestAssemblies") || FindValueInArray(assemblyDefinitionData.precompiledReferences, "nunit.framework.dll");
+                
+                // Assemblies in the Editor folder should not have any other platforms defined
+                if (!isTestAssembly && isInEditorFolder && assemblyDefinitionData.includePlatforms.Length > 1)
                 {
                     Error(string.Format("For editor assemblies, only 'Editor' should be present in 'includePlatform' in: [{0}]", simplifiedPath));
                 }
 
-                if (!isTestAssembly && isEditor && !editorInIncludePlatforms)
+                // Assemblies in the Editor folder must have Editor marked as platform
+                if (!isTestAssembly && isInEditorFolder && !editorInIncludePlatforms)
                 {
                     Error(string.Format("For editor assemblies, 'Editor' should be present in the includePlatform section in: [{0}]", simplifiedPath));
                 }
 
-                if (isTestAssembly != isTest)
+                // Assemblies in the test folder must only be Test assemblies
+                if (!isTestAssembly && isInTestFolder)
                 {
-                    Error(string.Format("Test assemblies should only be in the Tests folder and not in {0}", simplifiedPath));
+                    Error(string.Format("Assembly {0} is not a test assembly and should not be present in the Tests folder of your package", simplifiedPath));
                 }
 
-                if (!isTestAssembly && isTest)
-                {
-                    Error(string.Format("'TestAssemblies'{0} should be present in 'optionalUnityReferences' in: [{1}]", isTest ? "" : " not", simplifiedPath));
-                }
             }
             catch (Exception e)
             {
