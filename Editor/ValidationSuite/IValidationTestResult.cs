@@ -4,7 +4,7 @@ using UnityEngine;
 
 namespace UnityEditor.PackageManager.ValidationSuite
 {
-    internal enum TestState
+    public enum TestState
     {
         Succeeded,
         Failed,

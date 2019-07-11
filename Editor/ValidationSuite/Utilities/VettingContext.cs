@@ -46,17 +46,17 @@ public class RelatedPackage
 /// <summary>
 /// Class containing package data required for vetting.
 /// </summary>
-internal class VettingContext
+public class VettingContext
 {
     [Serializable]
-    internal class SampleData
+    public class SampleData
     {
         public string displayName = "";
         public string description = "";
         public string path = "";
     }
 
-    internal class ManifestData
+    public class ManifestData
     {
         public string path = "";
         public string name = "";

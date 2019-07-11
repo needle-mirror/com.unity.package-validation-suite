@@ -77,10 +77,30 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
             if (process.ExitCode != 0)
             {
                 var stdContent = string.Join("\n", stderr.GetOutput().Concat(stdout.GetOutput()));
-                if (stdContent.Contains("Mono.Cecil.AssemblyResolutionException"))
+                if (ApiUpdaterConfigurationExemptions(stdContent))
                     Warning(stdContent);
                 else
                     Error(stdContent);
+            }
+
+            bool ApiUpdaterConfigurationExemptions(string stdContent)
+            {
+                if (stdContent.Contains("Mono.Cecil.AssemblyResolutionException"))
+                    return true;
+
+                // This is a temporary workaround to unblock dots team.
+                var requiredEntries =  new[] 
+                {
+                    //"Failed to resolve source type  '[*] Unity.Entities.SubtractiveComponent<T>' in configuration [*] Unity.Entities.SubtractiveComponent<T> -> Unity.Entities.ExcludeComponent<T>",
+                    //"Config: [*] Unity.Entities.ComponentGroup [*] Unity.Entities.ComponentSystemBase::GetComponentGroup([*] Unity.Collections.NativeArray<Unity.Entities.ComponentType>) -> * Unity.Entities.ComponentSystemBase::GetEntityQuery(Unity.Collections.NativeArray<ComponentType>)",
+                    "Target of update (method ComponentSystemBase.GetEntityQuery) is less accessible than original (Unity.Entities.ComponentGroup Unity.Entities.ComponentSystemBase::GetComponentGroup(Unity.Entities.ComponentType[])).",
+                    "Target of update (method ComponentSystemBase.GetEntityQuery) is less accessible than original (Unity.Entities.ComponentGroup Unity.Entities.ComponentSystemBase::GetComponentGroup(Unity.Collections.NativeArray`1<Unity.Entities.ComponentType>)).",
+                    "Target of update (method ComponentSystemBase.GetEntityQuery) is less accessible than original (Unity.Entities.ComponentGroup Unity.Entities.ComponentSystemBase::GetComponentGroup(Unity.Entities.EntityArchetypeQuery[])).",
+                    // "Signature of target method (Unity.Entities.EntityQuery Unity.Entities.EntityManager::CreateEntityQuery(Unity.Entities.EntityQueryDesc[])) differs from original method signature (Unity.Entities.ComponentGroup Unity.Entities.EntityManager::CreateComponentGroup(Unity.Entities.EntityArchetypeQuery[])).",
+                    //"Configuation Validation - 4 invalid configuration entries found:"
+                };
+
+                return requiredEntries.All(stdContent.Contains);
             }
         }
     }

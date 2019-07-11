@@ -4,6 +4,10 @@ All notable changes to this package will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## [0.6.0] - 2019-07-11
+- Added Maximum Path Length validation to raise an error if file paths in a package are becoming too long, risking Windows long path issues to appear.
+- Fixed another issue in UpdateConfiguration validation causing some false-positives in DOTS packages.
+
 ## [0.5.2] - 2019-05-17
 - removing validations involving where tests should be found.  They can now be anywhere.
 

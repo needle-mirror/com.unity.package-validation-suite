@@ -5,7 +5,7 @@ using System.Linq;
 
 namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
 {
-    internal abstract class BaseValidation : IValidationTest, IValidationTestResult
+    public abstract class BaseValidation : IValidationTest, IValidationTestResult
     {
         public ValidationType[] SupportedValidations { get; set; }
 

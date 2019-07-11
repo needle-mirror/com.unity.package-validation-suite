@@ -221,10 +221,17 @@ namespace UnityEditor.PackageManager.ValidationSuite
 
         private void BuildTestSuite()
         {
-            // Use reflection to discover all Validation Tests in the project with base type == BaseValidationTest.
-            validationTests = (from t in Assembly.GetExecutingAssembly().GetTypes()
-                where typeof(BaseValidation).IsAssignableFrom(t) && t.GetConstructor(Type.EmptyTypes) != null && !t.IsAbstract
-                select(BaseValidation) Activator.CreateInstance(t)).ToList();
+            // Use reflection to discover all Validation Tests in the project with base type == BaseValidation.
+            List<BaseValidation> testList = new List<BaseValidation>();
+            Assembly[] currentDomainAssemblies = AppDomain.CurrentDomain.GetAssemblies();
+            foreach (Assembly assembly in currentDomainAssemblies)
+            {
+                testList.AddRange((from t in assembly.GetTypes()
+                                            where typeof(BaseValidation).IsAssignableFrom(t) && t.GetConstructor(Type.EmptyTypes) != null && !t.IsAbstract
+                                            select (BaseValidation)Activator.CreateInstance(t)).ToList());
+            }
+
+            validationTests = testList;
         }
 
         private void Run()

@@ -35,7 +35,6 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
         void CheckAssemblyDefinitionContent(string assemblyDefinitionPath)
         {
             var simplifiedPath = assemblyDefinitionPath.Replace(Context.PublishPackageInfo.path, "{Package-Root}");
-
             var isInEditorFolder = assemblyDefinitionPath.IndexOf(Path.DirectorySeparatorChar+"Editor"+Path.DirectorySeparatorChar) >= 0;
             var isInTestFolder = assemblyDefinitionPath.IndexOf(Path.DirectorySeparatorChar+"Tests"+Path.DirectorySeparatorChar) >= 0;
             
