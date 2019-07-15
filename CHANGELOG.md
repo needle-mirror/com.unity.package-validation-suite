@@ -4,6 +4,12 @@ All notable changes to this package will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## [0.6.1] - 2019-07-15
+- Changed maximum file path length validation to be 140 characters instead of 100.
+- Changed Dependency Validation to issue a Warning instead of an error when package's Major version conflicts with verified set.
+- Added exception handling in BuildTestSuite when calling assembly.GetTypes()
+- Fixed path length validation to handle absolute/relative paths correctly
+
 ## [0.6.0] - 2019-07-11
 - Added Maximum Path Length validation to raise an error if file paths in a package are becoming too long, risking Windows long path issues to appear.
 - Fixed another issue in UpdateConfiguration validation causing some false-positives in DOTS packages.

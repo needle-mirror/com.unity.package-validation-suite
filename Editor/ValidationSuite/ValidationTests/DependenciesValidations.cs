@@ -30,7 +30,7 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
 
                         if (vExisting.Major != vNew.Major)
                         {
-                            Error("Package dependency {0}@{1} will create a major conflict with verified package {2}:{3}", dependency.Key, dependency.Value, verifiedDependency.ParentName, verifiedDependency.ParentVersion);
+                            Warning("Package dependency {0}@{1} will create a major conflict with verified package {2}:{3}", dependency.Key, dependency.Value, verifiedDependency.ParentName, verifiedDependency.ParentVersion);
                         }
                     }
                 }

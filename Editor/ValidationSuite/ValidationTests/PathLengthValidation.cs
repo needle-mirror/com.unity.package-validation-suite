@@ -5,34 +5,42 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
 {
     internal class PathLengthValidation : BaseValidation
     {
-        public int MaxPathLength { get; set; } = 100;
+        public int MaxPathLength { get; set; } = 140;
 
         public PathLengthValidation()
         {
             TestName = "Path Length Validation";
-            TestDescription = "Validate that all package files are below a minimum path threshold, to ensure that excessively long paths are not produced on Windows machines within user projects.";
+            TestDescription = "Validate that all package files are below a maximum path threshold, to ensure that excessively long paths are not produced on Windows machines within user projects.";
             TestCategory = TestCategory.ContentScan;
             SupportedValidations = new[] { ValidationType.CI, ValidationType.LocalDevelopment, ValidationType.Publishing, ValidationType.VerifiedSet };
         }
 
-        void CheckPathLengthInFolderRecursively(string folder, string basePath)
+        private static string CombineAllowingEmpty(string path1, string path2)
+        {
+            if (string.IsNullOrEmpty(path1))
+                return path2;
+            if (string.IsNullOrEmpty(path2))
+                return path1;
+            return Path.Combine(path1, path2);
+        }
+
+        void CheckPathLengthInFolderRecursively(string relativeFolder, string absoluteBasePath)
         {
             try
             {
-                int baseLength = folder.Length - basePath.Length + 1;
-                foreach (string entry in Directory.GetFileSystemEntries(folder))
+                var fullFolder = CombineAllowingEmpty(absoluteBasePath, relativeFolder);
+                foreach (string entry in Directory.GetFileSystemEntries(fullFolder))
                 {
-                    var name = Path.GetFileName(entry);
-                    if (baseLength + name.Length > MaxPathLength)
+                    var fullPath = CombineAllowingEmpty(relativeFolder, Path.GetFileName(entry));
+                    if (fullPath.Length > MaxPathLength)
                     {
-                        var fullPath = Path.Combine(folder, name);
                         Error($"{fullPath} is {fullPath.Length} characters, which is longer than the limit of {MaxPathLength} characters. You must use shorter names.");
                     }
                 }
 
-                foreach (string dir in Directory.GetDirectories(folder))
+                foreach (string dir in Directory.GetDirectories(fullFolder))
                 {
-                    CheckPathLengthInFolderRecursively(dir, basePath);
+                    CheckPathLengthInFolderRecursively(CombineAllowingEmpty(relativeFolder, Path.GetFileName(dir)), absoluteBasePath);
                 }
             }
             catch (Exception e)
@@ -46,8 +54,12 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
             // Start by declaring victory
             TestState = TestState.Succeeded;
 
+            var rootPath = Context.PublishPackageInfo.path;
+            if (!Path.IsPathRooted(Context.PublishPackageInfo.path)) 
+                rootPath = Path.GetFullPath(rootPath);
+
             //check if each file/folder has a sufficiently short path relative to the base
-            CheckPathLengthInFolderRecursively(Context.PublishPackageInfo.path, Context.PublishPackageInfo.path);
+            CheckPathLengthInFolderRecursively(string.Empty, rootPath);
         }
     }
 }

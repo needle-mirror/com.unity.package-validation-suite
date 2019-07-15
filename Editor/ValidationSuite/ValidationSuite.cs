@@ -226,9 +226,16 @@ namespace UnityEditor.PackageManager.ValidationSuite
             Assembly[] currentDomainAssemblies = AppDomain.CurrentDomain.GetAssemblies();
             foreach (Assembly assembly in currentDomainAssemblies)
             {
-                testList.AddRange((from t in assembly.GetTypes()
+                try {
+                    testList.AddRange((from t in assembly.GetTypes()
                                             where typeof(BaseValidation).IsAssignableFrom(t) && t.GetConstructor(Type.EmptyTypes) != null && !t.IsAbstract
                                             select (BaseValidation)Activator.CreateInstance(t)).ToList());
+                } catch (System.Reflection.ReflectionTypeLoadException) {
+                    // There seems to be an isue with assembly.GetTypes throwing an exception. 
+                    // This quick fix is to allow validation suite to work without blocking anyone
+                    // while the owner of this code is contacted.
+                    continue;
+                }
             }
 
             validationTests = testList;
