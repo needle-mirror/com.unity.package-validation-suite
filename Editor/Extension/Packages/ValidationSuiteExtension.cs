@@ -1,7 +1,5 @@
-#if UNITY_2018_2_OR_NEWER
-#define NEW_PACKMAN
-
 using UnityEditor.PackageManager.UI;
+using UnityEngine;
 #if UNITY_2019_1_OR_NEWER
 using UnityEngine.UIElements;
 #else
@@ -10,6 +8,9 @@ using UnityEngine.Experimental.UIElements;
 
 namespace UnityEditor.PackageManager.ValidationSuite.UI
 {
+#if !UNITY_PACKAGE_MANAGER_DEVELOP_EXISTS
+#if UNITY_2018_2_OR_NEWER
+
     [InitializeOnLoad]
     internal class ValidationSuiteExtension : IPackageManagerExtension
     {
@@ -50,5 +51,6 @@ namespace UnityEditor.PackageManager.ValidationSuite.UI
             PackageManagerExtensions.RegisterExtension(new ValidationSuiteExtension());
         }
     }
-}
 #endif
+#endif
+}

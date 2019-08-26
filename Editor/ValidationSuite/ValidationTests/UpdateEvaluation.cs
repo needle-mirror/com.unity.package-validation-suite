@@ -27,14 +27,14 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
             SemVersion version;
             if (!SemVersion.TryParse(Context.ProjectPackageInfo.version, out version, true))
             {
-                Error("Failed to parse previous package version \"{0}\"", Context.ProjectPackageInfo.version);
+                AddError("Failed to parse previous package version \"{0}\"", Context.ProjectPackageInfo.version);
                 return;
             }
 
             SemVersion previousVersion = null;
             if (Context.PreviousPackageInfo != null && !SemVersion.TryParse(Context.PreviousPackageInfo.version, out previousVersion, true))
             {
-                Error("Failed to parse previous package version \"{0}\"", Context.ProjectPackageInfo.version);
+                AddError("Failed to parse previous package version \"{0}\"", Context.ProjectPackageInfo.version);
             }
 
             if (string.IsNullOrEmpty(version.Prerelease))
@@ -42,14 +42,14 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
                 // This is a production submission, let's make sure it meets some criteria
                 if (Context.PreviousPackageInfo == null)
                 {
-                    Warning("This package is not a preview version, but it's the first version of the package.  Should this package version be tagged as " + Context.ProjectPackageInfo.version + "-preview?");
+                    AddWarning("This package is not a preview version, but it's the first version of the package.  Should this package version be tagged as " + Context.ProjectPackageInfo.version + "-preview?");
                 }
             }
 
             // If it exists, get the last one from that list.
             if (Context.ValidationType == ValidationType.Publishing && Utilities.PackageExistsOnProduction(Context.ProjectPackageInfo.Id))
             {
-                Error("Version " + Context.ProjectPackageInfo.version + " of this package already exists in production.");
+                AddError("Version " + Context.ProjectPackageInfo.version + " of this package already exists in production.");
             }
 #endif
         }

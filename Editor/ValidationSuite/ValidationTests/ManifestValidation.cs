@@ -31,7 +31,7 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
             var manifestData = Context.ProjectPackageInfo;
             if (manifestData == null)
             {
-                Error("Manifest not available. Not validating manifest contents.");
+                AddError("Manifest not available. Not validating manifest contents.");
                 return;
             }
 
@@ -49,7 +49,7 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
                 {
                     if (Utilities.IsPreviewVersion(dependency.Value))
                     {
-                        Error("This production quality package has a dependency on preview package \"{0}\".  Production quality packages can only depend on other production quality packages.", dependency.Value);
+                        AddError("This production quality package has a dependency on preview package \"{0}\".  Production quality packages can only depend on other production quality packages.", dependency.Value);
                     }
                 }
             }
@@ -70,12 +70,12 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
 #endif
 
                 // Check if this package's dependencies are in production.  That is a requirement for publishing.
-                if (!Utilities.PackageExistsOnProduction(packageId))
+                if (Context.ValidationType != ValidationType.VerifiedSet && !Utilities.PackageExistsOnProduction(packageId))
                 {
                     if (Context.ValidationType == ValidationType.Publishing || Context.ValidationType == ValidationType.AssetStore)
-                        Error("Package dependency {0} is not published in production.", packageId);
+                        AddError("Package dependency {0} is not published in production.", packageId);
                     else
-                        Warning("Package dependency {0} must be published to production before this package is published to production.  (Except for core packages)", packageId);
+                        AddWarning("Package dependency {0} must be published to production before this package is published to production.  (Except for core packages)", packageId);
                 }
             }
 
@@ -94,7 +94,7 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
                 SemVersion projectRefSemver;
                 if (!SemVersion.TryParse(projectRef.Value, out projectRefSemver))
                 {
-                    Error(@"Invalid version number in dependency ""{0}"" : ""{1}""", projectRef.Key, projectRef.Value);
+                    AddError(@"Invalid version number in dependency ""{0}"" : ""{1}""", projectRef.Key, projectRef.Value);
                     continue;
                 }
 
@@ -107,14 +107,14 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
                         if (previousRefSemver.Major != projectRefSemver.Major &&
                             (versionChangeType == VersionChangeType.Patch || versionChangeType == VersionChangeType.Minor))
                         {
-                            Error(@"Dependency major versions may only change in major releases. ""{0}"": ""{1}"" -> ""{2}""",
+                            AddError(@"Dependency major versions may only change in major releases. ""{0}"": ""{1}"" -> ""{2}""",
                                 projectRef.Key, previousRefVersion, projectRef.Value);
                         }
                     }
                 }
                 else
                 {
-                    this.TestOutput.Add(string.Format(@"New dependency: ""{0}"": ""{1}""", projectRef.Key, projectRef.Value));
+                    AddInformation(string.Format(@"New dependency: ""{0}"": ""{1}""", projectRef.Key, projectRef.Value));
 
 #if UNITY_2019_2_OR_NEWER
                     var dependencyInfo = Utilities.UpmListOffline(projectRef.Key).FirstOrDefault();
@@ -127,7 +127,7 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
 #endif
                     if (versionChangeType == VersionChangeType.Patch ||
                         versionChangeType == VersionChangeType.Minor)
-                        Error("Adding package dependencies requires a new major version.");
+                        AddError("Adding package dependencies requires a new major version.");
                 }
             }
 
@@ -137,10 +137,10 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
                 {
                     SemVersion previousSemver;
                     if (!SemVersion.TryParse(previousRef.Value, out previousSemver))
-                        TestOutput.Add(String.Format(@"Invalid version number in previous package dependency ""{0}"" : ""{1}""", previousRef.Key, previousRef.Value));
+                        AddError(String.Format(@"Invalid version number in previous package dependency ""{0}"" : ""{1}""", previousRef.Key, previousRef.Value));
 
                     if (!projectRefs.ContainsKey(previousRef.Key) && versionChangeType == VersionChangeType.Patch)
-                        Error("Removing dependencies is not forwards-compatible and requires a new major or minor version. Removed dependency: {0}", previousRef.Key);
+                        AddError("Removing dependencies is not forwards-compatible and requires a new major or minor version. Removed dependency: {0}", previousRef.Key);
                 }
             }
         }
@@ -152,39 +152,39 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
             // Check the package Name, which needs to start with one of the approved company names.
             if (!PackageNamePrefixList.Any(namePrefix => (manifestData.name.StartsWith(namePrefix) && manifestData.name.Length > namePrefix.Length)))
             {
-                Error("In package.json, \"name\" needs to start with one of these approved company names: " + string.Join(", ", PackageNamePrefixList));
+                AddError("In package.json, \"name\" needs to start with one of these approved company names: " + string.Join(", ", PackageNamePrefixList));
             }
 
             // There cannot be any capital letters in package names.
             if (manifestData.name.ToLower(CultureInfo.InvariantCulture) != manifestData.name)
             {
-                Error("In package.json, \"name\" cannot contain capital letter");
+                AddError("In package.json, \"name\" cannot contain capital letter");
             }
 
             // Check name against our regex.
             Match match = Regex.Match(manifestData.name, UpmRegex);
             if (!match.Success)
             {
-                Error("In package.json, \"name\" is not a valid name.");
+                AddError("In package.json, \"name\" is not a valid name.");
             }
 
             if (string.IsNullOrEmpty(manifestData.displayName))
             {
-                Error("In package.json, \"displayName\" must be set.");
+                AddError("In package.json, \"displayName\" must be set.");
             }
             else if (manifestData.displayName.Length > 25)
             {
-                Error("In package.json, \"displayName\" is too long. Max Length = 25");
+                AddError("In package.json, \"displayName\" is too long. Max Length = 25");
             }
             else if (!Regex.Match(manifestData.displayName, UpmDisplayRegex).Success)
             {
-                Error("In package.json, \"displayName\" cannot have any special characters.");
+                AddError("In package.json, \"displayName\" cannot have any special characters.");
             }
 
             // Check Description, make sure it's there, and not too short.
             if (manifestData.description.Length < MinDescriptionSize)
             {
-                Error("In package.json, \"description\" must be fleshed out and informative, as it is used in the user interface.");
+                AddError("In package.json, \"description\" must be fleshed out and informative, as it is used in the user interface.");
             }
 
             if (Context.ValidationType == ValidationType.Publishing || Context.ValidationType == ValidationType.CI)
@@ -192,13 +192,13 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
                 // Check if `repository.url` and `repository.revision` exist and the content is valid
                 string value;
                 if (!manifestData.repository.TryGetValue("url", out value) || string.IsNullOrEmpty(value))
-                    Error("In package.json for a published package, there must be a \"repository.url\" field.");
+                    AddError("In package.json for a published package, there must be a \"repository.url\" field.");
                 if (!manifestData.repository.TryGetValue("revision", out value) || string.IsNullOrEmpty(value))
-                    Error("In package.json for a published package, there must be a \"repository.revision\" field.");
+                    AddError("In package.json for a published package, there must be a \"repository.revision\" field.");
             }
             else
             {
-                Information("Skipping Git tags check as this is a package in development.");
+                AddInformation("Skipping Git tags check as this is a package in development.");
             }
 
             ValidateVersion(manifestData);
@@ -210,7 +210,7 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
             SemVersion packageVersionNumber;
             if (!SemVersion.TryParse(manifestData.version, out packageVersionNumber))
             {
-                Error("In package.json, \"version\" needs to be a valid \"Semver\".");
+                AddError("In package.json, \"version\" needs to be a valid \"Semver\".");
                 return;
             }
 
@@ -218,7 +218,7 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
             {
                 if (!string.IsNullOrEmpty(packageVersionNumber.Prerelease) || packageVersionNumber.Major < 1)
                 {
-                    Error("Core packages cannot be preview packages.");
+                    AddError("Core packages cannot be preview packages.");
                     return;
                 }
             }
@@ -227,7 +227,7 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
             {
                 if (string.IsNullOrEmpty(packageVersionNumber.Prerelease) || packageVersionNumber.Prerelease.Split('.')[0] != "preview")
                 {
-                    Error("In package.json, \"version\" < 1, which makes it a preview version, please tag the package as " + packageVersionNumber.VersionOnly() + "-preview");
+                    AddError("In package.json, \"version\" < 1, which makes it a preview version, please tag the package as " + packageVersionNumber.VersionOnly() + "-preview");
                     return;
                 }
             }
@@ -253,7 +253,7 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
 
                     if ((preleleaseParts.Length > 2) || (preleleaseParts[0] != ("preview")))
                     {
-                        Error("In package.json, \"version\": the only pre-release filter supported is \"-preview.[num < 999]\".");
+                        AddError("In package.json, \"version\": the only pre-release filter supported is \"-preview.[num < 999]\".");
                     }
 
                     if (preleleaseParts.Length > 1 && !string.IsNullOrEmpty(preleleaseParts[1]))
@@ -262,7 +262,7 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
                         var results = int.TryParse(preleleaseParts[1], out previewVersion);
                         if (!results || previewVersion > 999)
                         {
-                            Error("In package.json, \"version\": the only pre-release filter supported is \"-preview.[num < 999]\".");
+                            AddError("In package.json, \"version\": the only pre-release filter supported is \"-preview.[num < 999]\".");
                         }
                     }
                 }

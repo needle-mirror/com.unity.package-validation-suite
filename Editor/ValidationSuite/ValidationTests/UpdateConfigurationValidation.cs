@@ -1,4 +1,3 @@
-#if UNITY_2019_1_OR_NEWER
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
@@ -8,6 +7,7 @@ using UnityEngine;
 
 namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
 {
+#if UNITY_2019_1_OR_NEWER
     internal class UpdateConfigurationValidation : BaseAssemblyValidation
     {
         public UpdateConfigurationValidation()
@@ -21,7 +21,7 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
             this.TestState = TestState.Succeeded;
             if (Context.ProjectPackageInfo?.name == "com.unity.package-validation-suite")
             {
-                Information("PackageValidationSuite update configurations tested by editor tests.");
+                AddInformation("PackageValidationSuite update configurations tested by editor tests.");
                 return;
             }
             
@@ -34,7 +34,7 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
             var validatorPath = Path.Combine(EditorApplication.applicationContentsPath, "Tools/ScriptUpdater/APIUpdater.ConfigurationValidator.exe");
             if (!File.Exists(validatorPath))
             {
-                Information("APIUpdater.ConfigurationValidator.exe is not present in this version of Unity. Not validating update configurations.");
+                AddInformation("APIUpdater.ConfigurationValidator.exe is not present in this version of Unity. Not validating update configurations.");
                 return;
             }
 
@@ -78,9 +78,9 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
             {
                 var stdContent = string.Join("\n", stderr.GetOutput().Concat(stdout.GetOutput()));
                 if (ApiUpdaterConfigurationExemptions(stdContent))
-                    Warning(stdContent);
+                    AddWarning(stdContent);
                 else
-                    Error(stdContent);
+                    AddError(stdContent);
             }
 
             bool ApiUpdaterConfigurationExemptions(string stdContent)
@@ -104,5 +104,5 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
             }
         }
     }
-}
 #endif
+}

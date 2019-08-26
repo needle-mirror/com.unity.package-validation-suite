@@ -32,13 +32,13 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
             //does it compile?
             if (EditorUtility.scriptCompilationFailed)
             {
-                Error("Compilation failed. Please fix any compilation errors.");
+                AddError("Compilation failed. Please fix any compilation errors.");
                 return;
             }
 
             if (EditorApplication.isCompiling)
             {
-                Error("Compilation in progress. Please wait for compilation to finish.");
+                AddError("Compilation in progress. Please wait for compilation to finish.");
                 return;
             }
 
@@ -59,7 +59,7 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
             var assemblyInfoOutsidePackage =
                 allAssemblyInfo.Where(a => !a.asmdefPath.StartsWith(packagePath)).ToArray();
             foreach (var badFilePath in assemblyInfoOutsidePackage.SelectMany(a => a.assembly.sourceFiles).Where(files.Contains))
-                Error("Script \"{0}\" is not included by any asmdefs in the package.", badFilePath);
+                AddError("Script \"{0}\" is not included by any asmdefs in the package.", badFilePath);
 
             var relevantAssemblyInfo =
                 allAssemblyInfo.Where(a => a.asmdefPath.StartsWith(packagePath));

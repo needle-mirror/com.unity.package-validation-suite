@@ -37,17 +37,17 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
             string[] allDocsDir = Directory.GetDirectories(Context.ProjectPackageInfo.path, "*Documentation*");
             if (allDocsDir.Length > 1)
             {
-                Error("You have multiple documentation folders. Please keep only the one named \"Documentation~\".");
+                AddError("You have multiple documentation folders. Please keep only the one named \"Documentation~\".");
                 return;
             }
             else if (!string.IsNullOrEmpty(wrongNameDocsDir))
             {
-                Error("Please rename your \"Documentation\" folder to \"Documentation~\" so that its files are ignored by the asset database.");
+                AddError("Please rename your \"Documentation\" folder to \"Documentation~\" so that its files are ignored by the asset database.");
                 return;
             }
             else if (string.IsNullOrEmpty(docsDir))
             {
-                Error("Your package must contain a \"Documentation~\" folder at the root, which holds your package's documentation.");
+                AddError("Your package must contain a \"Documentation~\" folder at the root, which holds your package's documentation.");
                 return;
             }
 
@@ -55,14 +55,14 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
             // Check the default file is not there anymore
             if (defaultFiles.Length > 0)
             {
-                Error("File \"your-package-name.md\" found in \"Documentation~\" directory, which comes from the package template.  Please take the time to work on your documentation.");
+                AddError("File \"your-package-name.md\" found in \"Documentation~\" directory, which comes from the package template.  Please take the time to work on your documentation.");
             }
 
             var docFiles = Directory.GetFiles(docsDir, "*.md");
             // Check for at least 1 md file in that directory.
             if (docFiles.Length == 0)
             {
-                Error("Your package must contain a \"Documentation~\" folder, with at least one \"*.md\" file in order for documentation to properly get built.");
+                AddError("Your package must contain a \"Documentation~\" folder, with at least one \"*.md\" file in order for documentation to properly get built.");
             }
             // Check that documentation files (except the default file) have at least 10 characters in them
             else if (docFiles.Length > defaultFiles.Length)
@@ -74,7 +74,7 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
                         long fileLength = new FileInfo(filePath).Length;
                         if (fileLength < 10)
                         {
-                            Error("Your documentation file " + filePath + " should contain at least 10 characters.");
+                            AddError("Your documentation file " + filePath + " should contain at least 10 characters.");
                         }
                     }
                 }

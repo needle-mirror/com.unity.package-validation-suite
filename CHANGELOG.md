@@ -4,6 +4,16 @@ All notable changes to this package will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## [0.7.1] - 2019-08-23
+- Modified the test output structure to differentiate info, warning and error output.
+- Added validation test to check for the existing of the "Resources" directory in packages, which is not recommended.
+- Modified Packman UI integration to turn yellow upon warnings in a run.
+- Fixed preview package fetch, to allow API evaluation testing, as well as diff generation.
+
+## [0.6.2] - 2019-07-15
+- Allows validation suite to be used by develop package
+- Moved validation suite output to Library path
+
 ## [0.6.1] - 2019-07-15
 - Changed maximum file path length validation to be 140 characters instead of 100.
 - Changed Dependency Validation to issue a Warning instead of an error when package's Major version conflicts with verified set.

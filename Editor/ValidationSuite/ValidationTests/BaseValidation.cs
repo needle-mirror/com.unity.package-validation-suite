@@ -22,8 +22,7 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
 
         public TestState TestState { get; set; }
 
-        // Output string from test
-        public List<string> TestOutput { get; set; }
+        public List<ValidationTestOutput> TestOutput { get; set; }
 
         public DateTime StartTime { get; private set; }
 
@@ -36,7 +35,7 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
         protected BaseValidation()
         {
             TestState = TestState.NotRun;
-            TestOutput = new List<string>();
+            TestOutput = new List<ValidationTestOutput>();
             ShouldRun = true;
             StartTime = DateTime.Now;
             EndTime = DateTime.Now;
@@ -58,35 +57,36 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
 
         // This needs to be implemented for every test
         protected abstract void Run();
-        protected void Error(string message, params object[] args)
+
+        public void AddError(string message, params object[] args)
         {
-            Error(string.Format(message, args));
+            AddError(string.Format(message, args));
         }
 
-        protected void Error(string message)
+        public void AddWarning(string message, params object[] args)
         {
-            TestOutput.Add("Error: " + message);
+            AddWarning(string.Format(message, args));
+        }
+
+        public void AddInformation(string message, params object[] args)
+        {
+            AddInformation(string.Format(message, args));
+        }
+
+        public void AddError(string message)
+        {
+            TestOutput.Add(new ValidationTestOutput() {Type = TestOutputType.Error, Output = message});
             TestState = TestState.Failed;
         }
 
-        protected void Warning(string message, params object[] args)
+        public void AddWarning(string message)
         {
-            Warning(string.Format(message, args));
+            TestOutput.Add(new ValidationTestOutput() { Type = TestOutputType.Warning, Output = message });
         }
 
-        protected void Warning(string message)
+        protected void AddInformation(string message)
         {
-            TestOutput.Add("Warning: " + message);
-        }
-
-        protected void Information(string message, params object[] args)
-        {
-            Information(string.Format(message, args));
-        }
-
-        protected void Information(string message)
-        {
-            TestOutput.Add(message);
+            TestOutput.Add(new ValidationTestOutput() { Type = TestOutputType.Information, Output = message });
         }
 
         protected void DirectorySearch(string path, string searchPattern, ref List<string> matches)

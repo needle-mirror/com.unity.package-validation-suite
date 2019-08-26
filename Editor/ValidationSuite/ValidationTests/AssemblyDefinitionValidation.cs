@@ -48,25 +48,25 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
                 // Assemblies in the Editor folder should not have any other platforms defined
                 if (!isTestAssembly && isInEditorFolder && assemblyDefinitionData.includePlatforms.Length > 1)
                 {
-                    Error(string.Format("For editor assemblies, only 'Editor' should be present in 'includePlatform' in: [{0}]", simplifiedPath));
+                    AddError("For editor assemblies, only 'Editor' should be present in 'includePlatform' in: [{0}]", simplifiedPath);
                 }
 
                 // Assemblies in the Editor folder must have Editor marked as platform
                 if (!isTestAssembly && isInEditorFolder && !editorInIncludePlatforms)
                 {
-                    Error(string.Format("For editor assemblies, 'Editor' should be present in the includePlatform section in: [{0}]", simplifiedPath));
+                    AddError("For editor assemblies, 'Editor' should be present in the includePlatform section in: [{0}]", simplifiedPath);
                 }
 
                 // Assemblies in the test folder must only be Test assemblies
                 if (!isTestAssembly && isInTestFolder)
                 {
-                    Error(string.Format("Assembly {0} is not a test assembly and should not be present in the Tests folder of your package", simplifiedPath));
+                    AddError("Assembly {0} is not a test assembly and should not be present in the Tests folder of your package", simplifiedPath);
                 }
 
             }
             catch (Exception e)
             {
-                Error(string.Format("Can't read assembly definition {0}: {1}", simplifiedPath, e.Message));
+                AddError("Can't read assembly definition {0}: {1}", simplifiedPath, e.Message);
             }
         }
 
@@ -80,8 +80,7 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
 
             if (!File.Exists(manifestFilePath))
             {
-                TestState = TestState.Failed;
-                TestOutput.Add("Can't find manifest: " + manifestFilePath);
+                AddError("Can't find manifest: " + manifestFilePath);
                 return;
             }
 
@@ -105,8 +104,7 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
                     // check if the cs file is not in any folder that has asmdef file
                     if (foldersWithAsmdefFile.All(f => csFile.IndexOf(f) < 0))
                     {
-                        TestOutput.Add("C# script found in \"" + folder + "\" folder, but no corresponding asmdef file: " + csFile);
-                        TestState = TestState.Failed;
+                        AddError("C# script found in \"" + folder + "\" folder, but no corresponding asmdef file: " + csFile);
                     }
                 }
             }

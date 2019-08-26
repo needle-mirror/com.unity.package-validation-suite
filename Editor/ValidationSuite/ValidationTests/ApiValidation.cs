@@ -45,25 +45,25 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
                     string.Join(", ", assemblyInfo.assemblyDefinition.excludePlatforms));
                 if (previousAssemblyDefinition.excludePlatforms.Any(p => !assemblyInfo.assemblyDefinition.excludePlatforms.Contains(p)) &&
                     versionChangeType == VersionChangeType.Patch)
-                    Error("Removing from excludePlatfoms requires a new minor or major version. " + excludePlatformsDiff);
+                    AddError("Removing from excludePlatfoms requires a new minor or major version. " + excludePlatformsDiff);
                 else if (assemblyInfo.assemblyDefinition.excludePlatforms.Any(p =>
                     !previousAssemblyDefinition.excludePlatforms.Contains(p)) &&
                          (versionChangeType == VersionChangeType.Patch || versionChangeType == VersionChangeType.Minor))
-                    Error("Adding to excludePlatforms requires a new major version. " + excludePlatformsDiff);
+                    AddError("Adding to excludePlatforms requires a new major version. " + excludePlatformsDiff);
 
                 var includePlatformsDiff = string.Format("Was:\"{0}\" Now:\"{1}\"",
                     string.Join(", ", previousAssemblyDefinition.includePlatforms),
                     string.Join(", ", assemblyInfo.assemblyDefinition.includePlatforms));
                 if (previousAssemblyDefinition.includePlatforms.Any(p => !assemblyInfo.assemblyDefinition.includePlatforms.Contains(p)) &&
                     (versionChangeType == VersionChangeType.Patch || versionChangeType == VersionChangeType.Minor))
-                    Error("Removing from includePlatfoms requires a new major version. " + includePlatformsDiff);
+                    AddError("Removing from includePlatfoms requires a new major version. " + includePlatformsDiff);
                 else if (assemblyInfo.assemblyDefinition.includePlatforms.Any(p => !previousAssemblyDefinition.includePlatforms.Contains(p)))
                 {
                     if (previousAssemblyDefinition.includePlatforms.Length == 0 &&
                         (versionChangeType == VersionChangeType.Minor || versionChangeType == VersionChangeType.Patch))
-                        Error("Adding the first entry in inlcudePlatforms requires a new major version. " + includePlatformsDiff);
+                        AddError("Adding the first entry in inlcudePlatforms requires a new major version. " + includePlatformsDiff);
                     else if (versionChangeType == VersionChangeType.Patch)
-                        Error("Adding to includePlatforms requires a new minor or major version. " + includePlatformsDiff);
+                        AddError("Adding to includePlatforms requires a new minor or major version. " + includePlatformsDiff);
                 }
             }
 
@@ -86,7 +86,7 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
                     assemblyDefinition.excludePlatforms.Any() &&
                     assemblyDefinition.excludePlatforms.Contains("Editor"))
                 {
-                    Error("Package Validation Suite does not support .asmdefs that are not built on the \"Editor\" platform. See \"{0}\"", assemblyDefinition.name);
+                    AddError("Package Validation Suite does not support .asmdefs that are not built on the \"Editor\" platform. See \"{0}\"", assemblyDefinition.name);
                 }
             }
         }
@@ -106,19 +106,19 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
             //does it compile?
             if (EditorUtility.scriptCompilationFailed)
             {
-                Error("Compilation failed. Please fix any compilation errors.");
+                AddError("Compilation failed. Please fix any compilation errors.");
                 return;
             }
 
             if (EditorApplication.isCompiling)
             {
-                Error("Compilation in progress. Please wait for compilation to finish.");
+                AddError("Compilation in progress. Please wait for compilation to finish.");
                 return;
             }
 
             if (Context.PreviousPackageInfo == null)
             {
-                TestOutput.Add("No previous package version. Skipping Semantic Versioning checks.");
+                AddInformation("No previous package version. Skipping Semantic Versioning checks.");
                 TestState = TestState.NotRun;
                 return;
             }
@@ -162,7 +162,7 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
             if (Context.PreviousPackageBinaryDirectory == null)
             {
                 TestState = TestState.NotRun;
-                TestOutput.Add("Previous package binaries must be present on artifactory to do API diff.");
+                AddInformation("Previous package binaries must be present on artifactory to do API diff.");
                 return;
             }
 
@@ -213,20 +213,19 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
             diff.removedAssemblyCount = diff.missingAssemblies.Count;
             diff.breakingChanges = diff.assemblyChanges.Sum(v => v.breakingChanges.Count);
 
-            TestOutput.Add(String.Format("API Diff - Breaking changes: {0} Additions: {1} Missing Assemblies: {2}",
+            AddInformation("API Diff - Breaking changes: {0} Additions: {1} Missing Assemblies: {2}",
                 diff.breakingChanges,
                 diff.additions,
-                diff.removedAssemblyCount));
+                diff.removedAssemblyCount);
 
             if (diff.breakingChanges > 0 || diff.additions > 0)
             {
-                TestOutput.AddRange(diff.assemblyChanges.Select(c => JsonUtility.ToJson(c, true)));
+                TestOutput.AddRange(diff.assemblyChanges.Select(c => new ValidationTestOutput() { Type = TestOutputType.Information, Output = JsonUtility.ToJson(c, true)}));
             }
 
-
             string json = JsonUtility.ToJson(diff, true);
-            Directory.CreateDirectory(ValidationSuiteReport.resultsPath);
-            File.WriteAllText(Path.Combine(ValidationSuiteReport.resultsPath, "ApiValidationReport.json"), json);
+            Directory.CreateDirectory(ValidationSuiteReport.ResultsPath);
+            File.WriteAllText(Path.Combine(ValidationSuiteReport.ResultsPath, "ApiValidationReport.json"), json);
 
             //Figure out type of version change (patch, minor, major)
             //Error if changes are not allowed
@@ -236,23 +235,21 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
                 return;
 
             if (diff.breakingChanges > 0 && changeType != VersionChangeType.Major)
-                Error("Breaking changes require a new major version.");
+                AddError("Breaking changes require a new major version.");
             if (diff.additions > 0 && changeType == VersionChangeType.Patch)
-                Error("Additions require a new minor or major version.");
+                AddError("Additions require a new minor or major version.");
             if (changeType != VersionChangeType.Major)
             {
                 foreach (var assembly in diff.missingAssemblies)
                 {
-                    Error(
-                        "Assembly \"{0}\" no longer exists or is no longer included in build. This requires a new major version.", assembly);
+                    AddError("Assembly \"{0}\" no longer exists or is no longer included in build. This requires a new major version.", assembly);
                 }
             }
             if (changeType == VersionChangeType.Patch)
             {
                 foreach (var assembly in diff.newAssemblies)
                 {
-                    Error(
-                        "New assembly \"{0}\" may only be added in a new minor or major version.", assembly);
+                    AddError("New assembly \"{0}\" may only be added in a new minor or major version.", assembly);
                 }
             }
         }

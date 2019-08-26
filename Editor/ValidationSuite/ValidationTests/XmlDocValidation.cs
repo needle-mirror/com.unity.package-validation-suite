@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
@@ -67,14 +68,14 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
             var stderrLines = stderr.GetOutput();
             if (stderrLines.Length > 0)
             {
-                Warning($"Internal Error running FindMissingDocs. Output:\n{string.Join("\n",stderrLines)}");
+                AddWarning($"Internal Error running FindMissingDocs. Output:\n{string.Join("\n",stderrLines)}");
                 return;
             }
 
             if (stdoutLines.Length > 0)
             {
                 var errorMessage = FormatErrorMessage(stdoutLines);
-                Warning(errorMessage);
+                AddWarning(errorMessage);
 
                 //// JonH: Enable errors in non-preview packages once the check has been put through its paces and the change is coordinated with RM and PM
                 // if (Context.ProjectPackageInfo.IsPreview)
@@ -92,8 +93,7 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
 
         public static string FormatErrorMessage(IEnumerable<string> expectedMessages)
         {
-            return $@"The following APIs are missing documentation:
-{string.Join("\n", expectedMessages)}";
+            return $@"The following APIs are missing documentation: {string.Join(Environment.NewLine, expectedMessages)}";
         }
     }
 }

@@ -4,15 +4,6 @@ using UnityEngine;
 
 namespace UnityEditor.PackageManager.ValidationSuite
 {
-    public enum TestState
-    {
-        Succeeded,
-        Failed,
-        NotRun,
-        Running,
-        NotImplementedYet
-    }
-
     internal interface IValidationTestResult
     {
         // The test associated to this result
@@ -20,8 +11,7 @@ namespace UnityEditor.PackageManager.ValidationSuite
 
         TestState TestState { get;}
 
-        // Output string from test
-        List<string> TestOutput { get;}
+        List<ValidationTestOutput> TestOutput { get;}
 
         DateTime StartTime { get; }
 

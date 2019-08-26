@@ -7,70 +7,35 @@ using UnityEngine;
 
 namespace UnityEditor.PackageManager.ValidationSuite
 {
-    internal class ValidationTestReport
-    {
-        public string TestName;
-        public string TestDescription;
-        public string TestResult;
-        public string[] TestOutput;
-        public string StartTime;
-        public string EndTime;
-        public int Elpased;
-    }
-
     internal class ValidationSuiteReport
     {
-        public static readonly string resultsPath = "ValidationSuiteResults";
+        public static readonly string ResultsPath = Path.Combine("Library", "ValidationSuiteResults");
 
-        private readonly string txtReportPath;
         private readonly string jsonReportPath;
+        TextReporter TextReporter { get; set; }
 
         public ValidationSuiteReport()
         {}
 
         public ValidationSuiteReport(string packageId, string packageName, string packageVersion, string packagePath)
         {
-            txtReportPath = Path.Combine(resultsPath, packageId + ".txt");
-            jsonReportPath = Path.Combine(resultsPath, packageId + ".json");
+            jsonReportPath = Path.Combine(ResultsPath, packageId + ".json");
 
-            if (!Directory.Exists(resultsPath))
-                Directory.CreateDirectory(resultsPath);
+            if (!Directory.Exists(ResultsPath))
+                Directory.CreateDirectory(ResultsPath);
 
-            if (File.Exists(txtReportPath))
-                File.Delete(txtReportPath);
+#if !UNITY_PACKAGE_MANAGER_DEVELOP_EXISTS
+            TextReporter = new TextReporter(packageId);
+#endif
+            TextReporter?.Clear();
 
             if (File.Exists(jsonReportPath))
                 File.Delete(jsonReportPath);
         }
 
-        public void Initialize(VettingContext context)
+        internal void Initialize(VettingContext context)
         {
-            var packageInfo = context.ProjectPackageInfo;
-            File.WriteAllText(txtReportPath, string.Format("Validation Suite Results for package \"{0}\"\r\n - Path: {1}\r\n - Version: {2}\r\n - Test Time: {3}\r\n", packageInfo.name, packageInfo.path, packageInfo.version, DateTime.Now));
-
-            List<PackageDependencyInfo> packageParents;
-            if (context.ProjectPackageInfo.dependencies.Any())
-            {
-                File.AppendAllText(txtReportPath, "\r\nPACKAGE DEPENDENCIES:\r\n");
-                File.AppendAllText(txtReportPath, "--------------------\r\n");
-                foreach (var dependencies in context.ProjectPackageInfo.dependencies)
-                {
-                    File.AppendAllText(txtReportPath, string.Format("    - {0}@{1}\r\n", dependencies.Key, dependencies.Value));
-                }
-            }
-
-            if (context.PackageCoDependencies.TryGetValue(packageInfo.name, out packageParents) && packageParents.Any())
-            {
-                File.AppendAllText(txtReportPath, "\r\nPARENT PACKAGES:\r\n");
-                File.AppendAllText(txtReportPath, "----------------\r\n");
-                foreach (var packageParent in packageParents)
-                {
-                    File.AppendAllText(txtReportPath, string.Format("    - {0}@{1} depends on {2}@{3}\r\n", packageParent.ParentName, packageParent.ParentVersion, packageInfo.name, packageParent.DependencyVersion));
-                }
-            }
-
-            File.AppendAllText(txtReportPath, "\r\nVALIDATION RESULTS:\r\n");
-            File.AppendAllText(txtReportPath, "-------------------\r\n");
+            TextReporter?.Initialize(context);
         }
 
         private ValidationTestReport[] BuildReport(ValidationSuite suite)
@@ -83,88 +48,79 @@ namespace UnityEditor.PackageManager.ValidationSuite
                 testReports[i].TestName = validationTest.TestName;
                 testReports[i].TestDescription = validationTest.TestDescription;
                 testReports[i].TestResult = validationTest.TestState.ToString();
+                testReports[i].TestState = validationTest.TestState;
                 testReports[i].TestOutput = validationTest.TestOutput.ToArray();
                 testReports[i].StartTime = validationTest.StartTime.ToString();
                 testReports[i].EndTime = validationTest.EndTime.ToString();
                 var span = validationTest.EndTime - validationTest.StartTime;
-                testReports[i].Elpased = span.TotalMilliseconds > 1 ? (int)(span.TotalMilliseconds) : 1;
+                testReports[i].Elapsed = span.TotalMilliseconds > 1 ? (int)(span.TotalMilliseconds) : 1;
                 i++;
             }
 
             return testReports;
         }
 
-        public static string TextReportPath(string packageId)
-        {
-            return Path.Combine(resultsPath, packageId + ".txt");
-        }
-
         public static string DiffsReportPath(string packageId)
         {
-            return Path.Combine(resultsPath, packageId + ".delta");
+            return Path.Combine(ResultsPath, packageId + ".delta");
         }
 
         public static bool ReportExists(string packageId)
         {
-            var txtReportPath = Path.Combine(resultsPath, packageId + ".txt");
-            return File.Exists(txtReportPath);
+            return TextReporter.ReportExists(packageId);
+        }
+
+        public static string GetJsonReportPath(string packageId)
+        {
+            return Path.Combine(ResultsPath, packageId + ".json");
+        }
+        
+        public static bool JsonReportExists(string packageId)
+        {
+            return File.Exists(GetJsonReportPath(packageId));
         }
 
         public static bool DiffsReportExists(string packageId)
         {
-            var deltaReportPath = Path.Combine(resultsPath, packageId + ".delta");
+            var deltaReportPath = Path.Combine(ResultsPath, packageId + ".delta");
             return File.Exists(deltaReportPath);
+        }
+        
+        public static ValidationSuiteReportData GetReport(string packageId)
+        {
+            if (!JsonReportExists(packageId))
+                return null;
+
+            return Utilities.GetDataFromJson<ValidationSuiteReportData>(GetJsonReportPath(packageId));
         }
 
         public void OutputErrorReport(string error)
         {
-            File.AppendAllText(txtReportPath, error);
+            TextReporter?.Append(error);
+            Debug.LogError(error);
         }
 
         public void OutputTextReport(ValidationSuite suite)
         {
-            SaveTestResult(suite, TestState.Failed);
-            SaveTestResult(suite, TestState.Succeeded);
-            SaveTestResult(suite, TestState.NotRun);
-            SaveTestResult(suite, TestState.NotImplementedYet);
+            TextReporter?.OutputReport(suite);
         }
 
         public void OutputJsonReport(ValidationSuite suite)
         {
-            var testReports = BuildReport(suite);
+            var testLists = BuildReport(suite);
             var span = suite.EndTime - suite.StartTime;
-            var report = string.Format
-                    ("{{\"TestResult\":\"{0}\", \"StartTime\":\"{1}\", \"EndTime\":\"{2}\", \"Elapsed\":{3}, \"Tests\":",
-                    suite.testSuiteState.ToString(),
-                    suite.StartTime.ToString(),
-                    suite.EndTime.ToString(),
-                    span.TotalMilliseconds > 1 ? (int)(span.TotalMilliseconds) : 1);
 
-            File.WriteAllText(jsonReportPath, report);
-            if (testReports.Length == 0)
+            var report = new ValidationSuiteReportData
             {
-                File.AppendAllText(jsonReportPath, "[]}");
-                return;
-            }
+                Type = suite.context.ValidationType,
+                TestResult = suite.testSuiteState,
+                StartTime = suite.StartTime.ToString(),
+                EndTime = suite.EndTime.ToString(),
+                Elapsed = span.TotalMilliseconds > 1 ? (int)(span.TotalMilliseconds) : 1,
+                Tests = testLists.ToList()
+            };
 
-            File.AppendAllText(jsonReportPath, "[");
-            for (var i = 0; i < testReports.Length; i++)
-            {
-                File.AppendAllText(jsonReportPath, JsonUtility.ToJson(testReports[i], false));
-                if (i < testReports.Length - 1)
-                    File.AppendAllText(jsonReportPath, ",");
-            }
-            File.AppendAllText(jsonReportPath, "]}");
-        }
-
-        private void SaveTestResult(ValidationSuite suite, TestState testState)
-        {
-            foreach (var testResult in suite.ValidationTests.Where(t => t.TestState == testState))
-            {
-                File.AppendAllText(txtReportPath, string.Format("\r\n{0} - \"{1}\"\r\n", testResult.TestState, testResult.TestName));
-                if (testResult.TestOutput.Any())
-                    File.AppendAllText(txtReportPath, string.Join("\r\n\n", testResult.TestOutput.ToArray()) + "\r\n");
-            }
+            File.WriteAllText(jsonReportPath, JsonUtility.ToJson(report));
         }
     }
 }

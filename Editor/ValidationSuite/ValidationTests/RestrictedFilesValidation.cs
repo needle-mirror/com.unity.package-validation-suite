@@ -34,8 +34,7 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
                         if (Context.ValidationType == ValidationType.AssetStore ||
                             !internalExceptionFileList.Any(ex => ex.Equals(Path.GetFileName(file), StringComparison.OrdinalIgnoreCase)))
                         {
-                            TestOutput.Add(file + " cannot be included in a package.");
-                            TestState = TestState.Failed;
+                            AddError(file + " cannot be included in a package.");
                         }
                     }
                 }
@@ -50,7 +49,7 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
                 if (matchingFiles.Any())
                 {
                     foreach (var file in matchingFiles)
-                        Warning(file + " should not be included in packages unless absolutely necessary.  " +
+                        AddWarning(file + " should not be included in packages unless absolutely necessary.  " +
                             "Please confirm that it's inclusion is deliberate and intentional.");
                 }
             }

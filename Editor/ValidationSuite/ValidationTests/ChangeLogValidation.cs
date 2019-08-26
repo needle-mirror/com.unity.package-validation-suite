@@ -27,8 +27,7 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
 
             if (!System.IO.File.Exists(changeLogPath))
             {
-                TestState = TestState.Failed;
-                TestOutput.Add("Cannot find chanlog at: " + changeLogPath);
+                AddError("Cannot find chanlog at: " + changeLogPath);
                 return;
             }
 
@@ -36,8 +35,7 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
 
             if (!SemVersion.TryParse(Context.ProjectPackageInfo.version, out packageJsonVersion))
             {
-                TestState = TestState.Failed;
-                TestOutput.Add(string.Format("Version format is not valid: {0} in: [{1}]", Context.ProjectPackageInfo.version, Context.ProjectPackageInfo.path));
+                AddError(string.Format("Version format is not valid: {0} in: [{1}]", Context.ProjectPackageInfo.version, Context.ProjectPackageInfo.path));
                 return;
             }
             // We must strip the -build<commit> off the prerelease
@@ -57,8 +55,7 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
             MatchCollection matches = Regex.Matches(textChangeLog, changeLogLineRegex);
             if (matches.Count == 0)
             {
-                TestState = TestState.Failed;
-                TestOutput.Add(string.Format("Can't find any entries in changelog that fits `format: ## [x.y.z] - YYYY-MM-DD`"));
+                AddError("Can't find any entries in changelog that fits `format: ## [x.y.z] - YYYY-MM-DD`");
                 return;
             }
 
@@ -69,8 +66,7 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
                 SemVersion versionInChangelog;
                 if (!SemVersion.TryParse(match.Groups["version"].ToString(), out versionInChangelog))
                 {
-                    TestState = TestState.Failed;
-                    TestOutput.Add(string.Format("Version format {0} is not valid in: [{1}]", match.Groups["version"].ToString(), changeLogPath));
+                    AddError("Version format {0} is not valid in: [{1}]", match.Groups["version"].ToString(), changeLogPath);
                     return;
                 }
 
@@ -86,8 +82,7 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
                         DateTimeStyles.None,
                         out date))
                     {
-                        TestState = TestState.Failed;
-                        TestOutput.Add(string.Format("Date {0} is not valid expecting format: YYYY-MM-DD in: [{1}]", dateToCheck, changeLogPath));
+                        AddError("Date {0} is not valid expecting format: YYYY-MM-DD in: [{1}]", dateToCheck, changeLogPath);
                     }
                     break;
                 }
@@ -96,14 +91,12 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
 
             if (found == null)
             {
-                TestState = TestState.Failed;
                 var expected = string.Format("`## [{0}] - YYYY-MM-DD` or `## [{1}] - YYYY-MM-DD`", packageJsonVersion.ToString(), packageJsonVersionNoPrelease.ToString());
-                TestOutput.Add(string.Format("No changelog entry for version `{0}` (expected: {1}) found in: [{2}]", packageJsonVersion.ToString(), expected, changeLogPath));
+               AddError("No changelog entry for version `{0}` (expected: {1}) found in: [{2}]", packageJsonVersion.ToString(), expected, changeLogPath);
             }
             else if (found != null && index != 1)
             {
-                TestState = TestState.Failed;
-                TestOutput.Add(string.Format("Found changelog entry `{0}`, but it was not the first entry of the changelog (it was entry #{1}) in: [{2}]", found.ToString(), index, changeLogPath));
+                AddError("Found changelog entry `{0}`, but it was not the first entry of the changelog (it was entry #{1}) in: [{2}]", found.ToString(), index, changeLogPath);
             }
         }
     }

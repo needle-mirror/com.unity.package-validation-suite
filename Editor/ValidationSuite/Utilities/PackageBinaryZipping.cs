@@ -79,12 +79,17 @@ namespace UnityEditor.PackageManager.ValidationSuite
         internal static bool Unzip(string zipFilePath, string destPath)
         {
             string zipper = Get7zPath();
-            string inputArguments = string.Format("x -o\"{0}\" \"{1}\"", destPath, zipFilePath);
-            var process = Process.Start(zipper, inputArguments);
+            string inputArguments = string.Format("x -y -o\"{0}\" \"{1}\"", destPath, zipFilePath);
+            ProcessStartInfo startInfo = new ProcessStartInfo();
+            startInfo.UseShellExecute = false;
+            startInfo.FileName = zipper;
+            startInfo.Arguments = inputArguments;
+            startInfo.RedirectStandardError = true;
+            var process = Process.Start(startInfo);
             process.WaitForExit();
 
             if (process.ExitCode != 0)
-                throw new IOException("Failed to unzip " + zipFilePath);
+                throw new IOException(string.Format("Failed to unzip:\n{0} {1}\n\n{2}", zipper, inputArguments, process.StandardError.ReadToEnd()));
 
             return true;
         }

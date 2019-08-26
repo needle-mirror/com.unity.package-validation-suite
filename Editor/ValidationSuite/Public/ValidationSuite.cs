@@ -15,6 +15,9 @@ namespace UnityEditor.PackageManager.ValidationSuite
     // Delegate called after the test run completed, whether it succeeded, failed or got canceled.
     internal delegate void AllTestsCompletedDelegate(ValidationSuite suite, TestState testRunState);
 
+    /// <summary>
+    /// The validation suite allows you to validate a package while in development
+    /// </summary>
     [InitializeOnLoad]
     public class ValidationSuite
     {
@@ -28,7 +31,7 @@ namespace UnityEditor.PackageManager.ValidationSuite
         private AllTestsCompletedDelegate allTestsCompletedDelegate;
 
         // Vetting context
-        private readonly VettingContext context;
+        internal readonly VettingContext context;
         private readonly ValidationSuiteReport report;
 
         internal TestState testSuiteState;
@@ -62,6 +65,12 @@ namespace UnityEditor.PackageManager.ValidationSuite
             get { return validationTests.Cast<IValidationTestResult>(); }
         }
 
+        /// <summary>
+        /// Validate a package for the given validation context.
+        /// </summary>
+        /// <param name="packageId">Package Id in the format of [package name]@[package version].</param>
+        /// <param name="validationType">The type of validation to assess.</param>
+        /// <returns>True if the validation successfully completed.</returns>
         public static bool ValidatePackage(string packageId, ValidationType validationType)
         {
             if (string.IsNullOrEmpty(packageId))
@@ -75,6 +84,13 @@ namespace UnityEditor.PackageManager.ValidationSuite
             return ValidatePackage(packageIdParts[0], packageIdParts[1], validationType);
         }
 
+        /// <summary>
+        /// Validate a package for the given validation context.
+        /// </summary>
+        /// <param name="packageName">The name of the package to validate.</param>
+        /// <param name="packageVersion">The version of the package to validate.</param>
+        /// <param name="validationType">The type of validation to assess.</param>
+        /// <returns>True if the validation successfully completed.</returns>
         public static bool ValidatePackage(string packageName, string packageVersion, ValidationType validationType)
         {
             if (string.IsNullOrEmpty(packageName))
@@ -118,7 +134,7 @@ namespace UnityEditor.PackageManager.ValidationSuite
             }
         }
 
-        public static void ValidateEmbeddedPackages()
+        internal static void ValidateEmbeddedPackages()
         {
             var packageIdList = new List<string>();
             var directories = Directory.GetDirectories("Packages/", "*", SearchOption.TopDirectoryOnly);
@@ -140,7 +156,7 @@ namespace UnityEditor.PackageManager.ValidationSuite
             }
         }
 
-        public static bool RunAssetStoreValidationSuite(string packageName, string packageVersion, string packagePath, string previousPackagePath = null)
+        internal static bool RunAssetStoreValidationSuite(string packageName, string packageVersion, string packagePath, string previousPackagePath = null)
         {
             if (string.IsNullOrEmpty(packageName))
                 throw new ArgumentNullException(packageName);
@@ -167,6 +183,12 @@ namespace UnityEditor.PackageManager.ValidationSuite
             }
         }
 
+        /// <summary>
+        /// Get the validation suite report for the given package.
+        /// </summary>
+        /// <param name="packageName">Package name.</param>
+        /// <param name="packageVersion">Package version.</param>
+        /// <returns>The validation suite report as a string.</returns>
         public static string GetValidationSuiteReport(string packageName, string packageVersion)
         {
             if (string.IsNullOrEmpty(packageName))
@@ -179,12 +201,17 @@ namespace UnityEditor.PackageManager.ValidationSuite
             return GetValidationSuiteReport(packageId);
         }
 
+        /// <summary>
+        /// Get the validation suite report for the given package id.
+        /// </summary>
+        /// <param name="packageId">Package Id in the format of [package name]@[package version].</param>
+        /// <returns>The validation suite report as a string.</returns>
         public static string GetValidationSuiteReport(string packageId)
         {
             if (string.IsNullOrEmpty(packageId))
                 throw new ArgumentNullException(packageId);
 
-            return ValidationSuiteReport.ReportExists(packageId) ? File.ReadAllText(ValidationSuiteReport.TextReportPath(packageId)) : null;
+            return ValidationSuiteReport.ReportExists(packageId) ? File.ReadAllText(TextReporter.ReportPath(packageId)) : null;
         }
 
         internal void RunSync()
@@ -199,7 +226,7 @@ namespace UnityEditor.PackageManager.ValidationSuite
             Run();
         }
 
-        private static bool ValidatePackages(IEnumerable<string> packageIds, ValidationType validationType)
+        static bool ValidatePackages(IEnumerable<string> packageIds, ValidationType validationType)
         {
             var success = true;
             foreach (var packageId in packageIds)
@@ -219,7 +246,7 @@ namespace UnityEditor.PackageManager.ValidationSuite
             return success;
         }
 
-        private void BuildTestSuite()
+        void BuildTestSuite()
         {
             // Use reflection to discover all Validation Tests in the project with base type == BaseValidation.
             List<BaseValidation> testList = new List<BaseValidation>();
@@ -241,7 +268,7 @@ namespace UnityEditor.PackageManager.ValidationSuite
             validationTests = testList;
         }
 
-        private void Run()
+        void Run()
         {
             testSuiteState = TestState.Succeeded;
             StartTime = DateTime.Now;
@@ -271,8 +298,7 @@ namespace UnityEditor.PackageManager.ValidationSuite
                     testSuiteState = TestState.Failed;
 
                     // Change the test outcome.
-                    test.TestState = TestState.Failed;
-                    test.TestOutput.Add(ex.ToString());
+                    test.AddError(ex.ToString());
                     singleTestCompletionDelegate(test);
                 }
             }
@@ -285,18 +311,48 @@ namespace UnityEditor.PackageManager.ValidationSuite
             allTestsCompletedDelegate(this, testSuiteState);
         }
 
-        private static string FindPackagePath(string packageId)
+        /// <summary>
+        /// Find out if the validation suite report exists for the given package id.
+        /// </summary>
+        /// <param name="packageId">Package Id in the format of [package name]@[package version].</param>
+        /// <returns>True if the validation suite report exists.</returns>
+        public static bool ReportExists(string packageId)
+        {
+            return ValidationSuiteReport.ReportExists(packageId);
+        }
+
+        /// <summary>
+        /// Find out if the validation suite report exists for the given package id.
+        /// </summary>
+        /// <param name="packageId">Package Id in the format of [package name]@[package version].</param>
+        /// <returns>True if the validation suite report exists.</returns>
+        public static bool JsonReportExists(string packageId)
+        {
+            return ValidationSuiteReport.JsonReportExists(packageId);
+        }
+            
+        /// <summary>
+        /// Get the validation suite report for the given package id.
+        /// </summary>
+        /// <param name="packageId">Package Id in the format of [package name]@[package version].</param>
+        /// <returns>The validation suite report.</returns>
+        public static ValidationSuiteReportData GetReport(string packageId)
+        {
+            return ValidationSuiteReport.GetReport(packageId);
+        }
+        
+        static string FindPackagePath(string packageId)
         {
             var path = string.Format("Packages/{0}/package.json", packageId);
             var absolutePath = Path.GetFullPath(path);
             return !File.Exists(absolutePath) ? string.Empty : Directory.GetParent(absolutePath).FullName;
         }
 
-        private static void SingleTestCompletedDelegate(IValidationTestResult testResult)
+        static void SingleTestCompletedDelegate(IValidationTestResult testResult)
         {
         }
 
-        private static void AllTestsCompletedDelegate(ValidationSuite suite, TestState testRunState)
+        static void AllTestsCompletedDelegate(ValidationSuite suite, TestState testRunState)
         {
             suite.report.OutputTextReport(suite);
             suite.report.OutputJsonReport(suite);

@@ -253,9 +253,8 @@ namespace UnityEditor.PackageManager.ValidationSuite
         /// </summary>
         public static IEnumerable<Assembly> AssembliesForPackage(string packageRootPath)
         {
-            var projectPath = Path.GetDirectoryName(Application.dataPath);
             var filesInPackage = Directory.GetFiles(packageRootPath, "*", SearchOption.AllDirectories);
-            filesInPackage = filesInPackage.Select(p => p.Substring(projectPath.Length + 1).Replace('\\', '/')).ToArray();
+            filesInPackage = filesInPackage.Select(p => p.Replace('\\', '/')).ToArray();
 
             var projectAssemblies = CompilationPipeline.GetAssemblies();
             var assemblyHash = new HashSet<Assembly>();

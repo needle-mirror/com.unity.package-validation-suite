@@ -1,7 +1,7 @@
-#if UNITY_2018_2_OR_NEWER
 using System;
 using System.Diagnostics;
 using System.IO;
+using System.Linq;
 using UnityEngine;
 using Debug = UnityEngine.Debug;
 #if UNITY_2019_1_OR_NEWER
@@ -12,6 +12,7 @@ using UnityEngine.Experimental.UIElements;
 
 namespace UnityEditor.PackageManager.ValidationSuite.UI
 {
+#if UNITY_2018_2_OR_NEWER
     internal class ValidationSuiteExtensionUI : VisualElement
     {
         private const string PackagePath = "Packages/com.unity.package-validation-suite/";
@@ -93,15 +94,32 @@ namespace UnityEditor.PackageManager.ValidationSuite.UI
 
             var validationType = CurrentPackageinfo.source == PackageSource.Registry ? ValidationType.Publishing : ValidationType.LocalDevelopment;
             var results = ValidationSuite.ValidatePackage(PackageId, validationType);
-            ValidationResults.text = results ? "Success" : "Failed";
+            var report = ValidationSuiteReport.GetReport(PackageId);
+
             UIUtils.SetElementDisplay(ViewResultsButton, ValidationSuiteReport.ReportExists(PackageId));
             UIUtils.SetElementDisplay(ViewDiffButton, ValidationSuiteReport.DiffsReportExists(PackageId));
-            root.style.backgroundColor = results ? Color.green : Color.red;
+
+            if (!results)
+            {
+                ValidationResults.text = "Failed";
+                root.style.backgroundColor = Color.red;
+            }
+            else if (report != null && report.Tests.Any(t => t.TestOutput.Any(o => o.Type == TestOutputType.Warning)))
+            {
+                ValidationResults.text = "Warnings";
+                root.style.backgroundColor = Color.yellow;
+            }
+            else
+            {
+                ValidationResults.text = "Success";
+                root.style.backgroundColor = Color.green;
+            }
+
         }
 
         private void ViewResults()
         {
-            var filePath = ValidationSuiteReport.TextReportPath(PackageId);
+            var filePath = TextReporter.ReportPath(PackageId);
             try
             {
                 try
@@ -140,35 +158,5 @@ namespace UnityEditor.PackageManager.ValidationSuite.UI
 
         internal Button ViewDiffButton { get { return root.Q<Button>("viewdiff"); } }
     }
-}
-
-#else
-
-namespace UnityEditor.PackageManager.ValidationSuite.UI
-{
-    internal class ValidationSuiteUI
-    {
-#if UNITY_2018_2_OR_NEWER
-        [MenuItem("internal:Packages/Test Packman Validation")]
-        internal static void TestPackmanValidation()
-        {
-            ValidationSuite.RunValidationSuite(string.Format("{0}@{1}", "com.unity.package-manager-ui", "1.8.1"));
-        }
-
 #endif
-
-        [MenuItem("internal:Packages/Test AssetStore Validation")]
-        internal static void TestAssetStoreValidation()
-        {
-            ValidationSuite.RunAssetStoreValidationSuite("Graph - Charts", "5.3", "data/pkg1", "data/pkg2");
-        }
-
-        [MenuItem("internal:Packages/Test AssetStore Validation no Previous")]
-        internal static void TestAssetStoreValidationNoPrevious()
-        {
-            ValidationSuite.RunAssetStoreValidationSuite("Graph - Charts", "5.3", "data/pkg1");
-        }
-    }
 }
-
-#endif

@@ -37,8 +37,7 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
                 (!string.IsNullOrEmpty(Context.ProjectPackageInfo.unity) && !double.TryParse(Context.ProjectPackageInfo.unity, out packageUnityVersionNumber)) ||
                 unityVersionNumber < packageUnityVersionNumber)
             {
-                TestState = TestState.Failed;
-                TestOutput.Add($"In package.json, \"unity\" is pointing to a version higher ({packageUnityVersionNumber}) than the editor you are currently using ({unityVersionNumber}). " +
+                AddError($"In package.json, \"unity\" is pointing to a version higher ({packageUnityVersionNumber}) than the editor you are currently using ({unityVersionNumber}). " +
                                $"Validation needs to happen on a version of the editor that is supported by the package.");
             }
         }

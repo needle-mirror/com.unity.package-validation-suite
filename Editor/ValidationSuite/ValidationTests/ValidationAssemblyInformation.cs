@@ -1,9 +1,9 @@
-#if UNITY_2018_1_OR_NEWER
 using System.Linq;
 using UnityEditor.Compilation;
 
 namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
 {
+#if UNITY_2018_1_OR_NEWER
     /// <summary>
     /// Used by tests to override assembly information for ApiValidation
     /// </summary>
@@ -56,5 +56,5 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
             return null;
         }
     }
-}
 #endif
+}

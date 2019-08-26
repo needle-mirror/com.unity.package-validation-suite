@@ -40,8 +40,7 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
             if (System.IO.File.Exists(toCheck + ".meta"))
                 return;
 
-            TestState = TestState.Failed;
-            TestOutput.Add("Did not find meta file for " + toCheck);
+            AddError("Did not find meta file for " + toCheck);
         }
 
         void CheckMetaInFolderRecursively(string folder)
@@ -64,8 +63,7 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
             }
             catch (Exception e)
             {
-                TestState = TestState.Failed;
-                TestOutput.Add("Exception " + e.Message);
+                AddError("Exception " + e.Message);
             }
         }
 

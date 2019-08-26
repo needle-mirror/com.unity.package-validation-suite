@@ -34,7 +34,7 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
                     var fullPath = CombineAllowingEmpty(relativeFolder, Path.GetFileName(entry));
                     if (fullPath.Length > MaxPathLength)
                     {
-                        Error($"{fullPath} is {fullPath.Length} characters, which is longer than the limit of {MaxPathLength} characters. You must use shorter names.");
+                        AddError($"{fullPath} is {fullPath.Length} characters, which is longer than the limit of {MaxPathLength} characters. You must use shorter names.");
                     }
                 }
 
@@ -45,7 +45,7 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
             }
             catch (Exception e)
             {
-                Error("Exception " + e.Message);
+                AddError("Exception " + e.Message);
             }
         }
 

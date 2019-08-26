@@ -38,7 +38,7 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
             // no previous package was found.
             if (Context.PreviousPackageInfo == null)
             {
-                TestOutput.Add("No previous package version. Skipping diff evaluation.");
+                AddInformation("No previous package version. Skipping diff evaluation.");
                 TestState = TestState.NotRun;
                 return;
             }
@@ -49,7 +49,7 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
             //      - Diff actual file, report what changed...
             // Meta files - if all meta files have changed, that's a red flag
             // if there are no common files, all files have changed,
-            GenerateReport(ValidationSuiteReport.resultsPath, Context.PublishPackageInfo, Context.PreviousPackageInfo);
+            GenerateReport(ValidationSuiteReport.ResultsPath, Context.PublishPackageInfo, Context.PreviousPackageInfo);
 
             TestState = TestState.Succeeded;
         }

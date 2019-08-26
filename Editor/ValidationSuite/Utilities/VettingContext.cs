@@ -316,7 +316,7 @@ public class VettingContext
                     var tempPath = Path.GetTempPath();
                     var previousPackagePath = Path.Combine(tempPath, "previous-" + previousPackageId);
                     var packageFileName = Utilities.DownloadPackage(previousPackageId, tempPath);
-                    Utilities.ExtractPackage(packageFileName, tempPath, previousPackagePath, projectPackageInfo.name);
+                    Utilities.ExtractPackage(Path.Combine(tempPath, packageFileName), tempPath, previousPackagePath, projectPackageInfo.name);
                     return previousPackagePath;
                 }
                 catch (Exception exception)
