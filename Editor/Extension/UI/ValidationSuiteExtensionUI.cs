@@ -1,18 +1,16 @@
 using System;
+using System.Linq;
 using System.Diagnostics;
 using System.IO;
-using System.Linq;
 using UnityEngine;
-using Debug = UnityEngine.Debug;
+
 #if UNITY_2019_1_OR_NEWER
 using UnityEngine.UIElements;
-#else
-using UnityEngine.Experimental.UIElements;
 #endif
 
 namespace UnityEditor.PackageManager.ValidationSuite.UI
 {
-#if UNITY_2018_2_OR_NEWER
+#if UNITY_2019_1_OR_NEWER
     internal class ValidationSuiteExtensionUI : VisualElement
     {
         private const string PackagePath = "Packages/com.unity.package-validation-suite/";
@@ -34,15 +32,10 @@ namespace UnityEditor.PackageManager.ValidationSuite.UI
 
         private ValidationSuiteExtensionUI(VisualTreeAsset asset)
         {
-#if UNITY_2019_1_OR_NEWER
             root = asset.CloneTree();
             string path = EditorGUIUtility.isProSkin ? DarkStylePath : LightStylePath;
             var styleSheet = EditorGUIUtility.Load(path) as StyleSheet;
             root.styleSheets.Add(styleSheet);
-#else
-            root = asset.CloneTree(null);
-            root.AddStyleSheetPath(EditorGUIUtility.isProSkin ? DarkStylePath : LightStylePath);
-#endif
             Add(root);
 
             ValidateButton.clickable.clicked += Validate;
@@ -53,11 +46,7 @@ namespace UnityEditor.PackageManager.ValidationSuite.UI
         public static bool SourceSupported(PackageInfo info)
         {
             PackageSource source = info.source;
-#if UNITY_2019_1_OR_NEWER
             return source == PackageSource.Embedded || source == PackageSource.Local || source == PackageSource.Registry || (info.source == PackageSource.BuiltIn && info.type != "module");
-#else
-            return source == PackageSource.Embedded || source == PackageSource.Local || source == PackageSource.Registry;
-#endif
         }
 
         public void OnPackageSelectionChange(PackageInfo packageInfo)
