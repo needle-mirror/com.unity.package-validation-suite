@@ -97,38 +97,6 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
                     AddError(@"Invalid version number in dependency ""{0}"" : ""{1}""", projectRef.Key, projectRef.Value);
                     continue;
                 }
-
-                string previousRefVersion;
-                if (previousRefs != null && previousRefs.TryGetValue(projectRef.Key, out previousRefVersion))
-                {
-                    SemVersion previousRefSemver;
-                    if (SemVersion.TryParse(previousRefVersion, out previousRefSemver))
-                    {
-                        if (previousRefSemver.Major != projectRefSemver.Major &&
-                            (versionChangeType == VersionChangeType.Patch || versionChangeType == VersionChangeType.Minor))
-                        {
-                            AddError(@"Dependency major versions may only change in major releases. ""{0}"": ""{1}"" -> ""{2}""",
-                                projectRef.Key, previousRefVersion, projectRef.Value);
-                        }
-                    }
-                }
-                else
-                {
-                    AddInformation(string.Format(@"New dependency: ""{0}"": ""{1}""", projectRef.Key, projectRef.Value));
-
-#if UNITY_2019_2_OR_NEWER
-                    var dependencyInfo = Utilities.UpmListOffline(projectRef.Key).FirstOrDefault();
-
-                    // Built in packages are shipped with the editor, and will therefore never by published to production.
-                    if (dependencyInfo != null && dependencyInfo.source == PackageSource.BuiltIn)
-                    {
-                        continue;
-                    }
-#endif
-                    if (versionChangeType == VersionChangeType.Patch ||
-                        versionChangeType == VersionChangeType.Minor)
-                        AddError("Adding package dependencies requires a new major version.");
-                }
             }
 
             if (previousRefs != null)
@@ -138,9 +106,6 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
                     SemVersion previousSemver;
                     if (!SemVersion.TryParse(previousRef.Value, out previousSemver))
                         AddError(String.Format(@"Invalid version number in previous package dependency ""{0}"" : ""{1}""", previousRef.Key, previousRef.Value));
-
-                    if (!projectRefs.ContainsKey(previousRef.Key) && versionChangeType == VersionChangeType.Patch)
-                        AddError("Removing dependencies is not forwards-compatible and requires a new major or minor version. Removed dependency: {0}", previousRef.Key);
                 }
             }
         }

@@ -172,20 +172,27 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
             foreach (var info in assembliesForPackage)
             {
                 var assemblyDefinition = info.assemblyDefinition;
-                var oldAssemblyPath = oldAssemblyPaths.FirstOrDefault(p =>
-                    Path.GetFileNameWithoutExtension(p) == assemblyDefinition.name);
-
+                var oldAssemblyPath = oldAssemblyPaths.FirstOrDefault(p => Path.GetFileNameWithoutExtension(p) == assemblyDefinition.name);
+                
                 if (info.assembly != null)
                 {
                     var extraSearchFolder = Path.GetDirectoryName(typeof(System.ObsoleteAttribute).Assembly.Location);
+                    var assemblySearchFolder = new[] 
+                    {
+                        extraSearchFolder, // System assemblies folder
+                        Path.Combine(EditorApplication.applicationContentsPath, "Managed"), // Main Unity assemblies folder.
+                        Path.Combine(EditorApplication.applicationContentsPath, "Managed/UnityEngine"), // Module assemblies folder.
+                        Path.GetDirectoryName(info.assembly.outputPath) // TODO: This is not correct. We need to keep all dependencies for the previous binaries. For now, use the same folder as the current version when resolving dependencies.
+                    };
 
                     var apiChangesAssemblyInfo = new APIChangesCollector.AssemblyInfo()
                     {
                         BaseAssemblyPath = oldAssemblyPath,
-                        BaseAssemblyExtraSearchFolder = extraSearchFolder,
+                        BaseAssemblyExtraSearchFolders = assemblySearchFolder,
                         CurrentAssemblyPath = info.assembly.outputPath,
-                        CurrentExtraSearchFolder = extraSearchFolder
+                        CurrentExtraSearchFolders = assemblySearchFolder
                     };
+
                     var entityChanges = APIChangesCollector.Collect(apiChangesAssemblyInfo).SelectMany(c => c.Changes).ToList();
                     var assemblyChange = new AssemblyChange(info.assembly.name)
                     {
