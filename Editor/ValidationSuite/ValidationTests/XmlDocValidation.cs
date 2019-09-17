@@ -52,7 +52,7 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
                 responseFileParameter = $@"--response-file=""{responseFilePath}""";
             }
 
-            var startInfo = new ProcessStartInfo(monopath, $@"{exePath} --root-path=""{this.Context.ProjectPackageInfo.path}"" {responseFileParameter}")
+            var startInfo = new ProcessStartInfo(monopath, $@"""{exePath}"" --root-path=""{this.Context.ProjectPackageInfo.path}"" {responseFileParameter}")
             {
                 UseShellExecute = false,
                 CreateNoWindow = true,

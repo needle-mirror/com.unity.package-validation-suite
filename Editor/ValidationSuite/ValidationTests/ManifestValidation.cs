@@ -10,7 +10,7 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
 {
     internal class ManifestValidation : BaseValidation
     {
-        private string[] PackageNamePrefixList = { "com.unity.", "com.autodesk." };
+        private string[] PackageNamePrefixList = { "com.unity.", "com.autodesk.", "com.havok." };
         private const string UpmRegex = @"^[a-z0-9][a-z0-9-._]{0,213}$";
         private const string UpmDisplayRegex = @"^[a-zA-Z0-9 ]+$";
         private const int MinDescriptionSize = 50;

@@ -144,6 +144,7 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
             }
         }
 
+#if UNITY_2019_1_OR_NEWER
         [Serializable]
         class ApiDiff
         {
@@ -154,9 +155,15 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
             public int additions;
             public int removedAssemblyCount;
         }
+#endif
 
         private void CheckApiDiff(AssemblyInfo[] assemblyInfo)
         {
+#if UNITY_2018_1_OR_NEWER && !UNITY_2019_1_OR_NEWER
+            TestState = TestState.NotRun;
+            AddInformation("Api breaking changes validation only available on Unity 2019.1 or newer.");
+            return;
+#else
             var diff = new ApiDiff();
             var assembliesForPackage = assemblyInfo.Where(a => !validationAssemblyInformation.IsTestAssembly(a)).ToArray();
             if (Context.PreviousPackageBinaryDirectory == null)
@@ -259,6 +266,7 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
                     AddError("New assembly \"{0}\" may only be added in a new minor or major version.", assembly);
                 }
             }
+#endif
         }
     }
 }

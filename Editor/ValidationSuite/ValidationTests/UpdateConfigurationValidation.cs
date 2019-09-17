@@ -2,8 +2,8 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Text.RegularExpressions;
 using UnityEditor.Compilation;
-using UnityEngine;
 
 namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
 {
@@ -46,10 +46,10 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
                 RunValidator(references, validatorPath, asmdefAssemblyPaths);
             }
 
-            var precompiledAssemlbyInfo = info.Where(i => i.assemblyKind == AssemblyInfo.AssemblyKind.PrecompiledAssembly).ToArray();
-            if (precompiledAssemlbyInfo.Length > 0)
+            var precompiledAssemblyInfo = info.Where(i => i.assemblyKind == AssemblyInfo.AssemblyKind.PrecompiledAssembly).ToArray();
+            if (precompiledAssemblyInfo.Length > 0)
             {
-                var precompiledDllPaths = precompiledAssemlbyInfo.Select(i => Path.GetFullPath(i.precompiledDllPath));
+                var precompiledDllPaths = precompiledAssemblyInfo.Select(i => Path.GetFullPath(i.precompiledDllPath));
                 var precompiledAssemblyPaths = CompilationPipeline.GetPrecompiledAssemblyPaths(CompilationPipeline.PrecompiledAssemblySources.All);
 
                 RunValidator(precompiledAssemblyPaths, validatorPath, precompiledDllPaths);
@@ -63,8 +63,8 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
 
             var monoPath = Utilities.GetMonoPath();
 
-            var processStartInfo =
-                new ProcessStartInfo(monoPath, $@"""{validatorPath}"" ""{responseFilePath}"" -a {string.Join(",", assemblyPaths.Select(p => $"\"{Path.GetFullPath(p)}\""))}")
+            var argumentsForValidator = ArgumentsForValidator();
+            var processStartInfo = new ProcessStartInfo(monoPath, $@"""{validatorPath}"" {argumentsForValidator}")
             {
                 UseShellExecute = false,
                 RedirectStandardError = true,
@@ -101,6 +101,29 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
                 };
 
                 return requiredEntries.All(stdContent.Contains);
+            }
+
+            string ArgumentsForValidator()
+            {
+                var whitelistArg = string.Empty;
+
+                // Resolves ValidationWhiteList.txt in folders
+                //      - ApiUpdater~/{Editor Exact Version} (ex: 2019.3.0f1)
+                //      - ApiUpdater~/{Editor Version Without Alpha/Beta/RC/Final info} (ex: 2019.3)
+                //      - ApiUpdater~/
+                // first one found will be used.
+                var probingFolders = new [] {$"{UnityEngine.Application.unityVersion}", $"{Regex.Replace(UnityEngine.Application.unityVersion, @"(?<=20[1-5][0-9]\.\d{1,3})\.[0-9]{1,4}.*", string.Empty)}", "."};
+                foreach(var path in probingFolders)
+                {
+                    var whitelistPath = Path.Combine(Context.ProjectPackageInfo.path, $"ApiUpdater~/{path}/ValidationWhiteList.txt");
+                    if (File.Exists(whitelistPath))
+                    {
+                        whitelistArg = $@" --whitelist ""{whitelistPath}""";
+                        break;
+                    }
+                }
+
+                return $"\"{responseFilePath}\" -a {string.Join(",", assemblyPaths.Select(p => $"\"{Path.GetFullPath(p)}\""))} {whitelistArg}";
             }
         }
     }
