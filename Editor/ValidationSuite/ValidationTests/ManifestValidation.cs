@@ -59,7 +59,6 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
             {
                 var packageId = Utilities.CreatePackageId(dependency.Key, dependency.Value);
 
-#if UNITY_2019_2_OR_NEWER
                 var dependencyInfo = Utilities.UpmListOffline(dependency.Key).FirstOrDefault();
 
                 // Built in packages are shipped with the editor, and will therefore never by published to production.
@@ -67,7 +66,6 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
                 {
                     continue;
                 }
-#endif
 
                 // Check if this package's dependencies are in production.  That is a requirement for publishing.
                 if (Context.ValidationType != ValidationType.VerifiedSet && !Utilities.PackageExistsOnProduction(packageId))

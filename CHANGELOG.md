@@ -4,6 +4,9 @@ All notable changes to this package will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## [0.7.5] - 2019-09-18
+- Fixed issue causing validation of packages with built-in dependencies to fail in Unity versions < 2019.2
+
 ## [0.7.4] - 2019-09-16
 - Disable semver validation upon api breaking changes on Unity 2018.X 
 - Allow console error whitelisting for API Updater Validation.
