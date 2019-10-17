@@ -14,20 +14,6 @@ using UnityEngine.Networking;
 using UnityEditor.PackageManager.ValidationSuite;
 using UnityEditor.PackageManager.ValidationSuite.ValidationTests;
 
-
-public class PackageDependencyInfo
-{
-    public string DependencyVersion { get; set; }
-
-    public string ParentName { get; set; }
-
-    public string ParentVersion { get; set; }
-
-    public bool ParentIsVerified { get; set; }
-
-    public bool ParentIsPreview { get; set; }
-}
-
 public class RelatedPackage
 {
     public string Name;
@@ -96,7 +82,6 @@ public class VettingContext
     public ManifestData ProjectPackageInfo { get; set; }
     public ManifestData PublishPackageInfo { get; set; }
     public ManifestData PreviousPackageInfo { get; set; }
-    public Dictionary<string, List<PackageDependencyInfo>> PackageCoDependencies { get; set; }
 
     public string PreviousPackageBinaryDirectory { get; set; }
     public ValidationType ValidationType { get; set; }
@@ -161,15 +146,10 @@ public class VettingContext
                 context.PreviousPackageInfo = GetManifest(previousPackagePath);
                 context.DownloadAssembliesForPreviousVersion();
             }
-
-#if UNITY_2018_2_OR_NEWER
-            context.PackageCoDependencies = BuildPackageDependencyTree(context.ProjectPackageInfo);
-#endif
         }
         else
         {
             context.PreviousPackageInfo = null;
-            context.PackageCoDependencies = new Dictionary<string, List<PackageDependencyInfo>>();
         }
 #else
         context.PreviousPackageInfo = null;
@@ -360,83 +340,4 @@ public class VettingContext
             PreviousPackageBinaryDirectory = PreviousVersionBinaryPath;
 #endif
     }
-
-#if UNITY_2018_2_OR_NEWER
-    private static Dictionary<string, List<PackageDependencyInfo>> BuildPackageDependencyTree(ManifestData manifestData)
-    {
-        var packageCoDependencies = new Dictionary<string, List<PackageDependencyInfo>>();
-
-        var foundPackages =  Utilities.UpmSearch(string.Empty, true);
-
-
-        // Fill in the dictionary
-        if (foundPackages != null && foundPackages.Length > 0)
-        {
-            packageCoDependencies[manifestData.name] = new List<PackageDependencyInfo>();
-            if (manifestData.dependencies != null)
-            {
-                foreach (var dependency in manifestData.dependencies)
-                {
-                    packageCoDependencies[dependency.Key] = new List<PackageDependencyInfo>();
-                }
-            }
-
-            foreach (var packageInfo in foundPackages)
-            {
-                // Check each of the packages dependencies against all other dependencies.
-                foreach (var dependency in packageCoDependencies)
-                {
-                    var dependencyInfo = packageInfo.dependencies.SingleOrDefault(d => d.name == dependency.Key);
-                    if (!string.IsNullOrEmpty(dependencyInfo.name) && Utilities.PackageExistsOnProduction(packageInfo.packageId))
-                    {
-                        packageCoDependencies[dependency.Key].Add(CreateDependencyInfo(dependencyInfo.version, packageInfo));
-                    }
-                }
-
-                // Is there a verified version?  If so, if it is different than the returned version, let's make a call to retrieve it's data.
-#if UNITY_2019_3_OR_NEWER
-                var verifiedVersion = packageInfo.versions.verified;
-#else
-                var verifiedVersion = packageInfo.versions.recommended;
-#endif
-                if (!string.IsNullOrEmpty(verifiedVersion) && verifiedVersion != packageInfo.version)
-                {
-                    var foundVerifiedPackages = Utilities.UpmSearch(packageInfo.name + "@" + verifiedVersion);
-                    if (foundVerifiedPackages.Length > 0)
-                    {
-                        foreach (var dependency in packageCoDependencies)
-                        {
-                            var dependencyInfo = foundVerifiedPackages[0].dependencies.SingleOrDefault(d => d.name == dependency.Key);
-                            if (!string.IsNullOrEmpty(dependencyInfo.name))
-                            {
-                                packageCoDependencies[dependency.Key].Add(CreateDependencyInfo(dependencyInfo.version, foundVerifiedPackages[0]));
-                            }
-                        }
-                    }
-                }
-            }
-        }
-
-        return packageCoDependencies;
-    }
-
-    private static PackageDependencyInfo CreateDependencyInfo(string version, UnityEditor.PackageManager.PackageInfo packageInfo)
-    {
-        var semVer = SemVersion.Parse(packageInfo.version);
-
-        return new PackageDependencyInfo()
-        {
-            DependencyVersion = version,
-            ParentName = packageInfo.name,
-            ParentVersion = packageInfo.version,
-#if UNITY_2019_3_OR_NEWER
-            ParentIsVerified = packageInfo.versions.verified == packageInfo.version,
-#else
-            ParentIsVerified = packageInfo.versions.recommended == packageInfo.version,
-#endif
-            ParentIsPreview = semVer.Prerelease.Contains("preview") || semVer.Major == 0
-        };
-    }
-
-#endif
 }

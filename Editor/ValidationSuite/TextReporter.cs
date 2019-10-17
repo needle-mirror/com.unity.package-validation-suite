@@ -19,7 +19,6 @@ namespace UnityEditor.PackageManager.ValidationSuite
             var packageInfo = context.ProjectPackageInfo;
             Write(string.Format("Validation Suite Results for package \"{0}\"\r\n - Path: {1}\r\n - Version: {2}\r\n - Test Time: {3}\r\n", packageInfo.name, packageInfo.path, packageInfo.version, DateTime.Now));
 
-            List<PackageDependencyInfo> packageParents;
             if (context.ProjectPackageInfo.dependencies.Any())
             {
                 Append("\r\nPACKAGE DEPENDENCIES:\r\n");
@@ -27,16 +26,6 @@ namespace UnityEditor.PackageManager.ValidationSuite
                 foreach (var dependencies in context.ProjectPackageInfo.dependencies)
                 {
                     Append(string.Format("    - {0}@{1}\r\n", dependencies.Key, dependencies.Value));
-                }
-            }
-
-            if (context.PackageCoDependencies.TryGetValue(packageInfo.name, out packageParents) && packageParents.Any())
-            {
-                Append("\r\nPARENT PACKAGES:\r\n");
-                Append("----------------\r\n");
-                foreach (var packageParent in packageParents)
-                {
-                    Append(string.Format("    - {0}@{1} depends on {2}@{3}\r\n", packageParent.ParentName, packageParent.ParentVersion, packageInfo.name, packageParent.DependencyVersion));
                 }
             }
 
