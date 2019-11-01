@@ -22,7 +22,8 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
             // from the published project dir, check if each file type is present.
             foreach (var fileType in restrictedFileList)
             {
-                List<string> matchingFiles = new List<string>();
+                var isExtensionRestriction = fileType.StartsWith("*.");
+                List < string> matchingFiles = new List<string>();
                 DirectorySearch(Context.PublishPackageInfo.path, fileType, ref matchingFiles);
 
                 if (matchingFiles.Any())
@@ -34,7 +35,9 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
                         if (Context.ValidationType == ValidationType.AssetStore ||
                             !internalExceptionFileList.Any(ex => ex.Equals(Path.GetFileName(file), StringComparison.OrdinalIgnoreCase)))
                         {
-                            AddError(file + " cannot be included in a package.");
+                            // Workaround for weird behavior in Directory.GetFiles call, which will return File.Commute when searching for *.com
+                            if (!isExtensionRestriction || (Path.GetExtension(fileType.ToLower()) == Path.GetExtension(file.ToLower())))
+                                AddError(file + " cannot be included in a package.");
                         }
                     }
                 }
@@ -43,14 +46,17 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
             // from the published project dir, check if each file type is present.
             foreach (var fileType in unapprovedFileList)
             {
+                var isExtensionRestriction = fileType.StartsWith("*.");
                 List<string> matchingFiles = new List<string>();
                 DirectorySearch(Context.PublishPackageInfo.path, fileType, ref matchingFiles);
 
                 if (matchingFiles.Any())
                 {
                     foreach (var file in matchingFiles)
-                        AddWarning(file + " should not be included in packages unless absolutely necessary.  " +
-                            "Please confirm that it's inclusion is deliberate and intentional.");
+                    {
+                        if (!isExtensionRestriction || (Path.GetExtension(fileType.ToLower()) == Path.GetExtension(file.ToLower())))
+                            AddWarning(file + " should not be included in packages unless absolutely necessary.  " + "Please confirm that it's inclusion is deliberate and intentional.");
+                    }
                 }
             }
         }
