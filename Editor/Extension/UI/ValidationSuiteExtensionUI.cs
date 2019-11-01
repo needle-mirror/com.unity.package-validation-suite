@@ -81,7 +81,7 @@ namespace UnityEditor.PackageManager.ValidationSuite.UI
                 return;
             }
 
-            var validationType = CurrentPackageinfo.source == PackageSource.Registry ? ValidationType.Publishing : ValidationType.LocalDevelopment;
+            var validationType = CurrentPackageinfo.source == PackageSource.Registry ? ValidationType.Publishing : ValidationType.LocalDevelopmentInternal;
             var results = ValidationSuite.ValidatePackage(PackageId, validationType);
             var report = ValidationSuiteReport.GetReport(PackageId);
 
@@ -108,7 +108,7 @@ namespace UnityEditor.PackageManager.ValidationSuite.UI
 
         private void ViewResults()
         {
-            var filePath = TextReporter.ReportPath(PackageId);
+            var filePath = TextReport.ReportPath(PackageId);
             try
             {
                 try

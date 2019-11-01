@@ -23,6 +23,8 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
         public TestState TestState { get; set; }
 
         public List<ValidationTestOutput> TestOutput { get; set; }
+       
+        public List<VettingReportEntry> VettingEntries { get; set; }
 
         public DateTime StartTime { get; private set; }
 
@@ -39,7 +41,7 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
             ShouldRun = true;
             StartTime = DateTime.Now;
             EndTime = DateTime.Now;
-            SupportedValidations = new[] { ValidationType.AssetStore, ValidationType.CI, ValidationType.LocalDevelopment, ValidationType.Publishing, ValidationType.VerifiedSet };
+            SupportedValidations = new[] { ValidationType.AssetStore, ValidationType.CI, ValidationType.LocalDevelopment, ValidationType.LocalDevelopmentInternal, ValidationType.Publishing, ValidationType.VerifiedSet };
         }
 
         // This method is called synchronously during initialization,
@@ -87,6 +89,11 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
         protected void AddInformation(string message)
         {
             TestOutput.Add(new ValidationTestOutput() { Type = TestOutputType.Information, Output = message });
+        }
+
+        protected void AddVettingEntry(VettingReportEntryType type, string entry)
+        {
+            VettingEntries.Add(new VettingReportEntry() { Type = type, Entry = entry });
         }
 
         protected void DirectorySearch(string path, string searchPattern, ref List<string> matches)

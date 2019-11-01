@@ -1,8 +1,11 @@
-**This package includes the following third-party software, governed by the following licenses:**
+This package contains third-party software components governed by the license(s) indicated below:
+---------
 
-1. Apache log4Net
+Component Name: Apache log4Net
 
-  Copyright 2017 The Apache Software Foundation
+License Type: Apache License, Version 2.0
+
+Copyright 2017 The Apache Software Foundation
 
    Licensed under the Apache License, Version 2.0 (the "License");
    you may not use this file except in compliance with the License.
@@ -16,7 +19,11 @@
    See the License for the specific language governing permissions and
    limitations under the License.
 
-1. semver
+---------
+
+Component Name: semver
+
+License Type: 2013 Max Hauser
 
 Copyright (c) 2013 Max Hauser
 

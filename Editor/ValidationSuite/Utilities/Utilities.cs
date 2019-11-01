@@ -20,6 +20,9 @@ namespace UnityEditor.PackageManager.ValidationSuite
         internal const string EditorTestsAssemblyDefintionSuffix = ".EditorTests.asmdef";
         internal const string RuntimeAssemblyDefintionSuffix = ".Runtime.asmdef";
         internal const string RuntimeTestsAssemblyDefintionSuffix = ".RuntimeTests.asmdef";
+        internal const string ThirdPartyNoticeFile = "Third-Party Notices.md";
+        internal const string LicenseFile = "LICENSE.md";
+
 
         public static bool NetworkNotReachable { get { return Application.internetReachability == NetworkReachability.NotReachable; } }
 

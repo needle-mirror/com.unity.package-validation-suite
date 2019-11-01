@@ -1,19 +1,19 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 
 namespace UnityEditor.PackageManager.ValidationSuite
 {
-    public class TextReporter
+    public class TextReport
     {
         public string FilePath { get; set; }
-        
-        public TextReporter(string packageId)
+
+        public TextReport(string packageId)
         {
             FilePath = ReportPath(packageId);
         }
-        
+
         internal void Initialize(VettingContext context)
         {
             var packageInfo = context.ProjectPackageInfo;
@@ -41,15 +41,15 @@ namespace UnityEditor.PackageManager.ValidationSuite
 
         public void Write(string text)
         {
-            File.WriteAllText(FilePath, text);            
+            File.WriteAllText(FilePath, text);
         }
-        
+
         public void Append(string text)
         {
             File.AppendAllText(FilePath, text);
         }
 
-        public void OutputReport(ValidationSuite suite)
+        public void GenerateReport(ValidationSuite suite)
         {
             SaveTestResult(suite, TestState.Failed);
             SaveTestResult(suite, TestState.Succeeded);
@@ -71,7 +71,7 @@ namespace UnityEditor.PackageManager.ValidationSuite
         {
             return Path.Combine(ValidationSuiteReport.ResultsPath, packageId + ".txt");
         }
-        
+
         public static bool ReportExists(string packageId)
         {
             return File.Exists(ReportPath(packageId));

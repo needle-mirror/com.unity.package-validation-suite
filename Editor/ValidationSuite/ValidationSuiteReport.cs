@@ -12,7 +12,8 @@ namespace UnityEditor.PackageManager.ValidationSuite
         public static readonly string ResultsPath = Path.Combine("Library", "ValidationSuiteResults");
 
         private readonly string jsonReportPath;
-        TextReporter TextReporter { get; set; }
+        TextReport TextReport { get; set; }
+        VettingReport VettingReport { get; set; }
 
         public ValidationSuiteReport()
         {}
@@ -25,9 +26,9 @@ namespace UnityEditor.PackageManager.ValidationSuite
                 Directory.CreateDirectory(ResultsPath);
 
 #if !UNITY_PACKAGE_MANAGER_DEVELOP_EXISTS
-            TextReporter = new TextReporter(packageId);
+            TextReport = new TextReport(packageId);
 #endif
-            TextReporter?.Clear();
+            TextReport?.Clear();
 
             if (File.Exists(jsonReportPath))
                 File.Delete(jsonReportPath);
@@ -35,7 +36,7 @@ namespace UnityEditor.PackageManager.ValidationSuite
 
         internal void Initialize(VettingContext context)
         {
-            TextReporter?.Initialize(context);
+            TextReport?.Initialize(context);
         }
 
         private ValidationTestReport[] BuildReport(ValidationSuite suite)
@@ -67,7 +68,7 @@ namespace UnityEditor.PackageManager.ValidationSuite
 
         public static bool ReportExists(string packageId)
         {
-            return TextReporter.ReportExists(packageId);
+            return TextReport.ReportExists(packageId);
         }
 
         public static string GetJsonReportPath(string packageId)
@@ -96,16 +97,21 @@ namespace UnityEditor.PackageManager.ValidationSuite
 
         public void OutputErrorReport(string error)
         {
-            TextReporter?.Append(error);
+            TextReport?.Append(error);
             Debug.LogError(error);
         }
 
-        public void OutputTextReport(ValidationSuite suite)
+        public void GenerateVettingReport(ValidationSuite suite)
         {
-            TextReporter?.OutputReport(suite);
+            VettingReport?.GenerateReport(suite);
         }
 
-        public void OutputJsonReport(ValidationSuite suite)
+        public void GenerateTextReport(ValidationSuite suite)
+        {
+            TextReport?.GenerateReport(suite);
+        }
+
+        public void GenerateJsonReport(ValidationSuite suite)
         {
             var testLists = BuildReport(suite);
             var span = suite.EndTime - suite.StartTime;

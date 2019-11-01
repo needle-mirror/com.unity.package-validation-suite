@@ -18,7 +18,7 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
             TestName = "API Validation";
             TestDescription = "Checks public API for style and changest that conflict with Semantic Versioning.";
             TestCategory = TestCategory.ApiValidation;
-            SupportedValidations = new[] { ValidationType.CI, ValidationType.LocalDevelopment, ValidationType.Publishing };
+            SupportedValidations = new[] { ValidationType.CI, ValidationType.LocalDevelopmentInternal, ValidationType.Publishing };
         }
 
         public ApiValidation(ValidationAssemblyInformation validationAssemblyInformation)
@@ -30,40 +30,43 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
         {
             var relevantAssemblyInfo = GetRelevantAssemblyInfo();
 
-            var previousAssemblyDefinitions = GetAssemblyDefinitionDataInFolder(Context.PreviousPackageInfo.path);
-            var versionChangeType = Context.VersionChangeType;
-
-            foreach (var assemblyInfo in relevantAssemblyInfo)
+            if (!Context.ProjectPackageInfo.IsPreview)
             {
-                //assembly is in the package
-                var previousAssemblyDefinition = previousAssemblyDefinitions.FirstOrDefault(ad => DoAssembliesMatch(ad, assemblyInfo.assemblyDefinition));
-                if (previousAssemblyDefinition == null)
-                    continue; //new asmdefs are fine
+                var previousAssemblyDefinitions = GetAssemblyDefinitionDataInFolder(Context.PreviousPackageInfo.path);
+                var versionChangeType = Context.VersionChangeType;
 
-                var excludePlatformsDiff = string.Format("Was:\"{0}\" Now:\"{1}\"",
-                    string.Join(", ", previousAssemblyDefinition.excludePlatforms),
-                    string.Join(", ", assemblyInfo.assemblyDefinition.excludePlatforms));
-                if (previousAssemblyDefinition.excludePlatforms.Any(p => !assemblyInfo.assemblyDefinition.excludePlatforms.Contains(p)) &&
-                    versionChangeType == VersionChangeType.Patch)
-                    AddError("Removing from excludePlatfoms requires a new minor or major version. " + excludePlatformsDiff);
-                else if (assemblyInfo.assemblyDefinition.excludePlatforms.Any(p =>
-                    !previousAssemblyDefinition.excludePlatforms.Contains(p)) &&
-                         (versionChangeType == VersionChangeType.Patch || versionChangeType == VersionChangeType.Minor))
-                    AddError("Adding to excludePlatforms requires a new major version. " + excludePlatformsDiff);
-
-                var includePlatformsDiff = string.Format("Was:\"{0}\" Now:\"{1}\"",
-                    string.Join(", ", previousAssemblyDefinition.includePlatforms),
-                    string.Join(", ", assemblyInfo.assemblyDefinition.includePlatforms));
-                if (previousAssemblyDefinition.includePlatforms.Any(p => !assemblyInfo.assemblyDefinition.includePlatforms.Contains(p)) &&
-                    (versionChangeType == VersionChangeType.Patch || versionChangeType == VersionChangeType.Minor))
-                    AddError("Removing from includePlatfoms requires a new major version. " + includePlatformsDiff);
-                else if (assemblyInfo.assemblyDefinition.includePlatforms.Any(p => !previousAssemblyDefinition.includePlatforms.Contains(p)))
+                foreach (var assemblyInfo in relevantAssemblyInfo)
                 {
-                    if (previousAssemblyDefinition.includePlatforms.Length == 0 &&
-                        (versionChangeType == VersionChangeType.Minor || versionChangeType == VersionChangeType.Patch))
-                        AddError("Adding the first entry in inlcudePlatforms requires a new major version. " + includePlatformsDiff);
-                    else if (versionChangeType == VersionChangeType.Patch)
-                        AddError("Adding to includePlatforms requires a new minor or major version. " + includePlatformsDiff);
+                    //assembly is in the package
+                    var previousAssemblyDefinition = previousAssemblyDefinitions.FirstOrDefault(ad => DoAssembliesMatch(ad, assemblyInfo.assemblyDefinition));
+                    if (previousAssemblyDefinition == null)
+                        continue; //new asmdefs are fine
+
+                    var excludePlatformsDiff = string.Format("Was:\"{0}\" Now:\"{1}\"",
+                        string.Join(", ", previousAssemblyDefinition.excludePlatforms),
+                        string.Join(", ", assemblyInfo.assemblyDefinition.excludePlatforms));
+                    if (previousAssemblyDefinition.excludePlatforms.Any(p => !assemblyInfo.assemblyDefinition.excludePlatforms.Contains(p)) &&
+                        versionChangeType == VersionChangeType.Patch)
+                        AddError("Removing from excludePlatfoms requires a new minor or major version. " + excludePlatformsDiff);
+                    else if (assemblyInfo.assemblyDefinition.excludePlatforms.Any(p =>
+                        !previousAssemblyDefinition.excludePlatforms.Contains(p)) &&
+                             (versionChangeType == VersionChangeType.Patch || versionChangeType == VersionChangeType.Minor))
+                        AddError("Adding to excludePlatforms requires a new major version. " + excludePlatformsDiff);
+
+                    var includePlatformsDiff = string.Format("Was:\"{0}\" Now:\"{1}\"",
+                        string.Join(", ", previousAssemblyDefinition.includePlatforms),
+                        string.Join(", ", assemblyInfo.assemblyDefinition.includePlatforms));
+                    if (previousAssemblyDefinition.includePlatforms.Any(p => !assemblyInfo.assemblyDefinition.includePlatforms.Contains(p)) &&
+                        (versionChangeType == VersionChangeType.Patch || versionChangeType == VersionChangeType.Minor))
+                        AddError("Removing from includePlatfoms requires a new major version. " + includePlatformsDiff);
+                    else if (assemblyInfo.assemblyDefinition.includePlatforms.Any(p => !previousAssemblyDefinition.includePlatforms.Contains(p)))
+                    {
+                        if (previousAssemblyDefinition.includePlatforms.Length == 0 &&
+                            (versionChangeType == VersionChangeType.Minor || versionChangeType == VersionChangeType.Patch))
+                            AddError("Adding the first entry in inlcudePlatforms requires a new major version. " + includePlatformsDiff);
+                        else if (versionChangeType == VersionChangeType.Patch)
+                            AddError("Adding to includePlatforms requires a new minor or major version. " + includePlatformsDiff);
+                    }
                 }
             }
 
@@ -248,6 +251,31 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
             if (changeType == VersionChangeType.Unknown)
                 return;
 
+            if (Context.ProjectPackageInfo.IsPreview)
+                PreReleasePackageValidateApiDiffs(diff, changeType);
+            else
+                ReleasePackageValidateApiDiffs(diff, changeType);
+#endif
+        }
+
+#if UNITY_2019_1_OR_NEWER
+
+        private void PreReleasePackageValidateApiDiffs(ApiDiff diff, VersionChangeType changeType)
+        {
+            if (diff.breakingChanges > 0 && changeType == VersionChangeType.Patch)
+                AddError("For Preview Packages, breaking changes require a new minor version.");
+
+            if (changeType == VersionChangeType.Patch)
+            {
+                foreach (var assembly in diff.missingAssemblies)
+                {
+                    AddError("Assembly \"{0}\" no longer exists or is no longer included in build. For Preview Packages, this change requires a new minor version.", assembly);
+                }
+            }
+        }
+
+        private void ReleasePackageValidateApiDiffs(ApiDiff diff, VersionChangeType changeType)
+        {
             if (diff.breakingChanges > 0 && changeType != VersionChangeType.Major)
                 AddError("Breaking changes require a new major version.");
             if (diff.additions > 0 && changeType == VersionChangeType.Patch)
@@ -256,7 +284,7 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
             {
                 foreach (var assembly in diff.missingAssemblies)
                 {
-                    AddError("Assembly \"{0}\" no longer exists or is no longer included in build. This requires a new major version.", assembly);
+                    AddError("Assembly \"{0}\" no longer exists or is no longer included in build. This change requires a new major version.", assembly);
                 }
             }
             if (changeType == VersionChangeType.Patch)
@@ -266,8 +294,8 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
                     AddError("New assembly \"{0}\" may only be added in a new minor or major version.", assembly);
                 }
             }
-#endif
         }
+#endif
     }
 }
 

@@ -20,7 +20,7 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
             TestName = "Manifest Validation";
             TestDescription = "Validate that the information found in the manifest is well formatted.";
             TestCategory = TestCategory.DataValidation;
-            SupportedValidations = new[] { ValidationType.CI, ValidationType.LocalDevelopment, ValidationType.Publishing, ValidationType.VerifiedSet };
+            SupportedValidations = new[] { ValidationType.CI, ValidationType.LocalDevelopment, ValidationType.LocalDevelopmentInternal, ValidationType.Publishing, ValidationType.VerifiedSet };
         }
 
         protected override void Run()

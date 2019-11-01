@@ -107,7 +107,7 @@ public class VettingContext
         context.ValidationType = validationType;
         context.ProjectPackageInfo = GetManifest(packageInfo.resolvedPath);
 
-        if (context.ValidationType == ValidationType.LocalDevelopment)
+        if (context.ValidationType == ValidationType.LocalDevelopment || context.ValidationType == ValidationType.LocalDevelopmentInternal)
         {
             var publishPackagePath = PublishPackage(context);
             context.PublishPackageInfo = GetManifest(publishPackagePath);

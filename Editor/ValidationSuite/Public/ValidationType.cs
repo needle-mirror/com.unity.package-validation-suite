@@ -12,6 +12,8 @@ namespace UnityEditor.PackageManager.ValidationSuite
     {
         /// <summary>Validation for local development.</summary>        
         LocalDevelopment,
+        /// <summary>Validation for local development internal to Unity.</summary>        
+        LocalDevelopmentInternal,
         /// <summary>Validation for verified packages.</summary>        
         VerifiedSet,
         /// <summary>Validation for continuous integration.</summary>        

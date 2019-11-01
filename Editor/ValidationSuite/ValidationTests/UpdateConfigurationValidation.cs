@@ -69,6 +69,8 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
                 UseShellExecute = false,
                 RedirectStandardError = true,
                 RedirectStandardOutput = true,
+                CreateNoWindow = true
+
             };
             var process = Process.Start(processStartInfo);
             var stderr = new ProcessOutputStreamReader(process, process.StandardError);

@@ -76,18 +76,35 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
             "arcoreimg.exe",          // required for com.unity.xr.arcore
             "bee.exe",                // required for com.unity.tiny
             "HavokVisualDebugger.exe", // required for com.havok.physics
-            "Unity.CollabProxy.Server.exe"  // required for com.unity.collab-proxy
+            "Unity.CollabProxy.Server.exe",  // required for com.unity.collab-proxy
+            "COMIntegration.exe"       // required for com.unity.ide.visualstudio
         };
 
         private readonly string[] restrictedFileList =
         {
+            "*.bat",
+            "*.bin",
+            "*.com",
+            "*.csh",
+            "*.dom",
+            "*.exe",
+            "*.jse",
             "*.jpg",
             "*.jpeg",
-            "*.exe",
+            "*.msi",
+            "*.msp",
+            "*.mst",
+            "*.ps1",
+            "*.vb",
+            "*.vbe",
+            "*.vbs",
+            "*.vbscript",
+            "*.vs",
+            "*.vsd",
+            "*.vsh",
             "AssetStoreTools.dll",
             "AssetStoreToolsExtra.dll",
-            "DroidSansMono.ttf",
-            "AssetStoreToolsExtra.dll",
+            "DroidSansMono.ttf"
         };
 
         private readonly string[] unapprovedFileList =

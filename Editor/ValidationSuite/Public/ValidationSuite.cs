@@ -134,7 +134,7 @@ namespace UnityEditor.PackageManager.ValidationSuite
             }
         }
 
-        internal static void ValidateEmbeddedPackages()
+        internal static void ValidateEmbeddedPackages(ValidationType validationType)
         {
             var packageIdList = new List<string>();
             var directories = Directory.GetDirectories("Packages/", "*", SearchOption.TopDirectoryOnly);
@@ -146,7 +146,7 @@ namespace UnityEditor.PackageManager.ValidationSuite
 
             if (packageIdList.Any())
             {
-                var success = ValidatePackages(packageIdList, ValidationType.LocalDevelopment);
+                var success = ValidatePackages(packageIdList, validationType);
                 Debug.Log("Package validation done and batchmode is set. Shutting down Editor");
                 EditorApplication.Exit(success ? 0 : 1);
             }
@@ -211,7 +211,7 @@ namespace UnityEditor.PackageManager.ValidationSuite
             if (string.IsNullOrEmpty(packageId))
                 throw new ArgumentNullException(packageId);
 
-            return ValidationSuiteReport.ReportExists(packageId) ? File.ReadAllText(TextReporter.ReportPath(packageId)) : null;
+            return ValidationSuiteReport.ReportExists(packageId) ? File.ReadAllText(TextReport.ReportPath(packageId)) : null;
         }
 
         internal void RunSync()
@@ -354,8 +354,9 @@ namespace UnityEditor.PackageManager.ValidationSuite
 
         static void AllTestsCompletedDelegate(ValidationSuite suite, TestState testRunState)
         {
-            suite.report.OutputTextReport(suite);
-            suite.report.OutputJsonReport(suite);
+            suite.report.GenerateTextReport(suite);
+            suite.report.GenerateJsonReport(suite);
+            suite.report.GenerateVettingReport(suite);
         }
     }
 }

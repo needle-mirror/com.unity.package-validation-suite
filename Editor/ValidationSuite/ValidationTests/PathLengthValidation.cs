@@ -12,7 +12,7 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
             TestName = "Path Length Validation";
             TestDescription = "Validate that all package files are below a maximum path threshold, to ensure that excessively long paths are not produced on Windows machines within user projects.";
             TestCategory = TestCategory.ContentScan;
-            SupportedValidations = new[] { ValidationType.CI, ValidationType.LocalDevelopment, ValidationType.Publishing, ValidationType.VerifiedSet };
+            SupportedValidations = new[] { ValidationType.CI, ValidationType.LocalDevelopment, ValidationType.LocalDevelopmentInternal, ValidationType.Publishing, ValidationType.VerifiedSet };
         }
 
         private static string CombineAllowingEmpty(string path1, string path2)

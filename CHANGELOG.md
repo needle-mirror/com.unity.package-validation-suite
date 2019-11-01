@@ -4,6 +4,11 @@ All notable changes to this package will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## [0.7.9] - 2019-10-31
+- Happy Halloween!!
+- Relaxed the API validation rules in preview
+- Added a more restrictive forbidden files list.
+
 ## [0.7.8] - 2019-10-17
 - Removed Dependency Validation check
 - Added "com.ptc" as a supported package name domain.
@@ -18,7 +23,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Fixed issue causing built-in packages validation to fail in Unity versions < 2019.2
 
 ## [0.7.4] - 2019-09-16
-- Disable semver validation upon api breaking changes on Unity 2018.X 
+- Disable semver validation upon api breaking changes on Unity 2018.X
 - Allow console error whitelisting for API Updater Validation.
 
 ## [0.7.3] - 2019-09-10
