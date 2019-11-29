@@ -62,8 +62,10 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
             File.WriteAllLines(responseFilePath, references);
 
             var monoPath = Utilities.GetMonoPath();
-
+            
             var argumentsForValidator = ArgumentsForValidator();
+            File.WriteAllText($"{Path.Combine(Path.GetTempPath(), Context.ProjectPackageInfo?.name)}.updater.validation.arguments", argumentsForValidator);
+            
             var processStartInfo = new ProcessStartInfo(monoPath, $@"""{validatorPath}"" {argumentsForValidator}")
             {
                 UseShellExecute = false,
@@ -87,22 +89,22 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
 
             bool ApiUpdaterConfigurationExemptions(string stdContent)
             {
+#if UNITY_2019_3_OR_NEWER
+                return false;
+#else
                 if (stdContent.Contains("Mono.Cecil.AssemblyResolutionException"))
                     return true;
 
                 // This is a temporary workaround to unblock dots team.
                 var requiredEntries =  new[] 
                 {
-                    //"Failed to resolve source type  '[*] Unity.Entities.SubtractiveComponent<T>' in configuration [*] Unity.Entities.SubtractiveComponent<T> -> Unity.Entities.ExcludeComponent<T>",
-                    //"Config: [*] Unity.Entities.ComponentGroup [*] Unity.Entities.ComponentSystemBase::GetComponentGroup([*] Unity.Collections.NativeArray<Unity.Entities.ComponentType>) -> * Unity.Entities.ComponentSystemBase::GetEntityQuery(Unity.Collections.NativeArray<ComponentType>)",
                     "Target of update (method ComponentSystemBase.GetEntityQuery) is less accessible than original (Unity.Entities.ComponentGroup Unity.Entities.ComponentSystemBase::GetComponentGroup(Unity.Entities.ComponentType[])).",
                     "Target of update (method ComponentSystemBase.GetEntityQuery) is less accessible than original (Unity.Entities.ComponentGroup Unity.Entities.ComponentSystemBase::GetComponentGroup(Unity.Collections.NativeArray`1<Unity.Entities.ComponentType>)).",
                     "Target of update (method ComponentSystemBase.GetEntityQuery) is less accessible than original (Unity.Entities.ComponentGroup Unity.Entities.ComponentSystemBase::GetComponentGroup(Unity.Entities.EntityArchetypeQuery[])).",
-                    // "Signature of target method (Unity.Entities.EntityQuery Unity.Entities.EntityManager::CreateEntityQuery(Unity.Entities.EntityQueryDesc[])) differs from original method signature (Unity.Entities.ComponentGroup Unity.Entities.EntityManager::CreateComponentGroup(Unity.Entities.EntityArchetypeQuery[])).",
-                    //"Configuation Validation - 4 invalid configuration entries found:"
                 };
 
                 return requiredEntries.All(stdContent.Contains);
+#endif                
             }
 
             string ArgumentsForValidator()

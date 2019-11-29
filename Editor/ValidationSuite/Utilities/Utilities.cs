@@ -12,7 +12,7 @@ using UnityEditor.Compilation;
 
 namespace UnityEditor.PackageManager.ValidationSuite
 {
-    internal static class Utilities
+    public static class Utilities
     {
         internal const string PackageJsonFilename = "package.json";
         internal const string ChangeLogFilename = "CHANGELOG.md";
@@ -134,7 +134,7 @@ namespace UnityEditor.PackageManager.ValidationSuite
             return !string.IsNullOrEmpty(packageData);
         }
 
-        internal static string ExtractPackage(string fullPackagePath, string workingPath, string outputDirectory, string packageName, bool deleteOutputDir = true)
+        public static string ExtractPackage(string fullPackagePath, string workingPath, string outputDirectory, string packageName, bool deleteOutputDir = true)
         {
             //verify if package exists
             if (!fullPackagePath.EndsWith(".tgz"))
@@ -298,5 +298,18 @@ namespace UnityEditor.PackageManager.ValidationSuite
         }
 
 #endif
+
+        // Return all types from an assembly that can be loaded
+        internal static IEnumerable<Type> GetTypesSafe(System.Reflection.Assembly assembly)
+        {
+            try
+            {
+                return assembly.GetTypes();
+            }
+            catch (System.Reflection.ReflectionTypeLoadException e)
+            {
+                return e.Types.Where(t => t != null);
+            }
+        }
     }
 }

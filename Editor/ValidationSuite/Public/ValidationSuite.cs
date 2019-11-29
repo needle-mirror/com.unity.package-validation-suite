@@ -9,6 +9,14 @@ using UnityEngine;
 
 namespace UnityEditor.PackageManager.ValidationSuite
 {
+    // Attribute for methods to be called before any tests are run, prototype is "void MyMethod(VettingContext)"
+    [AttributeUsage(AttributeTargets.Method)]
+    public class ValidationSuiteSetup : Attribute { }
+
+    // Attribute for methods to be called after all tests are run, prototype is "void MyMethod(VettingContext)"
+    [AttributeUsage(AttributeTargets.Method)]
+    public class ValidationSuiteTeardown : Attribute { }
+
     // Delegate called after every test to provide immediate feedback on single test results.
     internal delegate void SingleTestCompletedDelegate(IValidationTestResult testResult);
 
@@ -39,6 +47,10 @@ namespace UnityEditor.PackageManager.ValidationSuite
         internal DateTime StartTime;
 
         internal DateTime EndTime;
+
+        public ValidationSuite()
+        {
+        }
 
         internal ValidationSuite(SingleTestCompletedDelegate singleTestCompletionDelegate,
                                  AllTestsCompletedDelegate allTestsCompletedDelegate,
@@ -111,12 +123,12 @@ namespace UnityEditor.PackageManager.ValidationSuite
 
             // publish locally for embedded and local packages
             var context = VettingContext.CreatePackmanContext(packageId, validationType);
-            return ValidatePackage(context, validationType);
+            return ValidatePackage(context, validationType, out report);
         }
 
-        internal static bool ValidatePackage(VettingContext context, ValidationType validationType)
+        public static bool ValidatePackage(VettingContext context, ValidationType validationType, out ValidationSuiteReport report)
         {
-            var report = new ValidationSuiteReport(context.ProjectPackageInfo.Id, context.ProjectPackageInfo.name, context.ProjectPackageInfo.version, context.ProjectPackageInfo.path);
+            report = new ValidationSuiteReport(context.ProjectPackageInfo.Id, context.ProjectPackageInfo.name, context.ProjectPackageInfo.version, context.ProjectPackageInfo.path);
 
             try
             {
@@ -129,7 +141,7 @@ namespace UnityEditor.PackageManager.ValidationSuite
             }
             catch (Exception e)
             {
-                report.OutputErrorReport(string.Format("\r\nTest Setup Error: \"{0}\"\r\n", e));
+                report.OutputErrorReport(string.Format("Test Setup Error: \"{0}\"\r\n", e));
                 return false;
             }
         }
@@ -254,7 +266,7 @@ namespace UnityEditor.PackageManager.ValidationSuite
             foreach (Assembly assembly in currentDomainAssemblies)
             {
                 try {
-                    testList.AddRange((from t in assembly.GetTypes()
+                    testList.AddRange((from t in Utilities.GetTypesSafe(assembly)
                                             where typeof(BaseValidation).IsAssignableFrom(t) && t.GetConstructor(Type.EmptyTypes) != null && !t.IsAbstract
                                             select (BaseValidation)Activator.CreateInstance(t)).ToList());
                 } catch (System.Reflection.ReflectionTypeLoadException) {
@@ -268,11 +280,39 @@ namespace UnityEditor.PackageManager.ValidationSuite
             validationTests = testList;
         }
 
+        // Call all static methods with a given attribute type passing them the vetting context
+        void CallSuiteHandler(Type handlerAttributeType)
+        {
+            foreach (Assembly assembly in AppDomain.CurrentDomain.GetAssemblies())
+            {
+                try
+                {
+                    foreach(Type type in Utilities.GetTypesSafe(assembly))
+                    {
+                        foreach(MethodInfo method in type.GetMethods(BindingFlags.Static | BindingFlags.NonPublic | BindingFlags.Public).Where(methodInfo => methodInfo.GetCustomAttributes(handlerAttributeType, false).Length > 0))
+                        {
+                            ParameterInfo[] methodParameters = method.GetParameters();
+                            if ((method.ReturnType != typeof(void)) || (methodParameters.Length != 1) || (methodParameters[0].ParameterType != typeof(VettingContext)))
+                                throw new InvalidOperationException("Method '" + type.Name + "." + method.Name + "' with attribute [" + handlerAttributeType.Name + "] has the incorrect prototype, it must be \"void XXX(VettingContext)\"");
+
+                            method.Invoke(null, new object[] { context });
+                        }
+                    }
+                }
+                catch (ReflectionTypeLoadException)
+                {
+                }
+            }
+        }
+
         void Run()
         {
             testSuiteState = TestState.Succeeded;
             StartTime = DateTime.Now;
             testSuiteState = TestState.Running;
+
+            // Let each suite know we are about to start running tests so they can do setup if necessary.
+            CallSuiteHandler(typeof(ValidationSuiteSetup));
 
             // Run through tests
             foreach (var test in ValidationTests)
@@ -302,6 +342,9 @@ namespace UnityEditor.PackageManager.ValidationSuite
                     singleTestCompletionDelegate(test);
                 }
             }
+
+            // Let each suite know we have finished running tests so they can do tidy up if necessary
+            CallSuiteHandler(typeof(ValidationSuiteTeardown));
 
             EndTime = DateTime.Now;
             if (testSuiteState != TestState.Failed)

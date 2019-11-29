@@ -57,11 +57,18 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
             }
 
             // check that the license is valid.  We expect the first line to look like this:
-            var expectedLicenseHeader = string.Format("{0} copyright � {1} Unity Technologies ApS", Context.PublishPackageInfo.name, DateTime.UtcNow.Year);
-            if (string.Compare(licenseContent[0], expectedLicenseHeader, StringComparison.CurrentCultureIgnoreCase) != 0)
+            var expectedLicenseHeader1 = string.Format("{0} copyright © {1} Unity Technologies ApS", Context.PublishPackageInfo.name, DateTime.UtcNow.Year);
+            var expectedLicenseHeader2 = string.Format("{0} copyright © {1} Unity Technologies ApS", Context.PublishPackageInfo.displayName, DateTime.UtcNow.Year);
+            if (string.Compare(licenseContent[0], expectedLicenseHeader1, StringComparison.CurrentCultureIgnoreCase) != 0 &&
+                string.Compare(licenseContent[0], expectedLicenseHeader2, StringComparison.CurrentCultureIgnoreCase) != 0)
             {
                 // TODO: Make this an error at some point soon.
-                AddWarning("A LICENSE.md file exists in the package, but is in the wrong format.  Ensure the copyright year is set properly, otherwise, please check the package starter kit's license file as reference.  https://github.cds.internal.unity3d.com/unity/com.unity.package-validation-suite/blob/dev/LICENSE.md");
+                var message = string.Format("A LICENSE.md file exists in the package, but is in the wrong format.  " +
+                                            "Ensure the copyright year is set properly, otherwise, please check the package starter kit's license file as reference.  " +
+                                            "https://github.cds.internal.unity3d.com/unity/com.unity.package-validation-suite/blob/dev/LICENSE.md  " +
+                                            "It was `{0}` but was expecting `{1}` or `{2}`",
+                    licenseContent[0], expectedLicenseHeader1, expectedLicenseHeader2);
+                AddWarning(message);
             }
         }
 

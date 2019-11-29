@@ -207,7 +207,8 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
                     var assemblyChange = new AssemblyChange(info.assembly.name)
                     {
                         additions = entityChanges.Where(c => c.IsAdd()).Select(c => c.ToString()).ToList(),
-                        breakingChanges = entityChanges.Where(c => !c.IsAdd()).Select(c => c.ToString()).ToList()
+                        // Among all attribute changes, only the Obsolete attribute should be considered a breaking change
+                        breakingChanges = entityChanges.Where(c => !c.IsAdd() && !((c.GetType()).Equals(typeof (AttributeChange)))).Select(c => c.ToString()).ToList()
                     };
 
                     if (entityChanges.Count > 0)

@@ -7,13 +7,15 @@ using UnityEngine;
 
 namespace UnityEditor.PackageManager.ValidationSuite
 {
-    internal class ValidationSuiteReport
+    public class ValidationSuiteReport
     {
         public static readonly string ResultsPath = Path.Combine("Library", "ValidationSuiteResults");
 
         private readonly string jsonReportPath;
         TextReport TextReport { get; set; }
         VettingReport VettingReport { get; set; }
+
+        public ValidationSuiteReportData ReportData { get; set; }
 
         public ValidationSuiteReport()
         {}
@@ -116,7 +118,7 @@ namespace UnityEditor.PackageManager.ValidationSuite
             var testLists = BuildReport(suite);
             var span = suite.EndTime - suite.StartTime;
 
-            var report = new ValidationSuiteReportData
+            ReportData = new ValidationSuiteReportData
             {
                 Type = suite.context.ValidationType,
                 TestResult = suite.testSuiteState,
@@ -126,7 +128,7 @@ namespace UnityEditor.PackageManager.ValidationSuite
                 Tests = testLists.ToList()
             };
 
-            File.WriteAllText(jsonReportPath, JsonUtility.ToJson(report));
+            File.WriteAllText(jsonReportPath, JsonUtility.ToJson(ReportData));
         }
     }
 }
