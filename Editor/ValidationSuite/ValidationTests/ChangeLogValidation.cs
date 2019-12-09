@@ -1,8 +1,9 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Text.RegularExpressions;
 using System.Globalization;
-using UnityEditor.PackageManager.ValidationSuite;
+using System.Linq;
 using Semver;
 
 namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
@@ -27,15 +28,14 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
 
             if (!System.IO.File.Exists(changeLogPath))
             {
-                AddError("Cannot find chanlog at: " + changeLogPath);
+                AddError("Cannot find changelog at '{0}'. Please create a '{1}' file and '{1}.meta'. {2}", changeLogPath, Utilities.ChangeLogFilename, ErrorDocumentation.GetLinkMessage(ErrorTypes.CannotFindChangelog));
                 return;
             }
 
             SemVersion packageJsonVersion;
-
             if (!SemVersion.TryParse(Context.ProjectPackageInfo.version, out packageJsonVersion))
             {
-                AddError(string.Format("Version format is not valid: {0} in: [{1}]", Context.ProjectPackageInfo.version, Context.ProjectPackageInfo.path));
+                AddError("Version format '{0}' is not valid in '{1}'. Please correct the version format. {2}", Context.ProjectPackageInfo.version, Context.ProjectPackageInfo.path, ErrorDocumentation.GetLinkMessage(ErrorTypes.VersionFormatIsNotValid));
                 return;
             }
             // We must strip the -build<commit> off the prerelease
@@ -47,56 +47,142 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
             }
             var packageJsonVersionNoPrelease = packageJsonVersion.Change(null, null, null, "", null);
 
-            // We are basically searching for a string ## [Version] - YYYY-MM-DD
-            var changeLogLineRegex = @"## \[(?<version>(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(-(0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*)(\.(0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*))*)?(\+[0-9a-zA-Z-]+(\.[0-9a-zA-Z-]+)*)?)\] - (?<date>\d{4}-\d{1,2}-\d{1,2})";
+            // We are basically searching for a string ## [Version] - YYYY-MM-DD or ## [Unreleased]
+            var changeLogLineRegex = @"## \[(?<version>.*)]( - (?<date>.*))?";
 
-            var textChangeLog = File.ReadAllText(changeLogPath);
-
-            MatchCollection matches = Regex.Matches(textChangeLog, changeLogLineRegex);
+            var textChangeLog = File.ReadAllLines(changeLogPath);
+            
+            // We match each line individually so we won't end up with line ending characters etc in the match
+            List<Match> matches = new List<Match>();
+            foreach (var line in textChangeLog)
+            {
+                var lineMatches = Regex.Matches(line, changeLogLineRegex);
+                foreach (var match in lineMatches.Cast<Match>())
+                {
+                    matches.Add(match);
+                }
+            }
             if (matches.Count == 0)
             {
-                AddError("Can't find any entries in changelog that fits `format: ## [x.y.z] - YYYY-MM-DD`");
+                AddError("No valid changelog entries were found. The changelog needs to follow the https://keepachangelog.org specifications (`## [x.y.z] - YYYY-MM-DD` or `## [Unreleased]`). {0}", ErrorDocumentation.GetLinkMessage(ErrorTypes.NoValidChangelogEntriesWereFound));
                 return;
             }
 
-            int index = 1;
+            int foundIndex = -1;
+            int currentIndex = 1;
             Match found = null;
             foreach (Match match in matches)
             {
-                SemVersion versionInChangelog;
-                if (!SemVersion.TryParse(match.Groups["version"].ToString(), out versionInChangelog))
+                SemVersion versionInChangelog = null;
+                string versionString = match.Groups["version"].ToString();
+                if (versionString == "Unreleased")
                 {
-                    AddError("Version format {0} is not valid in: [{1}]", match.Groups["version"].ToString(), changeLogPath);
-                    return;
+                    if (found == null)
+                    {
+                        // In case of duplicated fields etc we keep track of the first entry to so we dont just pile more errors on top
+                        found = match;
+                        foundIndex = currentIndex;
+                    }
+                    
+                    if (currentIndex != 1)
+                    {
+                        AddWarningWithLine(string.Format("Unreleased section has to be the first section in the Changelog but it was number {0}. Please move it to the top or remove duplicate entries. {1}", currentIndex, ErrorDocumentation.GetLinkMessage(ErrorTypes.UnreleasedSectionFirst)), match.ToString());
+                    }
+                    currentIndex++;
+                    continue;
+                }
+                
+                if (!SemVersion.TryParse(versionString, out versionInChangelog, true))
+                {
+                    AddErrorWithDeprecationFallback(string.Format("Version format '{0}' is not valid in '{1}'. Please correct the version format. {2}", match.Groups["version"].ToString(), changeLogPath, ErrorDocumentation.GetLinkMessage(ErrorTypes.VersionFormatIsNotValid)), match.ToString(), foundIndex, currentIndex);
+                    currentIndex++;
+                    continue;
                 }
 
-                if (versionInChangelog == packageJsonVersion || versionInChangelog == packageJsonVersionNoPrelease)
+                if (found == null && (versionInChangelog == packageJsonVersion || versionInChangelog == packageJsonVersionNoPrelease))
                 {
+                    // In case of duplicated fields etc we keep track of the first entry to so we dont just pile more errors on top
                     found = match;
-                    DateTime date;
-                    string[] dateFormats = { "yyyy-MM-dd", "yyyy-MM-d", "yyyy-M-dd", "yyyy-M-d" };
-                    var dateToCheck = match.Groups["date"].ToString();
-                    if (!DateTime.TryParseExact(dateToCheck,
-                        dateFormats,
+                    foundIndex = currentIndex;
+                }
+                DateTime date;
+                string dateFormat = "yyyy-MM-dd";
+                string[] dateWarningFormats = {"yyyy-MM-d", "yyyy-M-dd", "yyyy-M-d"};
+                Group dateGroup = match.Groups["date"];
+                string dateToCheck = null;
+                if (!string.IsNullOrEmpty(dateGroup.Value))
+                {
+                    dateToCheck = dateGroup.ToString();
+                }
+
+                if (string.IsNullOrEmpty(dateGroup.Value))
+                {
+                    AddErrorWithDeprecationFallback(string.Format(
+                        "Date field is missing. A date is required in each version section (except for '## [Unreleased]') in '{0}'. Expecting expecting ISO 8601 date format 'YYYY-MM-DD'. Update the date to one of the supported values. {1}",
+                        changeLogPath,
+                        ErrorDocumentation.GetLinkMessage(ErrorTypes.ChangelogDateIsNotValid)), match.ToString(), foundIndex, currentIndex);
+                }
+                else if (!DateTime.TryParseExact(dateToCheck,
+                    dateFormat,
+                    CultureInfo.InvariantCulture,
+                    DateTimeStyles.None,
+                    out date))
+                {
+                    string errorString = string.Format(
+                            "Date '{0}' does not follow ISO 8601 in '{1}'. Expecting format 'YYYY-MM-DD'. Update the date to one of the supported values. {2}",
+                            dateToCheck, changeLogPath,
+                            ErrorDocumentation.GetLinkMessage(ErrorTypes.ChangelogDateIsNotValid));
+                    if (DateTime.TryParseExact(dateToCheck,
+                        dateWarningFormats,
                         CultureInfo.InvariantCulture,
                         DateTimeStyles.None,
                         out date))
                     {
-                        AddError("Date {0} is not valid expecting format: YYYY-MM-DD in: [{1}]", dateToCheck, changeLogPath);
+                        AddWarningWithLine(errorString, match.ToString());
                     }
-                    break;
+                    else
+                    {
+                        AddErrorWithDeprecationFallback(errorString, match.ToString(), foundIndex, currentIndex);
+                    }
+                    
                 }
-                index++;
+
+                currentIndex++;
+
             }
 
             if (found == null)
             {
                 var expected = string.Format("`## [{0}] - YYYY-MM-DD` or `## [{1}] - YYYY-MM-DD`", packageJsonVersion.ToString(), packageJsonVersionNoPrelease.ToString());
-               AddError("No changelog entry for version `{0}` (expected: {1}) found in: [{2}]", packageJsonVersion.ToString(), expected, changeLogPath);
+                AddError("No changelog entry for version `{0}` was found in '{2}'. Please add or fix a section so you have a {1} section. {3}", packageJsonVersion.ToString(), expected, changeLogPath, ErrorDocumentation.GetLinkMessage(ErrorTypes.NoChangelogEntryForVersionFound));
             }
-            else if (found != null && index != 1)
+            else if (foundIndex != 1)
             {
-                AddError("Found changelog entry `{0}`, but it was not the first entry of the changelog (it was entry #{1}) in: [{2}]", found.ToString(), index, changeLogPath);
+                AddErrorWithLine(string.Format("Found changelog entry but it was not the first entry in '{1}' (it was entry #{0}). Please rearrange your changelog with the most recent section at the top. {2}", foundIndex, changeLogPath, ErrorDocumentation.GetLinkMessage(ErrorTypes.FoundChangelogWrongPosition)), found.ToString());
+            }
+        }
+
+        private void AddWarningWithLine(string message, string lineMatch)
+        {
+            AddWarning("For '{0}': {1}", lineMatch, message);
+        }
+        
+        private void AddErrorWithLine(string message, string lineMatch)
+        {
+            AddError("For '{0}': {1}", lineMatch, message);
+        }
+
+        private void AddErrorWithDeprecationFallback(string errorString, string line, int foundIndex, int currentIndex)
+        {
+            // Previous implementation stopped parsing the file after it found the first valid section
+            // This one continues parsing and all new things needs to be warnings so we dont block suddenly
+            if (foundIndex > 0 && foundIndex != currentIndex)
+            {
+                AddWarningWithLine(errorString, line);
+            }
+            else
+            {
+                AddErrorWithLine(errorString, line);    
             }
         }
     }

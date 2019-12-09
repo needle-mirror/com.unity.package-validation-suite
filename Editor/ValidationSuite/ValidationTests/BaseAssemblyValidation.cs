@@ -53,7 +53,7 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
             var packagePath = Path.GetFullPath(Context.ProjectPackageInfo.path);
             var files = new HashSet<string>(Directory.GetFiles(packagePath, "*", SearchOption.AllDirectories));
 
-            var allAssemblyInfo = CompilationPipeline.GetAssemblies().Select(AssemblyInfoFromAssembly).Where(a => a != null)
+            var allAssemblyInfo = CompilationPipeline.GetAssemblies().Select(Utilities.AssemblyInfoFromAssembly).Where(a => a != null)
                 .ToArray();
 
             var assemblyInfoOutsidePackage =
@@ -87,16 +87,6 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
                 default:
                     return false;
             }
-        }
-
-        private AssemblyInfo AssemblyInfoFromAssembly(Assembly assembly)
-        {
-            var path = CompilationPipeline.GetAssemblyDefinitionFilePathFromAssemblyName(assembly.name);
-            if (string.IsNullOrEmpty(path))
-                return null;
-
-            var asmdefPath = Path.GetFullPath(path);
-            return new AssemblyInfo(assembly, asmdefPath);
         }
     }
 }

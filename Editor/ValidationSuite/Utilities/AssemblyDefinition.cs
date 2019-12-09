@@ -8,5 +8,6 @@ namespace UnityEditor.PackageManager.ValidationSuite
         public string[] includePlatforms = new string[0];
         public string[] excludePlatforms = new string[0];
         public string[] precompiledReferences = new string[0];
+        public string[] defineConstraints = new string[0];
     }
 }

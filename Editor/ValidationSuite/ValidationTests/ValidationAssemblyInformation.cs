@@ -3,7 +3,6 @@ using UnityEditor.Compilation;
 
 namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
 {
-#if UNITY_2018_1_OR_NEWER
     /// <summary>
     /// Used by tests to override assembly information for ApiValidation
     /// </summary>
@@ -31,9 +30,7 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
             if (isProjectPackageTestOverride.HasValue)
                 return isProjectPackageTestOverride.Value;
 
-            return assembly.assemblyDefinition.references.Contains("TestAssemblies") ||
-                assembly.assemblyDefinition.optionalUnityReferences.Contains("TestAssemblies") ||
-                assembly.assemblyDefinition.precompiledReferences.Contains("nunit.framework.dll");
+            return Utilities.IsTestAssembly(assembly.assembly);
         }
 
         public string GetAssemblyName(Assembly assembly, bool isPrevious)
@@ -56,5 +53,4 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
             return null;
         }
     }
-#endif
 }

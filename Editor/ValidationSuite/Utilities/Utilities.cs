@@ -5,10 +5,8 @@ using System.Linq;
 using System.Linq.Expressions;
 using Semver;
 using UnityEngine;
-
-#if UNITY_2018_1_OR_NEWER
 using UnityEditor.Compilation;
-#endif
+using UnityEditor.PackageManager.ValidationSuite.ValidationTests;
 
 namespace UnityEditor.PackageManager.ValidationSuite
 {
@@ -243,12 +241,24 @@ namespace UnityEditor.PackageManager.ValidationSuite
             var monoPath = Path.Combine(EditorApplication.applicationContentsPath, "MonoBleedingEdge/bin", Application.platform == RuntimePlatform.WindowsEditor ? "mono.exe" : "mono");
             return monoPath;
         }
-
-#if UNITY_2018_1_OR_NEWER
-
+        
         public static bool IsTestAssembly(Assembly assembly)
         {
-            return assembly.allReferences.Contains("TestAssemblies");
+            // see https://unity.slack.com/archives/C26EP4SUQ/p1555485851157200?thread_ts=1555441110.131100&cid=C26EP4SUQ for details about how this is verified
+            if (assembly.allReferences.Contains("TestAssemblies"))
+            {
+                return true;
+            }
+            
+            // Marking an assembly with UNITY_INCLUDE_TESTS means: 
+            // Include this assembly in the Unity project only if that package is in a testable state.
+            // Otherwise, the assembly is ignored
+            //
+            // for now, we must read the test assembly file directly
+            // because the defineConstraints field is not available on the assembly object
+            AssemblyInfo assemblyInfo = Utilities.AssemblyInfoFromAssembly(assembly);
+            AssemblyDefinition assemblyDefinition = Utilities.GetDataFromJson<AssemblyDefinition>(assemblyInfo.asmdefPath);
+            return assemblyDefinition.defineConstraints.Contains("UNITY_INCLUDE_TESTS");
         }
 
         /// <summary>
@@ -296,9 +306,7 @@ namespace UnityEditor.PackageManager.ValidationSuite
 
             return null;
         }
-
-#endif
-
+        
         // Return all types from an assembly that can be loaded
         internal static IEnumerable<Type> GetTypesSafe(System.Reflection.Assembly assembly)
         {
@@ -310,6 +318,16 @@ namespace UnityEditor.PackageManager.ValidationSuite
             {
                 return e.Types.Where(t => t != null);
             }
+        }
+        
+        internal static AssemblyInfo AssemblyInfoFromAssembly(Assembly assembly)
+        {
+            var path = CompilationPipeline.GetAssemblyDefinitionFilePathFromAssemblyName(assembly.name);
+            if (string.IsNullOrEmpty(path))
+                return null;
+
+            var asmdefPath = Path.GetFullPath(path);
+            return new AssemblyInfo(assembly, asmdefPath);
         }
     }
 }

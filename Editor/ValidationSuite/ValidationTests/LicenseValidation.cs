@@ -57,8 +57,8 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
             }
 
             // check that the license is valid.  We expect the first line to look like this:
-            var expectedLicenseHeader1 = string.Format("{0} copyright © {1} Unity Technologies ApS", Context.PublishPackageInfo.name, DateTime.UtcNow.Year);
-            var expectedLicenseHeader2 = string.Format("{0} copyright © {1} Unity Technologies ApS", Context.PublishPackageInfo.displayName, DateTime.UtcNow.Year);
+            var expectedLicenseHeader1 = string.Format("{0} copyright \u00a9 {1} Unity Technologies ApS", Context.PublishPackageInfo.name, DateTime.UtcNow.Year);
+            var expectedLicenseHeader2 = string.Format("{0} copyright \u00a9 {1} Unity Technologies ApS", Context.PublishPackageInfo.displayName, DateTime.UtcNow.Year);
             if (string.Compare(licenseContent[0], expectedLicenseHeader1, StringComparison.CurrentCultureIgnoreCase) != 0 &&
                 string.Compare(licenseContent[0], expectedLicenseHeader2, StringComparison.CurrentCultureIgnoreCase) != 0)
             {

@@ -116,9 +116,7 @@ public class VettingContext
         {
             context.PublishPackageInfo = GetManifest(packageInfo.resolvedPath);
         }
-
-
-#if UNITY_2018_3_OR_NEWER
+        
         foreach (var relatedPackage in context.PublishPackageInfo.relatedPackages)
         {
             // Check to see if the package is available locally
@@ -134,9 +132,7 @@ public class VettingContext
             context.relatedPackages.Add(new RelatedPackage(relatedPackage.Key, relatedPackage.Value,
                 relatedPackageInfo.First().resolvedPath));
         }
-#endif
 
-#if UNITY_2018_1_OR_NEWER
         // No need to compare against the previous version of the package if we're testing out the verified set.
         if (context.ValidationType != ValidationType.VerifiedSet)
         {
@@ -151,9 +147,7 @@ public class VettingContext
         {
             context.PreviousPackageInfo = null;
         }
-#else
-        context.PreviousPackageInfo = null;
-#endif
+        
         return context;
     }
 
@@ -259,8 +253,6 @@ public class VettingContext
 
     private static string GetPreviousPackage(ManifestData projectPackageInfo)
     {
-#if UNITY_2018_1_OR_NEWER
-
         // List out available versions for a package.
         var foundPackages =  Utilities.UpmSearch(projectPackageInfo.name);
 
@@ -307,7 +299,6 @@ public class VettingContext
                 }
             }
         }
-#endif
         return string.Empty;
     }
 
@@ -317,8 +308,6 @@ public class VettingContext
             Directory.Delete(PreviousVersionBinaryPath, true);
 
         Directory.CreateDirectory(PreviousVersionBinaryPath);
-
-#if UNITY_2018_1_OR_NEWER
 
         var packageDataZipFilename = PackageBinaryZipping.PackageDataZipFilename(PreviousPackageInfo.name, PreviousPackageInfo.version);
         var zipPath = Path.Combine(PreviousVersionBinaryPath, packageDataZipFilename);
@@ -338,6 +327,5 @@ public class VettingContext
         }
         else
             PreviousPackageBinaryDirectory = PreviousVersionBinaryPath;
-#endif
     }
 }

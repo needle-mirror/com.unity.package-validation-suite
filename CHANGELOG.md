@@ -4,6 +4,9 @@ All notable changes to this package will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## [0.7.12] - 2019-12-09
+- Fix Assembly Validation to better distinguish test assemblies.
+
 ## [0.7.11] - 2019-11-28
 - Made changes to allow running Validation Tests from other packages.
 - Bug fixes in License Validation.

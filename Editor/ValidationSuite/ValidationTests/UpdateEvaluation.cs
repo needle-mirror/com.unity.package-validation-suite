@@ -23,7 +23,6 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
 
         private void ValidateVersion()
         {
-#if UNITY_2018_2_OR_NEWER
             SemVersion version;
             if (!SemVersion.TryParse(Context.ProjectPackageInfo.version, out version, true))
             {
@@ -51,7 +50,6 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
             {
                 AddError("Version " + Context.ProjectPackageInfo.version + " of this package already exists in production.");
             }
-#endif
         }
     }
 }
