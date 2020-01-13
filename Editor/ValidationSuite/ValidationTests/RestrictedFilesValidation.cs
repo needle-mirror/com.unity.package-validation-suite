@@ -83,8 +83,9 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
             "bee.exe",                // required for com.unity.tiny
             "HavokVisualDebugger.exe", // required for com.havok.physics
             "Unity.CollabProxy.Server.exe",  // required for com.unity.collab-proxy
-            "COMIntegration.exe",       // required for com.unity.ide.visualstudio,
+            "COMIntegration.exe",       // required for com.unity.ide.visualstudio
             "Unity.ProcessServer.exe", // required for com.unity.process-server
+            "ilspycmd.exe"             // required for com.unity.entities
         };
 
         private readonly string[] restrictedFileList =
