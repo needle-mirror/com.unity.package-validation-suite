@@ -13,6 +13,7 @@ using UnityEngine;
 using UnityEngine.Networking;
 using UnityEditor.PackageManager.ValidationSuite;
 using UnityEditor.PackageManager.ValidationSuite.ValidationTests;
+using PackageInfo = UnityEditor.PackageManager.PackageInfo;
 
 public class RelatedPackage
 {
@@ -83,6 +84,8 @@ public class VettingContext
     public ManifestData PublishPackageInfo { get; set; }
     public ManifestData PreviousPackageInfo { get; set; }
 
+    public ManifestData VSuiteInfo { get; set; }
+    
     public string PreviousPackageBinaryDirectory { get; set; }
     public ValidationType ValidationType { get; set; }
     public const string PreviousVersionBinaryPath = "Temp/ApiValidationBinaries";
@@ -92,7 +95,8 @@ public class VettingContext
     {
         VettingContext context = new VettingContext();
         var packageParts = packageId.Split('@');
-        var packageInfo = Utilities.UpmListOffline().SingleOrDefault(p => p.name == packageParts[0] && p.version == packageParts[1]);
+        var packageList = Utilities.UpmListOffline();
+        var packageInfo = packageList.SingleOrDefault(p => p.name == packageParts[0] && p.version == packageParts[1]);
 
         if (packageInfo == null)
         {
@@ -147,6 +151,8 @@ public class VettingContext
         {
             context.PreviousPackageInfo = null;
         }
+
+        context.VSuiteInfo = GetPackageValidationSuiteInfo(packageList);
         
         return context;
     }
@@ -327,5 +333,22 @@ public class VettingContext
         }
         else
             PreviousPackageBinaryDirectory = PreviousVersionBinaryPath;
+    }
+    
+    private static ManifestData GetPackageValidationSuiteInfo(PackageInfo[] packageList)
+    {
+        var vSuitePackageInfo = packageList.SingleOrDefault(p => p.name == Utilities.VSuiteName);
+
+        if (vSuitePackageInfo == null)
+        {
+            throw new ArgumentException($"The package {Utilities.VSuiteName} could not be found in this project.");
+        }
+        
+        return new ManifestData()
+        {
+            version = vSuitePackageInfo.version,
+            name = vSuitePackageInfo.name,
+            displayName = vSuitePackageInfo.displayName
+        };
     }
 }

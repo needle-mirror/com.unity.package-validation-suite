@@ -191,7 +191,8 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
                         extraSearchFolder, // System assemblies folder
                         Path.Combine(EditorApplication.applicationContentsPath, "Managed"), // Main Unity assemblies folder.
                         Path.Combine(EditorApplication.applicationContentsPath, "Managed/UnityEngine"), // Module assemblies folder.
-                        Path.GetDirectoryName(info.assembly.outputPath) // TODO: This is not correct. We need to keep all dependencies for the previous binaries. For now, use the same folder as the current version when resolving dependencies.
+                        Path.GetDirectoryName(info.assembly.outputPath), // TODO: This is not correct. We need to keep all dependencies for the previous binaries. For now, use the same folder as the current version when resolving dependencies.
+                        Context.ProjectPackageInfo.path // make sure to add the package folder as well, because it may contain .dll files 
                     };
 
                     var apiChangesAssemblyInfo = new APIChangesCollector.AssemblyInfo()

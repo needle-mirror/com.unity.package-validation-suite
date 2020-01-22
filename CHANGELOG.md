@@ -4,6 +4,11 @@ All notable changes to this package will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## [0.7.15] - 2020-01-22
+- Added Validation Suite version to the validation suite text report
+- Added support of <inheritdoc/> tag in missing docs validation.
+- Fixed issue with API Validation not finding some compiled assemblies inside a package
+
 ## [0.7.14] - 2020-01-03
 - Whitelisting ILSpy.exe
 

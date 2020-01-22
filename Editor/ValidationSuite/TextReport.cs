@@ -17,7 +17,10 @@ namespace UnityEditor.PackageManager.ValidationSuite
         internal void Initialize(VettingContext context)
         {
             var packageInfo = context.ProjectPackageInfo;
-            Write(string.Format("Validation Suite Results for package \"{0}\"\r\n - Path: {1}\r\n - Version: {2}\r\n - Test Time: {3}\r\n", packageInfo.name, packageInfo.path, packageInfo.version, DateTime.Now));
+            Write(string.Format(
+                "Validation Suite Results for package \"{0}\"\r\n - Path: {1}\r\n - Version: {2}\r\n - Test Time: {3}\r\n - Tested with {4} version: {5}\r\n", 
+                packageInfo.name, packageInfo.path, packageInfo.version, DateTime.Now, context.VSuiteInfo.name, context.VSuiteInfo.version)
+            );
 
             if (context.ProjectPackageInfo.dependencies.Any())
             {

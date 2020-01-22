@@ -20,6 +20,7 @@ namespace UnityEditor.PackageManager.ValidationSuite
         internal const string RuntimeTestsAssemblyDefintionSuffix = ".RuntimeTests.asmdef";
         internal const string ThirdPartyNoticeFile = "Third-Party Notices.md";
         internal const string LicenseFile = "LICENSE.md";
+        internal const string VSuiteName = "com.unity.package-validation-suite";
 
 
         public static bool NetworkNotReachable { get { return Application.internetReachability == NetworkReachability.NotReachable; } }
