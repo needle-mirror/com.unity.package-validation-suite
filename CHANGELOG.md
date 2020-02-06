@@ -4,6 +4,14 @@ All notable changes to this package will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## [0.8.0] - 2020-02-04
+- Added error to fail validation if a package has unity field 2020.2 until the new Package Lifecycle is ready
+- Added error when UNRELEASED section is present in a package CHANGELOG.md during promotion
+- Added warning when UNRELEASED section is present in a package CHANGELOG.md during CI/publish to candidates
+- Changed display name validation to allow up to 50 characters instead of 25
+- Changed path length validation to ignore hidden directories
+- Fixed documentation generation errors (missing index.md file)
+
 ## [0.7.15] - 2020-01-22
 - Added Validation Suite version to the validation suite text report
 - Added support of <inheritdoc/> tag in missing docs validation.

@@ -11,7 +11,8 @@ namespace UnityEditor.PackageManager.ValidationSuite
         ChangelogDateIsNotValid,
         NoChangelogEntryForVersionFound,
         FoundChangelogWrongPosition,
-        UnreleasedSectionFirst
+        UnreleasedSectionFirst,
+        UnreleasedNotAllowedInPromoting
     }
     
     public static class ErrorDocumentation
@@ -31,6 +32,7 @@ namespace UnityEditor.PackageManager.ValidationSuite
             {ErrorTypes.NoChangelogEntryForVersionFound, new ErrorLink { FilePath = "changelog_validation_error.html", FileSection = "no-changelog-entry-for-version-was-found"}},
             {ErrorTypes.FoundChangelogWrongPosition, new ErrorLink { FilePath = "changelog_validation_error.html", FileSection = "found-changelog-correct-entry-but-it-was-not-the-first-entry"}},
             {ErrorTypes.UnreleasedSectionFirst, new ErrorLink { FilePath = "changelog_validation_error.html", FileSection = "unreleased-section-has-to-be-the-first-section-in-the-changelog"}},
+            {ErrorTypes.UnreleasedNotAllowedInPromoting, new ErrorLink { FilePath = "changelog_validation_error.html", FileSection = "unreleased-section-in-the-changelog-is-not-allowed-while-promoting"}},
         };
 
         public static string GetLinkMessage(ErrorTypes error)

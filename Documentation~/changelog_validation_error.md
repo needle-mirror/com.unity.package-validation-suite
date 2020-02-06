@@ -57,4 +57,9 @@ You have the correct section in the changelog, but it seems to be out of order. 
 There can only be one... Unreleased section in the Changelog. And it has to be the first one. Remove any duplicates and make sure the section is at the top.
 This is so that we follow the [keep a changelog](https://keepachangelog.com) specifications.
 **This check is currently a warning since previous iterations of the validation suite did not catch this.**
-So make sure you fix this since it will be converted into an error in the future.
+
+## Unreleased section in the Changelog is not allowed while promoting 
+The package has an [unreleased] section in the changelog. This is accepted in CI, and internal publishing, but is not accepted when sharing externally with clients.  
+**On publishing** a warning is displayed to remind you that on promotion the unreleased section in the changelog is not allowed and will have to be removed.  
+**On promotion** to a public registry (extrenal clients) an error appears specifying that the promotion is not possible with an unreleased section in the changelog.  
+To fix the error you have to publish a new version which replaces the `unreleased` tag by the new version being published. 

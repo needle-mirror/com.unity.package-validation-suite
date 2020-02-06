@@ -24,11 +24,28 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
             return Path.Combine(path1, path2);
         }
 
+        private bool IsHiddenDirectory(string path)
+        {
+            if (path.Length > 0 
+            && (path[path.Length-1] == Path.DirectorySeparatorChar
+            ||  path[path.Length-1] == Path.AltDirectorySeparatorChar))
+                path = path.Substring(0, path.Length-1);
+
+            string dir = Path.GetFileName(path);
+
+            if (dir.EndsWith("~") || dir.StartsWith("."))
+                return true;
+            return false;
+        }
+
         void CheckPathLengthInFolderRecursively(string relativeFolder, string absoluteBasePath)
         {
             try
             {
                 var fullFolder = CombineAllowingEmpty(absoluteBasePath, relativeFolder);
+                if (IsHiddenDirectory(fullFolder))
+                    return;
+
                 foreach (string entry in Directory.GetFileSystemEntries(fullFolder))
                 {
                     var fullPath = CombineAllowingEmpty(relativeFolder, Path.GetFileName(entry));

@@ -88,6 +88,33 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
                     {
                         AddWarningWithLine(string.Format("Unreleased section has to be the first section in the Changelog but it was number {0}. Please move it to the top or remove duplicate entries. {1}", currentIndex, ErrorDocumentation.GetLinkMessage(ErrorTypes.UnreleasedSectionFirst)), match.ToString());
                     }
+                    
+                    if (Context.ValidationType == ValidationType.CI)
+                    {
+                        AddWarningWithLine(
+                            string.Format(
+                                "The package has an [unreleased] section in the changelog in {0}. This is accepted in CI, and internal publishing,"
+                                + " but is not accepted when sharing externally with clients. Please curate your unreleased section to reflect the package version before promoting your package to production. {1}",
+                                changeLogPath,
+                                ErrorDocumentation.GetLinkMessage(ErrorTypes.UnreleasedNotAllowedInPromoting)
+                            ), 
+                            match.ToString()
+                        );
+                    }
+                    
+                    if (Context.ValidationType == ValidationType.Publishing)
+                    {
+                        AddErrorWithLine(
+                            string.Format(
+                                "The package has an [unreleased] section in the changelog in {0}. This is accepted in CI, and internal publishing,"
+                                + " but is not accepted when sharing externally with clients. Please curate your unreleased section to reflect the package version before promoting your package to production. {1}",
+                                changeLogPath,
+                                ErrorDocumentation.GetLinkMessage(ErrorTypes.UnreleasedNotAllowedInPromoting)
+                            ), 
+                            match.ToString()
+                        );
+                    }
+
                     currentIndex++;
                     continue;
                 }

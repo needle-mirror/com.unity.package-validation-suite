@@ -54,7 +54,7 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
             TestState = TestState.Succeeded;
         }
 
-        public void GenerateReport(string outputPath, VettingContext.ManifestData package1, VettingContext.ManifestData package2)
+        public void GenerateReport(string outputPath, ManifestData newPackageManifestData, ManifestData previousPackageManifestData)
         {
             // no previous package was found.
             if (Context.PreviousPackageInfo == null)
@@ -65,24 +65,24 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
 
             var compareData = new PackageCompareData();
 
-            compareData.TreeOutput.AppendLine("<" + package1.name + ">");
-            Compare(compareData, package1.path, package2.path, 1);
+            compareData.TreeOutput.AppendLine("<" + newPackageManifestData.name + ">");
+            Compare(compareData, newPackageManifestData.path, previousPackageManifestData.path, 1);
 
-            string fileName = Path.Combine(outputPath, package1.name + "@" + package1.version) + ".delta";
+            string fileName = Path.Combine(outputPath, newPackageManifestData.name + "@" + newPackageManifestData.version) + ".delta";
             StringBuilder Outout = new StringBuilder();
             Outout.AppendLine("Package Update Delta Evaluation");
             Outout.AppendLine("-------------------------------");
             Outout.AppendLine("");
-            Outout.AppendLine("Package Name: " + package1.name);
-            Outout.AppendLine("Package Version: " + package1.version);
-            Outout.AppendLine("Compared to Version: " + package2.version);
+            Outout.AppendLine("Package Name: " + newPackageManifestData.name);
+            Outout.AppendLine("Package Version: " + newPackageManifestData.version);
+            Outout.AppendLine("Compared to Version: " + previousPackageManifestData.version);
             Outout.AppendLine("");
             if (compareData.Added.Any())
             {
                 Outout.AppendLine("New in package:");
                 foreach (var addedFile in compareData.Added)
                 {
-                    Outout.AppendLine("    " + addedFile.Substring(package2.path.Length));
+                    Outout.AppendLine("    " + addedFile.Substring(previousPackageManifestData.path.Length));
                 }
 
                 Outout.AppendLine("");
@@ -93,7 +93,7 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
                 Outout.AppendLine("Removed from package:");
                 foreach (var removedFile in compareData.Removed)
                 {
-                    Outout.AppendLine("    " + removedFile.Substring(package1.path.Length));
+                    Outout.AppendLine("    " + removedFile.Substring(newPackageManifestData.path.Length));
                 }
 
                 Outout.AppendLine("");
@@ -104,7 +104,7 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
                 Outout.AppendLine("Modified:");
                 foreach (var modifiedFile in compareData.Modified)
                 {
-                    Outout.AppendLine("    " + modifiedFile.Substring(package1.path.Length));
+                    Outout.AppendLine("    " + modifiedFile.Substring(newPackageManifestData.path.Length));
                 }
 
                 Outout.AppendLine("");

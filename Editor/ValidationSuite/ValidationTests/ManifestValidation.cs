@@ -14,6 +14,7 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
         private const string UpmRegex = @"^[a-z0-9][a-z0-9-._]{0,213}$";
         private const string UpmDisplayRegex = @"^[a-zA-Z0-9 ]+$";
         private const int MinDescriptionSize = 50;
+        private const int MaxDisplayNameLength = 50;
 
         public ManifestValidation()
         {
@@ -67,13 +68,23 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
                     continue;
                 }
 
-                // Check if this package's dependencies are in production.  That is a requirement for publishing.
+                // Check if this package's dependencies are in production. That is a requirement for publishing.
                 if (Context.ValidationType != ValidationType.VerifiedSet && !Utilities.PackageExistsOnProduction(packageId))
                 {
                     if (Context.ValidationType == ValidationType.Publishing || Context.ValidationType == ValidationType.AssetStore)
                         AddError("Package dependency {0} is not published in production.", packageId);
                     else
                         AddWarning("Package dependency {0} must be published to production before this package is published to production.  (Except for core packages)", packageId);
+                }
+                
+                // only check this in CI or internal local development
+                // Make sure the dependencies I ask for that exist in the project have the good version
+                if (Context.ValidationType == ValidationType.CI || Context.ValidationType == ValidationType.LocalDevelopmentInternal) {
+                    PackageInfo packageInfo = Utilities.UpmListOffline(dependency.Key).FirstOrDefault();
+                    if (packageInfo != null && packageInfo.version != dependency.Value)
+                    {
+                        AddWarning("The package {2} depends on {0}, which is found locally but with another version. To remove this warning, in the package.json file of {2}, change the dependency of {0}@{1} to {0}@{3}.", dependency.Key, dependency.Value, Context.ProjectPackageInfo.name, packageInfo.version);
+                    }
                 }
             }
 
@@ -135,9 +146,9 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
             {
                 AddError("In package.json, \"displayName\" must be set.");
             }
-            else if (manifestData.displayName.Length > 25)
+            else if (manifestData.displayName.Length > MaxDisplayNameLength)
             {
-                AddError("In package.json, \"displayName\" is too long. Max Length = 25");
+                AddError($"In package.json, \"displayName\" is too long. Max Length = {MaxDisplayNameLength}. Current Length = {manifestData.displayName.Length}");
             }
             else if (!Regex.Match(manifestData.displayName, UpmDisplayRegex).Success)
             {
@@ -167,7 +178,7 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
             ValidateVersion(manifestData);
         }
 
-        private void ValidateVersion(VettingContext.ManifestData manifestData)
+        private void ValidateVersion(ManifestData manifestData)
         {
             // Check package version, make sure it's a valid SemVer string.
             SemVersion packageVersionNumber;
