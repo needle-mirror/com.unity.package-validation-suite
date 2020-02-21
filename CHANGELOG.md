@@ -4,6 +4,11 @@ All notable changes to this package will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## [0.8.1] - 2020-02-20
+- Whitelisted bee.dll, pram.exe, tundra2.exe. Required for incremental build pipeline used in com.unity.platforms
+- Added information line to API Validation to know which version was used for comparison
+- Fixed validate button not appearing when a package was added through a git URL or a local tarball path
+
 ## [0.8.0] - 2020-02-04
 - Added error to fail validation if a package has unity field 2020.2 until the new Package Lifecycle is ready
 - Added error when UNRELEASED section is present in a package CHANGELOG.md during promotion

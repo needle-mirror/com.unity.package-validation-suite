@@ -85,7 +85,10 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
             "Unity.CollabProxy.Server.exe",  // required for com.unity.collab-proxy
             "COMIntegration.exe",       // required for com.unity.ide.visualstudio
             "Unity.ProcessServer.exe", // required for com.unity.process-server
-            "ilspycmd.exe"             // required for com.unity.entities
+            "ilspycmd.exe",             // required for com.unity.entities
+            "bee.dll",                  // required by com.unity.platforms
+            "pram.exe",                 // required by com.unity.platforms
+            "tundra2.exe"               // required by com.unity.platforms
         };
 
         private readonly string[] restrictedFileList =

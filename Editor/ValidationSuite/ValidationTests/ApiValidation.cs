@@ -69,28 +69,12 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
                 }
             }
 
-            CheckForAsmdefsNotIncludedInEditor();
             return relevantAssemblyInfo;
         }
 
         private bool DoAssembliesMatch(AssemblyDefinition assemblyDefinition1, AssemblyDefinition assemblyDefinition2)
         {
             return validationAssemblyInformation.GetAssemblyName(assemblyDefinition1, true).Equals(validationAssemblyInformation.GetAssemblyName(assemblyDefinition2, false));
-        }
-
-        private void CheckForAsmdefsNotIncludedInEditor()
-        {
-            var assemblyDefinitions = GetAssemblyDefinitionDataInFolder(Context.ProjectPackageInfo.path);
-            foreach (var assemblyDefinition in assemblyDefinitions)
-            {
-                if (assemblyDefinition.includePlatforms.Any() &&
-                    !assemblyDefinition.includePlatforms.Contains("Editor") ||
-                    assemblyDefinition.excludePlatforms.Any() &&
-                    assemblyDefinition.excludePlatforms.Contains("Editor"))
-                {
-                    AddError("Package Validation Suite does not support .asmdefs that are not built on the \"Editor\" platform. See \"{0}\"", assemblyDefinition.name);
-                }
-            }
         }
 
         private AssemblyDefinition[] GetAssemblyDefinitionDataInFolder(string directory)
@@ -182,17 +166,17 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
             {
                 var assemblyDefinition = info.assemblyDefinition;
                 var oldAssemblyPath = oldAssemblyPaths.FirstOrDefault(p => Path.GetFileNameWithoutExtension(p) == assemblyDefinition.name);
-                
+
                 if (info.assembly != null)
                 {
                     var extraSearchFolder = Path.GetDirectoryName(typeof(System.ObsoleteAttribute).Assembly.Location);
-                    var assemblySearchFolder = new[] 
+                    var assemblySearchFolder = new[]
                     {
                         extraSearchFolder, // System assemblies folder
                         Path.Combine(EditorApplication.applicationContentsPath, "Managed"), // Main Unity assemblies folder.
                         Path.Combine(EditorApplication.applicationContentsPath, "Managed/UnityEngine"), // Module assemblies folder.
                         Path.GetDirectoryName(info.assembly.outputPath), // TODO: This is not correct. We need to keep all dependencies for the previous binaries. For now, use the same folder as the current version when resolving dependencies.
-                        Context.ProjectPackageInfo.path // make sure to add the package folder as well, because it may contain .dll files 
+                        Context.ProjectPackageInfo.path // make sure to add the package folder as well, because it may contain .dll files
                     };
 
                     var apiChangesAssemblyInfo = new APIChangesCollector.AssemblyInfo()
@@ -231,6 +215,7 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
             diff.removedAssemblyCount = diff.missingAssemblies.Count;
             diff.breakingChanges = diff.assemblyChanges.Sum(v => v.breakingChanges.Count);
 
+            AddInformation("Tested against version {0}", Context.PreviousPackageInfo.Id);
             AddInformation("API Diff - Breaking changes: {0} Additions: {1} Missing Assemblies: {2}",
                 diff.breakingChanges,
                 diff.additions,

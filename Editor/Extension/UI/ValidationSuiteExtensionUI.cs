@@ -46,7 +46,16 @@ namespace UnityEditor.PackageManager.ValidationSuite.UI
         public static bool SourceSupported(PackageInfo info)
         {
             PackageSource source = info.source;
-            return source == PackageSource.Embedded || source == PackageSource.Local || source == PackageSource.Registry || (info.source == PackageSource.BuiltIn && info.type != "module");
+            #if UNITY_2019_3_OR_NEWER
+            // Tarball is available here only, so check if its a tarball and return true
+            if (source == PackageSource.LocalTarball) return true;
+            #endif
+
+            return source == PackageSource.Embedded
+                || source == PackageSource.Local
+                || source == PackageSource.Registry
+                || source == PackageSource.Git
+                || (info.source == PackageSource.BuiltIn && info.type != "module");
         }
 
         public void OnPackageSelectionChange(PackageInfo packageInfo)
