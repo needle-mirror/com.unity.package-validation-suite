@@ -34,11 +34,14 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
 
         public bool ShouldRun { get; set; }
 
+        public bool CanUseValidationExceptions { get; set; }
+
         protected BaseValidation()
         {
             TestState = TestState.NotRun;
             TestOutput = new List<ValidationTestOutput>();
             ShouldRun = true;
+            CanUseValidationExceptions = false;
             StartTime = DateTime.Now;
             EndTime = DateTime.Now;
             SupportedValidations = new[] { ValidationType.AssetStore, ValidationType.CI, ValidationType.LocalDevelopment, ValidationType.LocalDevelopmentInternal, ValidationType.Publishing, ValidationType.VerifiedSet };
@@ -77,8 +80,16 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
 
         public void AddError(string message)
         {
-            TestOutput.Add(new ValidationTestOutput() {Type = TestOutputType.Error, Output = message});
-            TestState = TestState.Failed;
+            // let's check for Validation Exceptions
+            if (CanUseValidationExceptions && Context.ValidationExceptionManager.IsException(TestName, message, Context.PublishPackageInfo.version))
+            {
+                TestOutput.Add(new ValidationTestOutput() { Type = TestOutputType.ErrorMarkedWithException, Output = message });
+            }
+            else
+            {
+                TestOutput.Add(new ValidationTestOutput() { Type = TestOutputType.Error, Output = message });
+                TestState = TestState.Failed;
+            }
         }
 
         public void AddWarning(string message)

@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Threading;
+using UnityEngine.Profiling;
 
 namespace UnityEditor.PackageManager.ValidationSuite
 {
@@ -9,6 +10,7 @@ namespace UnityEditor.PackageManager.ValidationSuite
         internal static List<string> Pack(string path, string destinationPath)
         {
 #if UNITY_2019_3_OR_NEWER
+            Profiler.BeginSample("Pack");
             var packRequest = Client.Pack(path, destinationPath);
             while (!packRequest.IsCompleted)
             {
@@ -20,6 +22,7 @@ namespace UnityEditor.PackageManager.ValidationSuite
 
             var generatedPackages = new List<string>();
             generatedPackages.Add(packRequest.Result.tarballPath);
+            Profiler.EndSample();
             return generatedPackages;
 #else
             return _Pack("package", path, destinationPath);

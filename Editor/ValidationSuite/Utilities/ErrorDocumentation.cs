@@ -12,9 +12,11 @@ namespace UnityEditor.PackageManager.ValidationSuite
         NoChangelogEntryForVersionFound,
         FoundChangelogWrongPosition,
         UnreleasedSectionFirst,
-        UnreleasedNotAllowedInPromoting
+        UnreleasedNotAllowedInPromoting,
+        LicenseFileMissing,
+        InvalidLifecycleV2
     }
-    
+
     public static class ErrorDocumentation
     {
         class ErrorLink
@@ -22,7 +24,7 @@ namespace UnityEditor.PackageManager.ValidationSuite
             public string FilePath { get; set; }
             public string FileSection { get; set; }
         }
-        
+
         static Dictionary<ErrorTypes, ErrorLink> _links = new Dictionary<ErrorTypes, ErrorLink>
         {
             {ErrorTypes.CannotFindChangelog, new ErrorLink { FilePath = "changelog_validation_error.html", FileSection = "cannot-find-changelog"}},
@@ -33,6 +35,8 @@ namespace UnityEditor.PackageManager.ValidationSuite
             {ErrorTypes.FoundChangelogWrongPosition, new ErrorLink { FilePath = "changelog_validation_error.html", FileSection = "found-changelog-correct-entry-but-it-was-not-the-first-entry"}},
             {ErrorTypes.UnreleasedSectionFirst, new ErrorLink { FilePath = "changelog_validation_error.html", FileSection = "unreleased-section-has-to-be-the-first-section-in-the-changelog"}},
             {ErrorTypes.UnreleasedNotAllowedInPromoting, new ErrorLink { FilePath = "changelog_validation_error.html", FileSection = "unreleased-section-in-the-changelog-is-not-allowed-while-promoting"}},
+            {ErrorTypes.LicenseFileMissing, new ErrorLink { FilePath = "license_validation_error.html", FileSection = "every-package-must-have-a-license-file"}},
+            {ErrorTypes.InvalidLifecycleV2, new ErrorLink { FilePath = "lifecycle_validation_error.html", FileSection = "lifecycle-v2-tagging-rules"}},
         };
 
         public static string GetLinkMessage(ErrorTypes error)
@@ -43,11 +47,17 @@ namespace UnityEditor.PackageManager.ValidationSuite
             {
                 return "Further documentation for this error is unavailable. Please report this since we always want to have further documentation on all errors";
             }
-            StringBuilder sb = new StringBuilder();
+
+            return GetLinkMessage(errorLink.FilePath, errorLink.FileSection);
+        }
+
+        public static string GetLinkMessage(string filePath, string fileSection)
+        {
+            var sb = new StringBuilder();
             sb.Append("Read more about this error and potential solutions at https://docs.unity3d.com/Packages/com.unity.package-validation-suite@latest/index.html?preview=1&subfolder=/manual/");
-            sb.Append(errorLink.FilePath);
+            sb.Append(filePath);
             sb.Append("%23");
-            sb.Append(errorLink.FileSection);
+            sb.Append(fileSection);
             return sb.ToString();
         }
     }

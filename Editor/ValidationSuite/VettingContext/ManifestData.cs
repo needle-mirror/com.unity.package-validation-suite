@@ -3,6 +3,7 @@ using System.Collections.Generic;
 
 using UnityEngine;
 using Semver;
+using UnityEditor.PackageManager.ValidationSuite.Utils;
 
 namespace UnityEditor.PackageManager.ValidationSuite
 {
@@ -26,6 +27,10 @@ namespace UnityEditor.PackageManager.ValidationSuite
             get { return version.ToLower().Contains("-preview"); }
         }
 
+        internal LifecyclePhase LifecyclePhase {
+            get { return PackageLifecyclePhase.GetLifecyclePhase(version.ToLower()); }
+        }
+
         public bool IsProjectTemplate
         {
             get { return type.Equals("template", StringComparison.InvariantCultureIgnoreCase); }
@@ -43,7 +48,7 @@ namespace UnityEditor.PackageManager.ValidationSuite
 
         public static double EvaluateLifecycle(string unityVersion)
         {
-            return (SemVersion.Parse(unityVersion) < new SemVersion(2020, 2, 0)) ? 1.0 : 2.0;
+            return (SemVersion.Parse(unityVersion) < new SemVersion(2021, 1, 0)) ? 1.0 : 2.0;
         }
     }
 

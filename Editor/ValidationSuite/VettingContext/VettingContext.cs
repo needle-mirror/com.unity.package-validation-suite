@@ -8,6 +8,7 @@ using Semver;
 
 using UnityEngine;
 using UnityEngine.Networking;
+using UnityEngine.Profiling;
 using UnityEditor.PackageManager.ValidationSuite.ValidationTests;
 
 namespace UnityEditor.PackageManager.ValidationSuite
@@ -29,9 +30,12 @@ namespace UnityEditor.PackageManager.ValidationSuite
         public ValidationType ValidationType { get; set; }
         public const string PreviousVersionBinaryPath = "Temp/ApiValidationBinaries";
         public List<RelatedPackage> relatedPackages = new List<RelatedPackage>();
+        public ValidationExceptionManager ValidationExceptionManager { get; set; }
 
         public static VettingContext CreatePackmanContext(string packageId, ValidationType validationType)
         {
+            Profiler.BeginSample("CreatePackmanContext");
+
             VettingContext context = new VettingContext();
             var packageParts = packageId.Split('@');
             var packageList = Utilities.UpmListOffline();
@@ -60,6 +64,7 @@ namespace UnityEditor.PackageManager.ValidationSuite
                 context.PublishPackageInfo = GetManifest(packageInfo.resolvedPath);
             }
 
+            Profiler.BeginSample("RelatedPackages");
             foreach (var relatedPackage in context.PublishPackageInfo.relatedPackages)
             {
                 // Check to see if the package is available locally
@@ -75,6 +80,7 @@ namespace UnityEditor.PackageManager.ValidationSuite
                 context.relatedPackages.Add(new RelatedPackage(relatedPackage.Key, relatedPackage.Value,
                     relatedPackageInfo.First().resolvedPath));
             }
+            Profiler.EndSample();
 
             // No need to compare against the previous version of the package if we're testing out the verified set.
             if (context.ValidationType != ValidationType.VerifiedSet)
@@ -93,6 +99,11 @@ namespace UnityEditor.PackageManager.ValidationSuite
 
             context.VSuiteInfo = GetPackageValidationSuiteInfo(packageList);
 
+            // Get exception Data, if any was added to the package.
+            context.ValidationExceptionManager = new ValidationExceptionManager(context.PublishPackageInfo.path);
+
+            Profiler.EndSample();
+
             return context;
         }
 
@@ -108,6 +119,8 @@ namespace UnityEditor.PackageManager.ValidationSuite
 
         public static ManifestData GetManifest(string packagePath)
         {
+            Profiler.BeginSample("GetManifest");
+
             // Start by parsing the package's manifest data.
             var manifestPath = Path.Combine(packagePath, Utilities.PackageJsonFilename);
 
@@ -124,6 +137,8 @@ namespace UnityEditor.PackageManager.ValidationSuite
             manifest.relatedPackages = ParseDictionary(textManifestData, "relatedPackages");
             manifest.repository = ParseDictionary(textManifestData, "repository");
             manifest.lifecycle = ManifestData.EvaluateLifecycle(manifest.unity);
+
+            Profiler.EndSample();
 
             return manifest;
         }
@@ -179,6 +194,8 @@ namespace UnityEditor.PackageManager.ValidationSuite
             }
             else
             {
+                Profiler.BeginSample("PublishPackage");
+
                 var tempPath = System.IO.Path.GetTempPath();
                 string packageName = context.ProjectPackageInfo.Id.Replace("@", "-") + ".tgz";
 
@@ -192,6 +209,8 @@ namespace UnityEditor.PackageManager.ValidationSuite
                     Utilities.ExtractPackage(packageTgzName, tempPath, publishPackagePath, context.ProjectPackageInfo.name, deleteOutput);
                     deleteOutput = false;
                 }
+
+                Profiler.EndSample();
 
                 return publishPackagePath;
             }
@@ -250,6 +269,8 @@ namespace UnityEditor.PackageManager.ValidationSuite
 
         private void DownloadAssembliesForPreviousVersion()
         {
+            Profiler.BeginSample("DownloadAssembliesForPreviousVersion");
+
             if (Directory.Exists(PreviousVersionBinaryPath))
                 Directory.Delete(PreviousVersionBinaryPath, true);
 
@@ -273,6 +294,8 @@ namespace UnityEditor.PackageManager.ValidationSuite
             }
             else
                 PreviousPackageBinaryDirectory = PreviousVersionBinaryPath;
+
+            Profiler.EndSample();
         }
 
         private static ManifestData GetPackageValidationSuiteInfo(PackageInfo[] packageList)

@@ -6,6 +6,7 @@ using System.Reflection;
 using System.Text.RegularExpressions;
 using UnityEditor.PackageManager.ValidationSuite.ValidationTests;
 using UnityEngine;
+using UnityEngine.Profiling;
 
 namespace UnityEditor.PackageManager.ValidationSuite
 {
@@ -128,6 +129,8 @@ namespace UnityEditor.PackageManager.ValidationSuite
 
         public static bool ValidatePackage(VettingContext context, ValidationType validationType, out ValidationSuiteReport report)
         {
+            Profiler.BeginSample("ValidatePackage");
+
             report = new ValidationSuiteReport(context.ProjectPackageInfo.Id, context.ProjectPackageInfo.name, context.ProjectPackageInfo.version, context.ProjectPackageInfo.path);
 
             try
@@ -137,11 +140,14 @@ namespace UnityEditor.PackageManager.ValidationSuite
 
                 report.Initialize(testSuite.context);
                 testSuite.RunSync();
-                return testSuite.testSuiteState == TestState.Succeeded;
+                Profiler.EndSample();
+                return (testSuite.testSuiteState == TestState.Succeeded) &&
+                       context.ValidationExceptionManager.IsValid;
             }
             catch (Exception e)
             {
                 report.OutputErrorReport(string.Format("Test Setup Error: \"{0}\"\r\n", e));
+                Profiler.EndSample();
                 return false;
             }
         }
@@ -228,14 +234,20 @@ namespace UnityEditor.PackageManager.ValidationSuite
 
         internal void RunSync()
         {
+            Profiler.BeginSample("RunSync");
             foreach (var test in validationTests)
             {
                 test.Context = context;
                 test.Suite = this;
+
+                Profiler.BeginSample(test.TestName + ".setup");
                 test.Setup();
+                Profiler.EndSample();
             }
 
             Run();
+
+            Profiler.EndSample();
         }
 
         static bool ValidatePackages(IEnumerable<string> packageIds, ValidationType validationType)
@@ -260,6 +272,8 @@ namespace UnityEditor.PackageManager.ValidationSuite
 
         void BuildTestSuite()
         {
+            Profiler.BeginSample("BuildTestSuite");
+
             // Use reflection to discover all Validation Tests in the project with base type == BaseValidation.
             List<BaseValidation> testList = new List<BaseValidation>();
             Assembly[] currentDomainAssemblies = AppDomain.CurrentDomain.GetAssemblies();
@@ -278,11 +292,15 @@ namespace UnityEditor.PackageManager.ValidationSuite
             }
 
             validationTests = testList;
+
+            Profiler.EndSample();
         }
 
         // Call all static methods with a given attribute type passing them the vetting context
         void CallSuiteHandler(Type handlerAttributeType)
         {
+            Profiler.BeginSample("CallSuiteHandler." + handlerAttributeType.Name);
+
             foreach (Assembly assembly in AppDomain.CurrentDomain.GetAssemblies())
             {
                 try
@@ -295,7 +313,9 @@ namespace UnityEditor.PackageManager.ValidationSuite
                             if ((method.ReturnType != typeof(void)) || (methodParameters.Length != 1) || (methodParameters[0].ParameterType != typeof(VettingContext)))
                                 throw new InvalidOperationException("Method '" + type.Name + "." + method.Name + "' with attribute [" + handlerAttributeType.Name + "] has the incorrect prototype, it must be \"void XXX(VettingContext)\"");
 
+                            Profiler.BeginSample("CallSuiteHandler." + type.Name + "." + method.Name);
                             method.Invoke(null, new object[] { context });
+                            Profiler.EndSample();
                         }
                     }
                 }
@@ -303,10 +323,14 @@ namespace UnityEditor.PackageManager.ValidationSuite
                 {
                 }
             }
+
+            Profiler.EndSample();
         }
 
         void Run()
         {
+            Profiler.BeginSample("Run");
+
             testSuiteState = TestState.Succeeded;
             StartTime = DateTime.Now;
             testSuiteState = TestState.Running;
@@ -322,7 +346,9 @@ namespace UnityEditor.PackageManager.ValidationSuite
 
                 try
                 {
+                    Profiler.BeginSample(test.TestName + ".run");
                     test.RunTest();
+                    Profiler.EndSample();
 
                     if (test.TestState == TestState.Failed)
                     {
@@ -352,6 +378,8 @@ namespace UnityEditor.PackageManager.ValidationSuite
 
             // when we're done, signal the main thread and all other interested
             allTestsCompletedDelegate(this, testSuiteState);
+
+            Profiler.EndSample();
         }
 
         /// <summary>

@@ -9,9 +9,14 @@ namespace UnityEditor.PackageManager.ValidationSuite {
     {
         /// <summary>The test output string is simply informational.</summary>
         Information,
+
         /// <summary>The test output string is a warning</summary>
         Warning,
+
         /// <summary>The test output string is an error</summary>
         Error,
+
+        /// <summary>The test output string is an error, but was part of the exception list</summary>
+        ErrorMarkedWithException
     }
 }

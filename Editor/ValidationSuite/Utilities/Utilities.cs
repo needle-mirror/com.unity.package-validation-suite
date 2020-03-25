@@ -5,8 +5,10 @@ using System.Linq;
 using System.Linq.Expressions;
 using Semver;
 using UnityEngine;
+using UnityEngine.Profiling;
 using UnityEditor.Compilation;
 using UnityEditor.PackageManager.ValidationSuite.ValidationTests;
+using UnityEditor.PackageManager.ValidationSuite.Utils;
 
 namespace UnityEditor.PackageManager.ValidationSuite
 {
@@ -36,7 +38,8 @@ namespace UnityEditor.PackageManager.ValidationSuite
         public static bool IsPreviewVersion(string version)
         {
             var semVer = SemVersion.Parse(version);
-            return semVer.Prerelease.Contains("preview") || semVer.Major == 0;
+            VersionTag pre = VersionTag.Parse(semVer.Prerelease);
+            return PackageLifecyclePhase.IsPreviewVersion(semVer, pre);
         }
 
         internal static T GetDataFromJson<T>(string jsonFile)
@@ -59,6 +62,7 @@ namespace UnityEditor.PackageManager.ValidationSuite
 
         internal static PackageManager.PackageInfo[] UpmSearch(string packageIdOrName = null, bool throwOnRequestFailure = false)
         {
+            Profiler.BeginSample("UpmSearch");
             var request = string.IsNullOrEmpty(packageIdOrName) ? Client.SearchAll() : Client.Search(packageIdOrName);
             while (!request.IsCompleted)
             {
@@ -68,11 +72,14 @@ namespace UnityEditor.PackageManager.ValidationSuite
             }
             if (throwOnRequestFailure && request.Status == StatusCode.Failure)
                 throw new Exception("Failed to fetch package infomation.  Error details: " + request.Error.errorCode + " " + request.Error.message);
+            Profiler.EndSample();
             return request.Result;
         }
 
         internal static PackageManager.PackageInfo[] UpmListOffline(string packageIdOrName = null)
         {
+            Profiler.BeginSample("UpmListOffline");
+
 #if UNITY_2019_2_OR_NEWER
             var request = Client.List(true, true);
 #else
@@ -88,6 +95,9 @@ namespace UnityEditor.PackageManager.ValidationSuite
                     continue;
                 result.Add(upmPackage);
             }
+
+            Profiler.EndSample();
+
             return result.ToArray();
         }
 
@@ -135,6 +145,8 @@ namespace UnityEditor.PackageManager.ValidationSuite
 
         public static string ExtractPackage(string fullPackagePath, string workingPath, string outputDirectory, string packageName, bool deleteOutputDir = true)
         {
+            Profiler.BeginSample("ExtractPackage");
+
             //verify if package exists
             if (!fullPackagePath.EndsWith(".tgz"))
                 throw new ArgumentException("Package should be a .tgz file");
@@ -234,6 +246,7 @@ namespace UnityEditor.PackageManager.ValidationSuite
                 }
             }
 
+            Profiler.EndSample();
             return outputDirectory;
         }
 
@@ -242,7 +255,7 @@ namespace UnityEditor.PackageManager.ValidationSuite
             var monoPath = Path.Combine(EditorApplication.applicationContentsPath, "MonoBleedingEdge/bin", Application.platform == RuntimePlatform.WindowsEditor ? "mono.exe" : "mono");
             return monoPath;
         }
-        
+
         public static bool IsTestAssembly(Assembly assembly)
         {
             // see https://unity.slack.com/archives/C26EP4SUQ/p1555485851157200?thread_ts=1555441110.131100&cid=C26EP4SUQ for details about how this is verified
@@ -250,8 +263,8 @@ namespace UnityEditor.PackageManager.ValidationSuite
             {
                 return true;
             }
-            
-            // Marking an assembly with UNITY_INCLUDE_TESTS means: 
+
+            // Marking an assembly with UNITY_INCLUDE_TESTS means:
             // Include this assembly in the Unity project only if that package is in a testable state.
             // Otherwise, the assembly is ignored
             //
@@ -307,7 +320,7 @@ namespace UnityEditor.PackageManager.ValidationSuite
 
             return null;
         }
-        
+
         // Return all types from an assembly that can be loaded
         internal static IEnumerable<Type> GetTypesSafe(System.Reflection.Assembly assembly)
         {
@@ -320,7 +333,7 @@ namespace UnityEditor.PackageManager.ValidationSuite
                 return e.Types.Where(t => t != null);
             }
         }
-        
+
         internal static AssemblyInfo AssemblyInfoFromAssembly(Assembly assembly)
         {
             var path = CompilationPipeline.GetAssemblyDefinitionFilePathFromAssemblyName(assembly.name);

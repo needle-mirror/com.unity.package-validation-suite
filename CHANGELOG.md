@@ -4,6 +4,16 @@ All notable changes to this package will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## [0.9.0] - 2020-03-24
+- Added new rules to validate version tagging in lifecycle v2
+- Added Validation Exception mechanism to be able to manage known exceptions
+- Added whitelist for dsymutil.exe. Required to support debug symbols for MacOS cross compilation
+- Added profile markers to Validation Suite tests
+- Changed Lifecycle V2 version validation to 2021.1
+
+## [0.8.2] - 2020-03-03
+- Changed validation to warning when License is not present for Verified packages
+
 ## [0.8.1] - 2020-02-20
 - Whitelisted bee.dll, pram.exe, tundra2.exe. Required for incremental build pipeline used in com.unity.platforms
 - Added information line to API Validation to know which version was used for comparison

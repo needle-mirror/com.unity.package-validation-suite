@@ -66,6 +66,7 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
             "vswhere.exe",            // required for com.unity.ide.visualstudio
             "bcl.exe",                // required for com.unity.burst
             "lld.exe",                // required for com.unity.burst
+            "dsymutil.exe",           // required for com.unity.burst
             "burst-llvm.lib",         // required for com.unity.burst
             "burst-llvm.dll",         // required for com.unity.burst
             "Burst.Backend.dll",      // required for com.unity.burst

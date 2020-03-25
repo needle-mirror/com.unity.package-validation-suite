@@ -27,9 +27,13 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
                 // TODO: If the license file exists, check that the copyright year is setup properly.
                 CheckLicenseContent(licenseFilePath);
             }
+            else if (Context.ValidationType == ValidationType.VerifiedSet)
+            {
+                AddWarning(string.Format("Every package must have a LICENSE.md file. {0}", ErrorDocumentation.GetLinkMessage(ErrorTypes.LicenseFileMissing)));
+            }
             else
             {
-                AddError("Every package must have a LICENSE.md file.");
+                AddError(string.Format("Every package must have a LICENSE.md file. {0}", ErrorDocumentation.GetLinkMessage(ErrorTypes.LicenseFileMissing)));
             }
 
             // Check that the 3rd party notice file is not empty, and does not come from the starter kit.

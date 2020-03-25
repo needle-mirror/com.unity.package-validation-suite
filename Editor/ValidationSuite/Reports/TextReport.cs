@@ -36,8 +36,20 @@ namespace UnityEditor.PackageManager.ValidationSuite
                 }
             }
 
+            if (context.ValidationExceptionManager.HasExceptions)
+            {
+                Append("\r\n\r\n***************************************\r\n");
+                Append("PACKAGE CONTAINS VALIDATION EXCEPTIONS!\r\n");
+                var issuesList = context.ValidationExceptionManager.CheckValidationExceptions(context.PublishPackageInfo.version);
+                foreach (var issue in issuesList)
+                {
+                    Append("\r\n- Error: " + issue + "\r\n");
+                }
+                Append("***************************************\r\n");
+            }
+
             Append("\r\nVALIDATION RESULTS:\r\n");
-            Append("-------------------\r\n");
+            Append("------------------\r\n");
         }
 
         public void Clear()
