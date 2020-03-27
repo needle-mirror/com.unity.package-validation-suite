@@ -31,7 +31,7 @@ namespace UnityEditor.PackageManager.ValidationSuite
             var match = prereleaseRegex.Match(versionTag);
             if (!match.Success)
             {
-                throw new ArgumentException("Invalid version tag.", nameof(versionTag));
+                throw new ArgumentException(String.Format("\"{0}\" is an invalid version tag", versionTag));
             }
             
             var iterationMatch = match.Groups["iteration"];

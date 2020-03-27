@@ -51,7 +51,7 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
             }
             catch (ArgumentException e)
             {
-                AddError("In package.json, \"version\" doesn't follow our lifecycle rules. \"" + packageVersionNumber.Prerelease + "\" is invalid. " + ErrorDocumentation.GetLinkMessage(docsFilePath, "version-is-invalid-tag-must-follow-lifecycle-rules"));
+                AddError("In package.json, \"version\" doesn't follow our lifecycle rules. {0}. {1}", e.Message, ErrorDocumentation.GetLinkMessage(docsFilePath, "version-is-invalid-tag-must-follow-lifecycle-rules"));
                 return;
             }
 
