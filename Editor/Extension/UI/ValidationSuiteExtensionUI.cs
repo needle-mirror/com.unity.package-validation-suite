@@ -90,7 +90,7 @@ namespace UnityEditor.PackageManager.ValidationSuite.UI
                 return;
             }
 
-            var validationType = CurrentPackageinfo.source == PackageSource.Registry ? ValidationType.Publishing : ValidationType.LocalDevelopmentInternal;
+            var validationType = CurrentPackageinfo.source == PackageSource.Registry ? ValidationType.Promotion : ValidationType.LocalDevelopmentInternal;
             var results = ValidationSuite.ValidatePackage(PackageId, validationType);
             var report = ValidationSuiteReport.GetReport(PackageId);
 

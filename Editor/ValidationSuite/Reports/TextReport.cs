@@ -21,6 +21,7 @@ namespace UnityEditor.PackageManager.ValidationSuite
                 string.Format("Validation Suite Results for package \"{0}\"\r\n", packageInfo.name) +
                 string.Format(" - Path: {0}\r\n", packageInfo.path) +
                 string.Format(" - Version: {0}\r\n", packageInfo.version) +
+                string.Format(" - Context: {0}\r\n", context.ValidationType) +
                 string.Format(" - Lifecycle: {0}\r\n", packageInfo.lifecycle) +
                 string.Format(" - Test Time: {0}\r\n", DateTime.Now) +
                 string.Format(" - Tested with {0} version: {1}\r\n", context.VSuiteInfo.name, context.VSuiteInfo.version)

@@ -116,7 +116,8 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
             "*.vsh",
             "AssetStoreTools.dll",
             "AssetStoreToolsExtra.dll",
-            "DroidSansMono.ttf"
+            "DroidSansMono.ttf",
+            "csc.rsp"
         };
 
         private readonly string[] unapprovedFileList =

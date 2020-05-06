@@ -15,7 +15,7 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
             TestName = "ChangeLog Validation";
             TestDescription = "Validate Changelog contains entry for given package.";
             TestCategory = TestCategory.DataValidation;
-            SupportedValidations = new[] { ValidationType.CI, ValidationType.LocalDevelopment, ValidationType.LocalDevelopmentInternal, ValidationType.Publishing, ValidationType.VerifiedSet };
+            SupportedValidations = new[] { ValidationType.CI, ValidationType.LocalDevelopment, ValidationType.LocalDevelopmentInternal, ValidationType.Promotion, ValidationType.VerifiedSet };
         }
 
         protected override void Run()
@@ -102,7 +102,7 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
                         );
                     }
                     
-                    if (Context.ValidationType == ValidationType.Publishing)
+                    if (Context.ValidationType == ValidationType.Promotion)
                     {
                         AddErrorWithLine(
                             string.Format(

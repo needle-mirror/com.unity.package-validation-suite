@@ -20,6 +20,8 @@ namespace UnityEditor.PackageManager.ValidationSuite
         CI,
         /// <summary>Validation for package publishing.</summary>        
         Publishing,
+        /// <summary>Validation for package promotion.</summary>        
+        Promotion,
         /// <summary>Validation for the asset store.</summary>        
         AssetStore,
         /// <summary>Running just tests marked for InternalTesting</summary>

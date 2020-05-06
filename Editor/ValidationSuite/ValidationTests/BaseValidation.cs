@@ -44,7 +44,7 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
             CanUseValidationExceptions = false;
             StartTime = DateTime.Now;
             EndTime = DateTime.Now;
-            SupportedValidations = new[] { ValidationType.AssetStore, ValidationType.CI, ValidationType.LocalDevelopment, ValidationType.LocalDevelopmentInternal, ValidationType.Publishing, ValidationType.VerifiedSet };
+            SupportedValidations = new[] { ValidationType.AssetStore, ValidationType.CI, ValidationType.LocalDevelopment, ValidationType.LocalDevelopmentInternal, ValidationType.Promotion, ValidationType.VerifiedSet };
         }
 
         // This method is called synchronously during initialization,

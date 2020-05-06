@@ -22,7 +22,7 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
             TestName = "Manifest Validation";
             TestDescription = "Validate that the information found in the manifest is well formatted.";
             TestCategory = TestCategory.DataValidation;
-            SupportedValidations = new[] { ValidationType.CI, ValidationType.LocalDevelopment, ValidationType.LocalDevelopmentInternal, ValidationType.Publishing, ValidationType.VerifiedSet };
+            SupportedValidations = new[] { ValidationType.CI, ValidationType.LocalDevelopment, ValidationType.LocalDevelopmentInternal, ValidationType.Promotion, ValidationType.VerifiedSet };
         }
 
         protected override void Run()
@@ -79,10 +79,10 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
                     continue;
                 }
 
-                // Check if this package's dependencies are in production. That is a requirement for publishing.
+                // Check if this package's dependencies are in production. That is a requirement for promotion.
                 if (Context.ValidationType != ValidationType.VerifiedSet && !Utilities.PackageExistsOnProduction(packageId))
                 {
-                    if (Context.ValidationType == ValidationType.Publishing || Context.ValidationType == ValidationType.AssetStore)
+                    if (Context.ValidationType == ValidationType.Promotion || Context.ValidationType == ValidationType.AssetStore)
                         AddError("Package dependency {0} is not published in production. {1}", packageId, ErrorDocumentation.GetLinkMessage(ManifestValidation.docsFilePath,  "package-dependency-[packageID]-is-not-published-in-production"));
                     else
                         AddWarning("Package dependency {0} must be published to production before this package is published to production. (Except for core packages)", packageId);
@@ -105,7 +105,7 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
         private void ValidateManifestData(ManifestData manifestData)
         {
             // Check the package Name, which needs to start with one of the approved company names.
-            // This should probably be executed only in internal development, CI and Publishing contexts
+            // This should probably be executed only in internal development, CI and Promotion contexts
             if (!PackageNamePrefixList.Any(namePrefix => (manifestData.name.StartsWith(namePrefix) && manifestData.name.Length > namePrefix.Length)))
             {
                 AddError("In package.json, \"name\" needs to start with one of these approved company names: {0}. {1}", string.Join(", ", PackageNamePrefixList), ErrorDocumentation.GetLinkMessage(ManifestValidation.docsFilePath,  "name-needs-to-start-with-one-of-these-approved-company-names"));
@@ -123,6 +123,14 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
             {
                 AddError("In package.json, \"name\" is not a valid name. {0}", ErrorDocumentation.GetLinkMessage(ManifestValidation.docsFilePath,  "name-is-not-a-valid-name"));
             }
+
+			// Package name cannot end with .framework, .plugin or .bundle.
+            String[] strings = { ".framework", ".bundle", ".plugin" };
+			foreach (var value in strings) {
+ 				if (manifestData.name.EndsWith(value)) {
+					AddError("In package.json, \"name\" cannot end with .plugin, .bundle or .framework. {0}", ErrorDocumentation.GetLinkMessage(ManifestValidation.docsFilePath,  "name-cannot-end-with"));
+				}
+			} 
 
             if (string.IsNullOrEmpty(manifestData.displayName))
             {
@@ -143,8 +151,13 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
                 AddError("In package.json, \"description\" is too short. Minimum Length = {0}. Current Length = {1}. {2}", MinDescriptionSize, manifestData.description.Length, ErrorDocumentation.GetLinkMessage(ManifestValidation.docsFilePath,  "description-is-too-short"));
             }
 
-            if (Context.ValidationType == ValidationType.Publishing || Context.ValidationType == ValidationType.CI)
+            if (Context.ValidationType == ValidationType.Promotion || Context.ValidationType == ValidationType.CI)
             {
+                if (!string.IsNullOrWhiteSpace(manifestData.documentationUrl))
+                {
+                    AddError("In package.json, \"documentationUrl\" can't be used for Unity packages.  It is a features reserved for enterprise customers.  The Unity documentation team will ensure the package's documentation is published in the appropriate fashion");
+                }
+
                 // Check if `repository.url` and `repository.revision` exist and the content is valid
                 string value;
                 if (!manifestData.repository.TryGetValue("url", out value) || string.IsNullOrEmpty(value))

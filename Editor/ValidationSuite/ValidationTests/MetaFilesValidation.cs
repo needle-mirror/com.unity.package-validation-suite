@@ -11,7 +11,7 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
             TestName = "Meta Files Validation";
             TestDescription = "Validate that metafiles are present for all package files.";
             TestCategory = TestCategory.ContentScan;
-            SupportedValidations = new[] { ValidationType.CI, ValidationType.LocalDevelopment, ValidationType.LocalDevelopmentInternal, ValidationType.Publishing, ValidationType.VerifiedSet };
+            SupportedValidations = new[] { ValidationType.CI, ValidationType.LocalDevelopment, ValidationType.LocalDevelopmentInternal, ValidationType.Promotion, ValidationType.VerifiedSet };
         }
 
         bool ShouldIgnore(string name)

@@ -50,6 +50,9 @@ This is validated through the following regular expression: `^[a-z0-9][a-z0-9-._
 ## name cannot contain capital letters
 The `name` value in package.json can only contain lowercase letters. For additional requirements of the name field, refer to ["name" is not a valid name](#"name"-is-not-a-valid-name)
 
+## name cannot end with
+The `name` value in package.json cannot end with .plugin, .framework or .bundle. This is because of Unity's magic folders and will transform your package into something your probably do not want. For additional requirements of the name field, refer to ["name" is not a valid name](#"name"-is-not-a-valid-name)
+
 ## displayName must be set
 The `displayName` field in package.json must have a value
 

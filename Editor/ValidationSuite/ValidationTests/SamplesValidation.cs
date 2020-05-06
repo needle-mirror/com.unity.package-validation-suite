@@ -12,7 +12,7 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
             TestName = "Samples Validation";
             TestDescription = "Verify that samples meet expectation, if the package has samples.";
             TestCategory = TestCategory.DataValidation;
-            SupportedValidations = new[] { ValidationType.CI, ValidationType.LocalDevelopment, ValidationType.LocalDevelopmentInternal, ValidationType.Publishing, ValidationType.VerifiedSet };
+            SupportedValidations = new[] { ValidationType.CI, ValidationType.LocalDevelopment, ValidationType.LocalDevelopmentInternal, ValidationType.Promotion, ValidationType.VerifiedSet };
         }
 
         protected override void Run()
@@ -34,7 +34,7 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
                 AddError("`Samples` and `Samples~` cannot both be present in the package.");
             }
 
-            if ((Context.ValidationType == ValidationType.Publishing || Context.ValidationType == ValidationType.VerifiedSet) && samplesDirExists)
+            if ((Context.ValidationType == ValidationType.Promotion || Context.ValidationType == ValidationType.VerifiedSet) && samplesDirExists)
             {
                 AddError("In a published package, the `Samples` needs to be renamed to `Samples~`. It should have been done automatically in the CI publishing process.");
             }
@@ -50,7 +50,7 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
                     "Please refer to https://gitlab.internal.unity3d.com/upm-packages/upm-package-template/blob/master/Samples/Example/.sample.json for more info.");
             }
 
-            if (Context.ValidationType == ValidationType.Publishing || Context.ValidationType == ValidationType.VerifiedSet)
+            if (Context.ValidationType == ValidationType.Promotion || Context.ValidationType == ValidationType.VerifiedSet)
             {
                 if (Context.PublishPackageInfo.samples.Count != matchingFiles.Count)
                 {

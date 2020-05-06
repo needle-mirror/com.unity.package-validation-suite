@@ -15,7 +15,7 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
             this.TestName = "API Updater Configuration Validation";
             TestDescription = "Checks the validity of script updater code included with the package.";
             TestCategory = TestCategory.ApiValidation;
-            SupportedValidations = new[] { ValidationType.CI, ValidationType.LocalDevelopmentInternal, ValidationType.Publishing };
+            SupportedValidations = new[] { ValidationType.CI, ValidationType.LocalDevelopmentInternal, ValidationType.Promotion };
             CanUseValidationExceptions = true;
         }
 

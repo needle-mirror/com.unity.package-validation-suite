@@ -1,19 +1,21 @@
 {
   "name": "com.unity.package-validation-suite",
   "displayName": "Package Validation Suite",
-  "version": "0.9.1-preview",
+  "version": "0.10.0-preview",
   "unity": "2018.4",
   "description": "Unity Package Manager validation suite, used to evaluate a package's integrity before it's considered for publishing.  This is a Unity internal tool at the moment, no support will be provided for this package.",
   "dependencies": {
     "nuget.mono-cecil": "0.1.6-preview"
   },
   "relatedPackages": {
-    "com.unity.package-validation-suite.tests": "0.9.1-preview"
+    "com.unity.package-validation-suite.tests": "0.10.0-preview"
+  },
+  "upmCi": {
+    "footprint": "276d9d251bb11250c4d78610ce770b3f01ffca48"
   },
   "repository": {
-    "footprint": "74b905f92b6128bbcf1e8237b4582419ddfd27b0",
     "type": "git",
     "url": "https://github.cds.internal.unity3d.com/unity/com.unity.package-validation-suite.git",
-    "revision": "ddedd28344bc8885b601c3a32d5ad705a586c720"
+    "revision": "bf3bd9cb3c2ee9b4162ea489167055257700ab24"
   }
 }

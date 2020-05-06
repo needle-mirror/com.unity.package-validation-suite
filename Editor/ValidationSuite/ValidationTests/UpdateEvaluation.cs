@@ -11,7 +11,7 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
             TestName = "Package Update Validation";
             TestDescription = "If this is an update, validate that the package's metadata is correct.";
             TestCategory = TestCategory.DataValidation;
-            SupportedValidations = new[] { ValidationType.CI, ValidationType.LocalDevelopmentInternal, ValidationType.Publishing };
+            SupportedValidations = new[] { ValidationType.CI, ValidationType.LocalDevelopmentInternal, ValidationType.Promotion };
         }
 
         protected override void Run()
@@ -46,7 +46,7 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
             }
 
             // If it exists, get the last one from that list.
-            if (Context.ValidationType == ValidationType.Publishing && Utilities.PackageExistsOnProduction(Context.ProjectPackageInfo.Id))
+            if (Context.ValidationType == ValidationType.Promotion && Utilities.PackageExistsOnProduction(Context.ProjectPackageInfo.Id))
             {
                 AddError("Version " + Context.ProjectPackageInfo.version + " of this package already exists in production.");
             }

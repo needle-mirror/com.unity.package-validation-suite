@@ -122,6 +122,13 @@ namespace UnityEditor.PackageManager.ValidationSuite
                 return false;
             }
 
+            // temporary overwrite of the validationType for retro-compatibility:
+            // this should be removed once upm-ci's stable version is correctly using promotion instead of publishing
+            if (validationType == ValidationType.Publishing)
+            {
+                validationType = ValidationType.Promotion;
+            }
+            
             // publish locally for embedded and local packages
             var context = VettingContext.CreatePackmanContext(packageId, validationType);
             return ValidatePackage(context, validationType, out report);

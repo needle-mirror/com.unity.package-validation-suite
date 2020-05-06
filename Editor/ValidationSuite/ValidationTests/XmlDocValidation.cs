@@ -24,7 +24,7 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
             TestName = "Xmldoc Validation";
             TestDescription = "Checks public API to ensure xmldocs exist.";
             TestCategory = TestCategory.ApiValidation;
-            SupportedValidations = new[] { ValidationType.CI, ValidationType.LocalDevelopment, ValidationType.LocalDevelopmentInternal, ValidationType.Publishing };
+            SupportedValidations = new[] { ValidationType.CI, ValidationType.LocalDevelopment, ValidationType.LocalDevelopmentInternal, ValidationType.Promotion };
         }
         protected override void Run(AssemblyInfo[] info)
         {

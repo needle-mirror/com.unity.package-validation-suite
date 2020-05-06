@@ -4,6 +4,12 @@ All notable changes to this package will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## [0.10.0] - 2020-05-05
+- Added a new Promotion context and transferred all the Publishing tests to this new context
+- Added new rule where a package name cannot end with .plugin, .framework or .bundle
+- Added new rule where a package should not include documentationUrl field in the manifest
+- Added csc.rsp to the list of restricted files
+
 ## [0.9.1] - 2020-03-25
 - Fixed unused variable in LifecycleValidation exception block
 

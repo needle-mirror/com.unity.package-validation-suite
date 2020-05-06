@@ -11,6 +11,7 @@ namespace UnityEditor.PackageManager.ValidationSuite
     {
         public string path = "";
         public string name = "";
+        public string documentationUrl = "";
         public string displayName = "";
         public string description = "";
         public string unity = "";

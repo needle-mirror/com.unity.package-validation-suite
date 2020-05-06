@@ -10,7 +10,7 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
             TestName = "Documentation Validation";
             TestDescription = "Make sure the package has local documentation. It is required for a verified package and recommended for a preview package";
             TestCategory = TestCategory.DataValidation;
-            SupportedValidations = new[] { ValidationType.CI, ValidationType.LocalDevelopment, ValidationType.LocalDevelopmentInternal, ValidationType.Publishing, ValidationType.VerifiedSet };
+            SupportedValidations = new[] { ValidationType.CI, ValidationType.LocalDevelopment, ValidationType.LocalDevelopmentInternal, ValidationType.Promotion, ValidationType.VerifiedSet };
         }
 
         protected override void Run()

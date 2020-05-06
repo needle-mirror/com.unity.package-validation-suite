@@ -7,7 +7,7 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
             TestName = "Signature Validation";
             TestDescription = "Verify that the package has a valid signature associated with it.";
             TestCategory = TestCategory.DataValidation;
-            SupportedValidations = new[] { ValidationType.CI, ValidationType.LocalDevelopmentInternal, ValidationType.Publishing, ValidationType.VerifiedSet };
+            SupportedValidations = new[] { ValidationType.CI, ValidationType.LocalDevelopmentInternal, ValidationType.Promotion, ValidationType.VerifiedSet };
         }
 
         protected override void Run()

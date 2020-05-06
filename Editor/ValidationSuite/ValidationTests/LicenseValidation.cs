@@ -11,7 +11,7 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
             TestName = "License Validation";
             TestDescription = "Verify that licensing information is present, and filled out.";
             TestCategory = TestCategory.DataValidation;
-            SupportedValidations = new[] { ValidationType.CI, ValidationType.LocalDevelopmentInternal, ValidationType.Publishing, ValidationType.VerifiedSet };
+            SupportedValidations = new[] { ValidationType.CI, ValidationType.LocalDevelopmentInternal, ValidationType.Promotion, ValidationType.VerifiedSet };
         }
 
         protected override void Run()
