@@ -12,6 +12,7 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
             TestName = "Restricted File Type Validation";
             TestDescription = "Make sure no restricted file types are included with this package.";
             TestCategory = TestCategory.ContentScan;
+            CanUseValidationExceptions = true;
         }
 
         protected override void Run()
@@ -37,7 +38,7 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
                         {
                             // Workaround for weird behavior in Directory.GetFiles call, which will return File.Commute when searching for *.com
                             if (!isExtensionRestriction || (Path.GetExtension(fileType.ToLower()) == Path.GetExtension(file.ToLower())))
-                                AddError(file + " cannot be included in a package.");
+                                AddError(Utilities.GetOSAgnosticPath(Utilities.GetPathFromRoot(file, Context.PublishPackageInfo.path)) + " cannot be included in a package.");
                         }
                     }
                 }

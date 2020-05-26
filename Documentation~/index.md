@@ -3,7 +3,7 @@
 Use the package validation suite to verify your package, making sure it meets Unity's package hosting standards before you submit your package for publishing.
 
 ### Pre-requisites
-The Package Validation Suite requires the Package Manager UI extension mechanism, which is available from version 1.9.3 or later.
+The Package Validation Suite requires the Package Manager UI extension mechanism, which is available from version 1.9.3 or later or can be found in Unity 2019.2 or later.
 
 ### Installation
 To add the Package Validation Suite to your project, please use the Package Manager UI to install the latest version of the package.
@@ -34,4 +34,4 @@ As shown below, once the validation package is installed in your project, the Pa
 
 This version of Unity Package Manager is compatible with the following versions of the Unity Editor:
 
-* 2018.1 and later (recommended)
+* 2018.4 and later (recommended)

@@ -6,6 +6,7 @@ using Semver;
 using Unity.APIComparison.Framework.Changes;
 using Unity.APIComparison.Framework.Collectors;
 using UnityEditor.Compilation;
+using UnityEditor.PackageManager.ValidationSuite.Utils;
 using UnityEngine;
 
 namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
@@ -30,7 +31,7 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
         {
             var relevantAssemblyInfo = GetRelevantAssemblyInfo();
 
-            if (!Context.ProjectPackageInfo.IsPreview)
+            if (Context.ProjectPackageInfo.LifecyclePhase != LifecyclePhase.Preview && Context.ProjectPackageInfo.LifecyclePhase != LifecyclePhase.Experimental)
             {
                 var previousAssemblyDefinitions = GetAssemblyDefinitionDataInFolder(Context.PreviousPackageInfo.path);
                 var versionChangeType = Context.VersionChangeType;
@@ -238,7 +239,7 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
             if (changeType == VersionChangeType.Unknown)
                 return;
 
-            if (Context.ProjectPackageInfo.IsPreview)
+            if (Context.ProjectPackageInfo.LifecyclePhase == LifecyclePhase.Preview || Context.ProjectPackageInfo.LifecyclePhase == LifecyclePhase.Experimental)
                 PreReleasePackageValidateApiDiffs(diff, changeType);
             else
                 ReleasePackageValidateApiDiffs(diff, changeType);

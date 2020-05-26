@@ -107,6 +107,14 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
             VettingEntries.Add(new VettingReportEntry() { Type = type, Entry = entry });
         }
 
+        protected void AddPromotionConditionalError(string message)
+        {
+            if (Context.ValidationType == ValidationType.Promotion) 
+                AddError(message);
+            else 
+                AddWarning(message);
+        }
+
         protected void DirectorySearch(string path, string searchPattern, ref List<string> matches)
         {
             if (!Directory.Exists(path))

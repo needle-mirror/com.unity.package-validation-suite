@@ -36,7 +36,7 @@ namespace UnityEditor.PackageManager.ValidationSuite.Utils {
 
         internal static bool IsPreviewVersion(SemVersion version, VersionTag tag)
         {
-            #if UNITY_2020_2_OR_NEWER
+            #if UNITY_2021_1_OR_NEWER
             return version.Prerelease.Contains("preview");
             #else
             return version.Prerelease.Contains("preview") || version.Major == 0;
@@ -48,14 +48,14 @@ namespace UnityEditor.PackageManager.ValidationSuite.Utils {
             try {
                 VersionTag pre = VersionTag.Parse(semVer.Prerelease);
 
+                if (PackageLifecyclePhase.IsPreviewVersion(semVer, pre)) return LifecyclePhase.Preview;
                 if (PackageLifecyclePhase.IsReleasedVersion(semVer, pre)) return LifecyclePhase.Release;
                 if (PackageLifecyclePhase.IsRCVersion(semVer, pre)) return LifecyclePhase.ReleaseCandidate;
                 if (PackageLifecyclePhase.IsPreReleaseVersion(semVer, pre)) return LifecyclePhase.PreRelease;
                 if (PackageLifecyclePhase.IsExperimentalVersion(semVer, pre)) return LifecyclePhase.Experimental;
-                if (PackageLifecyclePhase.IsPreviewVersion(semVer, pre)) return LifecyclePhase.Preview;
                 return LifecyclePhase.InvalidVersionTag;
             } catch (System.ArgumentException e) {
-                if (e.Message.Contains("Invalid version tag"))
+                if (e.Message.Contains("invalid version tag"))
                     return LifecyclePhase.InvalidVersionTag;
                 throw e;
             }

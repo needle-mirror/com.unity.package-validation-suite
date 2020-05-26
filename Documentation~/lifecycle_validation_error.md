@@ -24,9 +24,9 @@ Your version is less than 1.0.0, making it a preview package by default, so plea
 
 Your version tag is invalid, we only allow x.y.z-preview packages in lifecycle v1.
 
-## 2020.2 Packages are not supported yet!
+## 2021.1 Packages are not supported yet!
 
-We are working on transitioning to the package lifecycle version 2 in 2020.2, and the minimum required parts aren't ready.  Until further notice, please ensure the unity field in your package's package.json file is less than 2020.2.
+We are working on transitioning to the package lifecycle version 2 in 2021.1, and the minimum required parts aren't ready.  Until further notice, please ensure the unity field in your package's package.json file is less than 2021.1.
 
 ## Lifecycle V2 Tagging Rules
 
@@ -54,8 +54,8 @@ Your custom version tag is too long, please use something 10 characters or less.
 
 Your version tag requires an iteration number, and it should be 1 or higher (ex. "1.0.0-pre.**1**").
 
-## Package depends on a package which is in an invalid track for release purposes
-The package you validated contains dependencies on a different release track. All packages supporting 2020.2+ need to adhere to Lifecycle V2 rules, which means that packages cannot have dependencies in versions that precede their current release track.
+## Package depends on a package which is in an invalid phase for release purposes
+The package you validated contains dependencies on a different release phase. All packages supporting 2020.2+ need to adhere to Lifecycle V2 rules, which means that packages cannot have dependencies in versions that precede their current release phase.
 
 **Release Packages**
 
@@ -79,5 +79,31 @@ Release Candidates (x.y.z-rc.n) can depend on:
 *Experimental* Packages can depend on:
 * Other Experimental (0.y.z or x.y.z-exp.n)
 * A *Pre Release* (x.y.z-pre.n)
-* A *Release Candidate* (x.y.z-rc.n)
+* A *Release Candidate* (x.y.z)
 * A *Release* (x.y.z)
+
+
+## The very first version of a package must be promoted by Release Management
+
+An entirely new package must go through Release Management in order to be promoted to production, even an experimental one. Please reach to #devs-pkg-promotion, ask for a promotion and mention that this is a new package.
+
+## A release package must be manually promoted by Release Management
+
+A release package is a package version X.Y.Z, without a pre-release tag. 
+Those packages should be manually promoted by Release Management.  
+You can ask for your package to be promoted by going to the #devs-pkg-promotion slack channel.  
+
+## Previous version of this package is not a Pre-Release version
+
+Lifecycle V2 rules state that a Pre-Release package can only be promoted to production in the following cases:
+
+1. Manually promoted by Release Management when it is the first Pre-Release package for the current version (e.g any pre.1)
+1. The package is promoted by the team through CI when it is the next iteration of a Pre-Release package (e.g. -pre.2+)
+
+## This package iteration (x) must be higher than the highest published iteration (y)
+
+Validation suite has found that a published version of this package exists with a higher iteration number than the version you are validating. Iterations in a phase (e.g. pre.x or exp.x) need to be higher than the highest published of that same package version. Some examples:
+* 1.0.0-pre.3 > 1.0.0-pre.2
+* 2.5.4-pre.10 > 2.5.4-pre.1
+* 1.2.3-exp.5 > 1.2.3-exp.3
+* 1.2.3-exp.somefeature.x > 1.2.3-exp-somefeature.y

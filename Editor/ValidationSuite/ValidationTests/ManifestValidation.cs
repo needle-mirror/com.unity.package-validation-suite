@@ -13,9 +13,11 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
         private string[] PackageNamePrefixList = { "com.unity.", "com.autodesk.", "com.havok.", "com.ptc." };
         private const string UpmRegex = @"^[a-z0-9][a-z0-9-._]{0,213}$";
         private const string UpmDisplayRegex = @"^[a-zA-Z0-9 ]+$";
+        private const string UnityRegex = @"^[0-9]{4}\.[0-9]+$";
+        private const string UnityReleaseRegex = @"^[0-9]+[a|b|f]{1}[0-9]+$";
         internal static readonly int MinDescriptionSize = 50;
         internal static readonly int MaxDisplayNameLength = 50;
-        internal static readonly string docsFilePath = "manifest_validation_errors.md";
+        internal static readonly string docsFilePath = "manifest_validation_error.html";
 
         public ManifestValidation()
         {
@@ -114,7 +116,7 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
             // There cannot be any capital letters in package names.
             if (manifestData.name.ToLower(CultureInfo.InvariantCulture) != manifestData.name)
             {
-                AddError("In package.json, \"name\" cannot contain capital letter. {0}", ErrorDocumentation.GetLinkMessage(ManifestValidation.docsFilePath,  "name-cannot-contain-capital-letters"));
+                AddError("In package.json, \"name\" cannot contain capital letters. {0}", ErrorDocumentation.GetLinkMessage(ManifestValidation.docsFilePath,  "name-cannot-contain-capital-letters"));
             }
 
             // Check name against our regex.
@@ -150,6 +152,31 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
             {
                 AddError("In package.json, \"description\" is too short. Minimum Length = {0}. Current Length = {1}. {2}", MinDescriptionSize, manifestData.description.Length, ErrorDocumentation.GetLinkMessage(ManifestValidation.docsFilePath,  "description-is-too-short"));
             }
+            
+            //check unity field, if it's there
+            if (!string.IsNullOrEmpty(manifestData.unity) && (manifestData.unity.Length > 6 || !Regex.Match(manifestData.unity, UnityRegex).Success))
+            {
+                AddError($"In package.json, \"unity\" is invalid. It should only be <MAJOR>.<MINOR> (e.g. 2018.4). Current unity = {manifestData.unity}. {ErrorDocumentation.GetLinkMessage(ManifestValidation.docsFilePath,  "unity-is-invalid")}");
+            }
+            
+            //check unityRelease field, if it's there
+            if (!string.IsNullOrEmpty(manifestData.unityRelease))
+            {
+                // it should be valid
+                if (!Regex.Match(manifestData.unityRelease, UnityReleaseRegex).Success)
+                {
+                    AddError(
+                        $"In package.json, \"unityRelease\" is invalid. Current unityRelease = {manifestData.unityRelease}. {ErrorDocumentation.GetLinkMessage(ManifestValidation.docsFilePath, "unityrelease-is-invalid")}");
+                }
+                
+                // it should be accompanied of a unity field
+                if (string.IsNullOrEmpty(manifestData.unity))
+                {
+                    AddError(
+                        $"In package.json, \"unityRelease\" needs a \"unity\" field to be used. {ErrorDocumentation.GetLinkMessage(ManifestValidation.docsFilePath, "unityrelease-without-unity")}");
+                }
+            }
+
 
             if (Context.ValidationType == ValidationType.Promotion || Context.ValidationType == ValidationType.CI)
             {

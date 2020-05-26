@@ -4,6 +4,14 @@ All notable changes to this package will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## [0.11.0] - 2020-05-26
+- Added new rule where the first pre-release version of a package must be promoted by release management
+- Added new rule where the package iteration must be higher than the nighest published iteration
+- Added new rule where release versions of a package must be promoted by release management
+- Added new rule where the very first version of a package must be promoted by release management
+- Added new rule validating the unity and unityRelease fields of a package manifest
+- Added the exception mechanism to the restricted files validation
+
 ## [0.10.0] - 2020-05-05
 - Added a new Promotion context and transferred all the Publishing tests to this new context
 - Added new rule where a package name cannot end with .plugin, .framework or .bundle

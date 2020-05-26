@@ -256,6 +256,16 @@ namespace UnityEditor.PackageManager.ValidationSuite
             return monoPath;
         }
 
+        public static string GetOSAgnosticPath(string filePath)
+        {
+            return filePath.Replace("\\", "/");
+        }
+
+        public static string GetPathFromRoot(string filePath, string root)
+        {
+            return filePath.Remove(0, root.Length);
+        }
+
         public static bool IsTestAssembly(Assembly assembly)
         {
             // see https://unity.slack.com/archives/C26EP4SUQ/p1555485851157200?thread_ts=1555441110.131100&cid=C26EP4SUQ for details about how this is verified

@@ -15,6 +15,7 @@ namespace UnityEditor.PackageManager.ValidationSuite
         public string displayName = "";
         public string description = "";
         public string unity = "";
+        public string unityRelease = "";
         public string version = "";
         public double lifecycle = 1.0;
         public string type = "";
@@ -22,11 +23,6 @@ namespace UnityEditor.PackageManager.ValidationSuite
         public Dictionary<string, string> repository = new Dictionary<string, string>();
         public Dictionary<string, string> dependencies = new Dictionary<string, string>();
         public Dictionary<string, string> relatedPackages = new Dictionary<string, string>();
-
-        public bool IsPreview
-        {
-            get { return version.ToLower().Contains("-preview"); }
-        }
 
         internal LifecyclePhase LifecyclePhase {
             get { return PackageLifecyclePhase.GetLifecyclePhase(version.ToLower()); }

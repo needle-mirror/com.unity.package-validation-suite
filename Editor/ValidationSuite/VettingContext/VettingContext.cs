@@ -23,8 +23,11 @@ namespace UnityEditor.PackageManager.ValidationSuite
         public ManifestData ProjectPackageInfo { get; set; }
         public ManifestData PublishPackageInfo { get; set; }
         public ManifestData PreviousPackageInfo { get; set; }
+        public string[] AllVersions { get; set; }
 
         public ManifestData VSuiteInfo { get; set; }
+        
+        public bool PackageExistsOnProduction { get; set; }
 
         public string PreviousPackageBinaryDirectory { get; set; }
         public ValidationType ValidationType { get; set; }
@@ -53,6 +56,8 @@ namespace UnityEditor.PackageManager.ValidationSuite
 #endif
             context.ValidationType = validationType;
             context.ProjectPackageInfo = GetManifest(packageInfo.resolvedPath);
+
+            context.PackageExistsOnProduction = Utilities.PackageExistsOnProduction(packageInfo.name);
 
             if (context.ValidationType == ValidationType.LocalDevelopment || context.ValidationType == ValidationType.LocalDevelopmentInternal)
             {
@@ -85,11 +90,22 @@ namespace UnityEditor.PackageManager.ValidationSuite
             // No need to compare against the previous version of the package if we're testing out the verified set.
             if (context.ValidationType != ValidationType.VerifiedSet)
             {
-                var previousPackagePath = GetPreviousPackage(context.ProjectPackageInfo);
-                if (!string.IsNullOrEmpty(previousPackagePath))
+                // List out available versions for a package
+                var foundPackages = Utilities.UpmSearch(context.ProjectPackageInfo.name);
+                
+                // If it exists, get the last one from that list.
+                if (foundPackages != null && foundPackages.Length > 0)
                 {
-                    context.PreviousPackageInfo = GetManifest(previousPackagePath);
-                    context.DownloadAssembliesForPreviousVersion();
+                    // Get the last released version of the package
+                    var previousPackagePath = GetPreviousReleasedPackage(context.ProjectPackageInfo, foundPackages[0]);
+                    if (!string.IsNullOrEmpty(previousPackagePath))
+                    {
+                        context.PreviousPackageInfo = GetManifest(previousPackagePath);
+                        context.DownloadAssembliesForPreviousVersion();
+                    }
+                    
+                    // Fill the versions for later use
+                    context.AllVersions = foundPackages[0].versions.all;
                 }
             }
             else
@@ -164,7 +180,7 @@ namespace UnityEditor.PackageManager.ValidationSuite
             get
             {
                 if (PreviousPackageInfo == null || PreviousPackageInfo.version == null ||
-                    PreviousPackageInfo == null || PreviousPackageInfo.version == null)
+                    ProjectPackageInfo == null || ProjectPackageInfo.version == null)
                 {
                     return VersionChangeType.Unknown;
                 }
@@ -216,54 +232,47 @@ namespace UnityEditor.PackageManager.ValidationSuite
             }
         }
 
-        private static string GetPreviousPackage(ManifestData projectPackageInfo)
+        private static string GetPreviousReleasedPackage(ManifestData projectPackageInfo, PackageInfo packageInfo)
         {
-            // List out available versions for a package.
-            var foundPackages = Utilities.UpmSearch(projectPackageInfo.name);
-
-            // If it exists, get the last one from that list.
-            if (foundPackages != null && foundPackages.Length > 0)
+            var version = SemVersion.Parse(projectPackageInfo.version);
+            var previousVersions = packageInfo.versions.all.Where(v =>
             {
-                var packageInfo = foundPackages[0];
-                var version = SemVersion.Parse(projectPackageInfo.version);
-                var previousVersions = packageInfo.versions.all.Where(v =>
-                {
-                    var prevVersion = SemVersion.Parse(v);
-                // ignore pre-release and build tags when finding previous version
-                return prevVersion < version && !(prevVersion.Major == version.Major && prevVersion.Minor == version.Minor && prevVersion.Patch == version.Patch);
-                });
+                var prevVersion = SemVersion.Parse(v);
+            // ignore pre-release and build tags when finding previous version
+            return prevVersion < version && !(prevVersion.Major == version.Major && prevVersion.Minor == version.Minor && prevVersion.Patch == version.Patch);
+            });
 
-                // Find the last version on Production
-                string previousVersion = null;
-                previousVersions = previousVersions.Reverse();
-                foreach (var prevVersion in previousVersions)
+            // Find the last version on Production
+            string previousVersion = null;
+            previousVersions = previousVersions.Reverse();
+            foreach (var prevVersion in previousVersions)
+            {
+                if (Utilities.PackageExistsOnProduction(packageInfo.name + "@" + prevVersion))
                 {
-                    if (Utilities.PackageExistsOnProduction(packageInfo.name + "@" + prevVersion))
-                    {
-                        previousVersion = prevVersion;
-                        break;
-                    }
-                }
-
-                if (previousVersion != null)
-                {
-                    try
-                    {
-                        var previousPackageId = ManifestData.GetPackageId(projectPackageInfo.name, previousVersion);
-                        var tempPath = Path.GetTempPath();
-                        var previousPackagePath = Path.Combine(tempPath, "previous-" + previousPackageId);
-                        var packageFileName = Utilities.DownloadPackage(previousPackageId, tempPath);
-                        Utilities.ExtractPackage(Path.Combine(tempPath, packageFileName), tempPath, previousPackagePath, projectPackageInfo.name);
-                        return previousPackagePath;
-                    }
-                    catch (Exception exception)
-                    {
-                        // Failing to fetch when there is no prior version, which is an accepted case.
-                        if ((string)exception.Data["reason"] == "fetchFailed")
-                            EditorUtility.DisplayDialog("Data: " + exception.Message, "Failed", "ok");
-                    }
+                    previousVersion = prevVersion;
+                    break;
                 }
             }
+
+            if (previousVersion != null)
+            {
+                try
+                {
+                    var previousPackageId = ManifestData.GetPackageId(projectPackageInfo.name, previousVersion);
+                    var tempPath = Path.GetTempPath();
+                    var previousPackagePath = Path.Combine(tempPath, "previous-" + previousPackageId);
+                    var packageFileName = Utilities.DownloadPackage(previousPackageId, tempPath);
+                    Utilities.ExtractPackage(Path.Combine(tempPath, packageFileName), tempPath, previousPackagePath, projectPackageInfo.name);
+                    return previousPackagePath;
+                }
+                catch (Exception exception)
+                {
+                    // Failing to fetch when there is no prior version, which is an accepted case.
+                    if ((string)exception.Data["reason"] == "fetchFailed")
+                        EditorUtility.DisplayDialog("Data: " + exception.Message, "Failed", "ok");
+                }
+            }
+            
             return string.Empty;
         }
 
