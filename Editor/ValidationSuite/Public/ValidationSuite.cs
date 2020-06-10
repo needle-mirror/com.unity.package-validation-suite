@@ -148,8 +148,7 @@ namespace UnityEditor.PackageManager.ValidationSuite
                 report.Initialize(testSuite.context);
                 testSuite.RunSync();
                 Profiler.EndSample();
-                return (testSuite.testSuiteState == TestState.Succeeded) &&
-                       context.ValidationExceptionManager.IsValid;
+                return testSuite.testSuiteState == TestState.Succeeded;
             }
             catch (Exception e)
             {
@@ -165,14 +164,14 @@ namespace UnityEditor.PackageManager.ValidationSuite
             var directories = Directory.GetDirectories("Packages/", "*", SearchOption.TopDirectoryOnly);
             foreach (var directory in directories)
             {
-                Debug.Log("Starting package validation for " + directory);
+                ActivityLogger.Log("Starting package validation for " + directory);
                 packageIdList.Add(VettingContext.GetManifest(directory).Id);
             }
 
             if (packageIdList.Any())
             {
                 var success = ValidatePackages(packageIdList, validationType);
-                Debug.Log("Package validation done and batchmode is set. Shutting down Editor");
+                ActivityLogger.Log("Package validation done and batchmode is set. Shutting down Editor");
                 EditorApplication.Exit(success ? 0 : 1);
             }
             else
@@ -265,12 +264,12 @@ namespace UnityEditor.PackageManager.ValidationSuite
                 var result = ValidatePackage(packageId, validationType);
                 if (result)
                 {
-                    Debug.Log("Validation succeeded for " + packageId);
+                    ActivityLogger.Log("Validation succeeded for " + packageId);
                 }
                 else
                 {
                     success = false;
-                    Debug.LogError("Validation failed for " + packageId);
+                    ActivityLogger.Log("Validation failed for " + packageId);
                 }
             }
 

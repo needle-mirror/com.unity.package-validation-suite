@@ -17,6 +17,7 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
             TestCategory = TestCategory.ApiValidation;
             SupportedValidations = new[] { ValidationType.CI, ValidationType.LocalDevelopmentInternal, ValidationType.Promotion };
             CanUseValidationExceptions = true;
+            CanUseCompleteTestExceptions = true;
         }
 
         protected override bool IncludePrecompiledAssemblies => true;

@@ -4,6 +4,15 @@ All notable changes to this package will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## [0.13.0] - 2020-06-10
+- Fixed System.InvalidCastException during "API Validation"
+- Fixed System.NullReferenceException at Unity.APIComparison.Framework.CecilExtensions.IsPublicAPI() during "API Validation"
+- Fixed false positive breaking change when making property accessor more accessible
+- Fixed the validation of dependencies to look for the version chosen by the resolver instead of the verbatim version
+- Added logging to the validation suite steps
+- Changed the exception mechanism to make an exception for the whole validation category
+- Changed the exception mechanism to not fail on unused exception rules anymore
+
 ## [0.11.0] - 2020-05-26
 - Added new rule where the first pre-release version of a package must be promoted by release management
 - Added new rule where the package iteration must be higher than the nighest published iteration

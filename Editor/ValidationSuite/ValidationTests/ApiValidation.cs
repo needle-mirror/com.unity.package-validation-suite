@@ -20,6 +20,7 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
             TestCategory = TestCategory.ApiValidation;
             SupportedValidations = new[] { ValidationType.CI, ValidationType.LocalDevelopmentInternal, ValidationType.Promotion };
             CanUseValidationExceptions = true;
+            CanUseCompleteTestExceptions = true;
         }
 
         public ApiValidation(ValidationAssemblyInformation validationAssemblyInformation)
@@ -181,6 +182,7 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
                         Context.ProjectPackageInfo.path // make sure to add the package folder as well, because it may contain .dll files
                     };
 
+                    File.WriteAllText("Logs/ApiValidationParameters.txt", $"previous: {oldAssemblyPath}\ncurrent: {info.assembly.outputPath}\nsearch path: {string.Join("\n", assemblySearchFolder)}");
                     var apiChangesAssemblyInfo = new APIChangesCollector.AssemblyInfo()
                     {
                         BaseAssemblyPath = oldAssemblyPath,

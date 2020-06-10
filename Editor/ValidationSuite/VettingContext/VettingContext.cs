@@ -38,10 +38,13 @@ namespace UnityEditor.PackageManager.ValidationSuite
         public static VettingContext CreatePackmanContext(string packageId, ValidationType validationType)
         {
             Profiler.BeginSample("CreatePackmanContext");
+            ActivityLogger.Log("Starting Packman Context Creation");
 
             VettingContext context = new VettingContext();
             var packageParts = packageId.Split('@');
             var packageList = Utilities.UpmListOffline();
+
+            ActivityLogger.Log("Looking for package {0} in project", packageParts[0]);
             var packageInfo = packageList.SingleOrDefault(p => p.name == packageParts[0] && p.version == packageParts[1]);
 
             if (packageInfo == null)
@@ -57,7 +60,12 @@ namespace UnityEditor.PackageManager.ValidationSuite
             context.ValidationType = validationType;
             context.ProjectPackageInfo = GetManifest(packageInfo.resolvedPath);
 
-            context.PackageExistsOnProduction = Utilities.PackageExistsOnProduction(packageInfo.name);
+            if (context.ValidationType != ValidationType.VerifiedSet)
+            {
+                ActivityLogger.Log("Checking if package {0} has been promoted to production", packageInfo.name);
+                context.PackageExistsOnProduction = Utilities.PackageExistsOnProduction(packageInfo.name);
+                ActivityLogger.Log("Package {0} {1} in production", packageInfo.name, context.PackageExistsOnProduction ? "is" : "is not");
+            }
 
             if (context.ValidationType == ValidationType.LocalDevelopment || context.ValidationType == ValidationType.LocalDevelopmentInternal)
             {
@@ -75,11 +83,12 @@ namespace UnityEditor.PackageManager.ValidationSuite
                 // Check to see if the package is available locally
                 // We are only focusing on local packages to avoid validation suite failures in CI
                 // when the situation arises where network connection is impaired
+                ActivityLogger.Log("Looking for related package {0} in the project", relatedPackage.Key);
                 var foundRelatedPackage = Utilities.UpmListOffline().Where(p => p.name.Equals(relatedPackage.Key));
                 var relatedPackageInfo = foundRelatedPackage.ToList();
                 if (!relatedPackageInfo.Any())
                 {
-                    Debug.Log(String.Format("Cannot find the relatedPackage {0} ", relatedPackage.Key));
+                    ActivityLogger.Log(String.Format("Cannot find the relatedPackage {0} ", relatedPackage.Key));
                     continue;
                 }
                 context.relatedPackages.Add(new RelatedPackage(relatedPackage.Key, relatedPackage.Value,
@@ -90,6 +99,8 @@ namespace UnityEditor.PackageManager.ValidationSuite
             // No need to compare against the previous version of the package if we're testing out the verified set.
             if (context.ValidationType != ValidationType.VerifiedSet)
             {
+                ActivityLogger.Log("Looking for previous package version");
+
                 // List out available versions for a package
                 var foundPackages = Utilities.UpmSearch(context.ProjectPackageInfo.name);
                 
@@ -258,6 +269,7 @@ namespace UnityEditor.PackageManager.ValidationSuite
             {
                 try
                 {
+                    ActivityLogger.Log("Retrieving previous package version {0}", previousVersion);
                     var previousPackageId = ManifestData.GetPackageId(projectPackageInfo.name, previousVersion);
                     var tempPath = Path.GetTempPath();
                     var previousPackagePath = Path.Combine(tempPath, "previous-" + previousPackageId);
@@ -285,6 +297,7 @@ namespace UnityEditor.PackageManager.ValidationSuite
 
             Directory.CreateDirectory(PreviousVersionBinaryPath);
 
+            ActivityLogger.Log("Retrieving assemblies for previous package version {0}", PreviousPackageInfo.version);
             var packageDataZipFilename = PackageBinaryZipping.PackageDataZipFilename(PreviousPackageInfo.name, PreviousPackageInfo.version);
             var zipPath = Path.Combine(PreviousVersionBinaryPath, packageDataZipFilename);
             var uri = Path.Combine("https://artifactory.eu-cph-1.unityops.net/pkg-api-validation", packageDataZipFilename);
@@ -295,15 +308,26 @@ namespace UnityEditor.PackageManager.ValidationSuite
             var operation = request.SendWebRequest();
             while (!operation.isDone)
                 Thread.Sleep(1);
-
-            if (request.isHttpError || request.isNetworkError || !PackageBinaryZipping.Unzip(zipPath, PreviousVersionBinaryPath))
+            
+            // Starting in 2020_1, isHttpError and isNetworkError are deprecated
+            // which caused API obsolete errors to be shown for PVS
+            // https://jira.unity3d.com/browse/PAI-1215
+            var requestError = false;
+            #if UNITY_2020_1_OR_NEWER
+            requestError = request.result == UnityWebRequest.Result.ProtocolError ||
+                           request.result == UnityWebRequest.Result.ConnectionError;
+            #else
+            requestError = request.isHttpError || request.isNetworkError;
+            #endif
+            if (requestError || !PackageBinaryZipping.Unzip(zipPath, PreviousVersionBinaryPath))
             {
-                Debug.Log(String.Format("Could not download binary assemblies for previous package version from {0}. {1}", uri, request.responseCode));
+                ActivityLogger.Log(String.Format("Could not download binary assemblies for previous package version from {0}. {1}", uri, request.responseCode));
                 PreviousPackageBinaryDirectory = null;
             }
             else
                 PreviousPackageBinaryDirectory = PreviousVersionBinaryPath;
 
+            ActivityLogger.Log("Done retrieving assemblies for previous package", PreviousPackageInfo.version);
             Profiler.EndSample();
         }
 

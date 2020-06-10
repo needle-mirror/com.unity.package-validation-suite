@@ -100,7 +100,7 @@ namespace UnityEditor.PackageManager.ValidationSuite
         public void OutputErrorReport(string error)
         {
             TextReport?.Append(error);
-            Debug.LogError(error);
+            ActivityLogger.Log(error);
         }
 
         public void GenerateVettingReport(ValidationSuite suite)

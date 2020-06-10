@@ -71,23 +71,25 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
                     continue;
                 }
 
-                var packageId = Utilities.CreatePackageId(dependency.Key, dependency.Value);
-
                 var dependencyInfo = Utilities.UpmListOffline(dependency.Key).FirstOrDefault();
 
-                // Built in packages are shipped with the editor, and will therefore never by published to production.
+                // Built in packages are shipped with the editor, and will therefore never be published to production.
                 if (dependencyInfo != null && dependencyInfo.source == PackageSource.BuiltIn)
                 {
                     continue;
                 }
-
+                
                 // Check if this package's dependencies are in production. That is a requirement for promotion.
+				// make sure to check the version actually resolved by upm and not the one necessarily listed by the package
+                var version = dependencyInfo != null ? dependencyInfo.version : dependency.Value;
+                var packageId = Utilities.CreatePackageId(dependency.Key, version);
+                
                 if (Context.ValidationType != ValidationType.VerifiedSet && !Utilities.PackageExistsOnProduction(packageId))
                 {
                     if (Context.ValidationType == ValidationType.Promotion || Context.ValidationType == ValidationType.AssetStore)
-                        AddError("Package dependency {0} is not published in production. {1}", packageId, ErrorDocumentation.GetLinkMessage(ManifestValidation.docsFilePath,  "package-dependency-[packageID]-is-not-published-in-production"));
+                        AddError("Package dependency {0} is not promoted in production. {1}", packageId, ErrorDocumentation.GetLinkMessage(ManifestValidation.docsFilePath,  "package-dependency-[packageID]-is-not-published-in-production"));
                     else
-                        AddWarning("Package dependency {0} must be published to production before this package is published to production. (Except for core packages)", packageId);
+                        AddWarning("Package dependency {0} must be promoted to production before this package is promoted to production. (Except for core packages)", packageId);
                 }
 
                 // only check this in CI or internal local development

@@ -62,7 +62,6 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
             }
 
             lifecycleVersionValidator(packageVersionNumber, versionTag);
-            ValidatePackageExistsOnRegistry();
             ValidateVersionAbilityToPromote(packageVersionNumber, versionTag);
         }
 
@@ -157,28 +156,6 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
             }
         }
 
-        // if the package does not exist at all on the registry, then warn in CI and fail in production
-        // the package must be promoted by RM for the very first time
-        private void ValidatePackageExistsOnRegistry()
-        {
-            // check if the package exists on the registry
-            if (Context.PackageExistsOnProduction)
-            {
-                return;
-            }
-
-            var message =
-                $"{Context.PublishPackageInfo.name} has never been promoted to production before. Please contact Release Management through slack in #devs-pkg-promotion to promote the first version of your package before trying to use this automated pipeline. {ErrorDocumentation.GetLinkMessage(docsFilePath, "the-very-first-version-of-a-package-must-be-promoted-by-release-management")}";
-            if (Context.ValidationType == ValidationType.Promotion)
-            {
-                AddError(message);
-            }
-            else
-            {
-                AddInformation(message);
-            }
-        }
-
         /**
          * Can't promote if it's a release or RC
          * Can promote -preview, -pre (unless it is the first one, but that is verified somewhere else) and -exp
@@ -187,18 +164,22 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
          */
         private void ValidateVersionAbilityToPromote(SemVersion packageVersionNumber, VersionTag versionTag)
         {
+            var message = String.Empty;
             if (PackageLifecyclePhase.IsReleasedVersion(packageVersionNumber, versionTag) ||
                 PackageLifecyclePhase.IsRCVersion(packageVersionNumber, versionTag))
             {
-                if (Context.ValidationType != ValidationType.Promotion)
-                {
-                    AddInformation($"Automated promotion of Release packages is not allowed. Release Management are the only ones that can promote Release packages, if you need this to happen, please go to #devs-pkg-promotion. {ErrorDocumentation.GetLinkMessage(docsFilePath, "a-release-package-must-be-manually-promoted-by-release-management")}");
-                }
-                else 
-                {
-                    AddError($"Automated promotion of Release packages is not allowed. Release Management are the only ones that can promote Release packages, if you need this to happen, please go to #devs-pkg-promotion. {ErrorDocumentation.GetLinkMessage(docsFilePath, "a-release-package-must-be-manually-promoted-by-release-management")}");
-                }
+                message =
+                    $"Automated promotion of Release packages is not allowed. Release Management are the only ones that can promote Release packages, if you need this to happen, please go to #devs-pkg-promotion. {ErrorDocumentation.GetLinkMessage(docsFilePath, "a-release-package-must-be-manually-promoted-by-release-management")}";
             }
+            else
+            {
+                // We send a message if this is the first version of the package being promoted
+                if (!Context.PackageExistsOnProduction)
+                    message = $"{Context.PublishPackageInfo.name} has never been promoted to production before. Please contact Release Management through slack in #devs-pkg-promotion to promote the first version of your package before trying to use this automated pipeline. {ErrorDocumentation.GetLinkMessage(docsFilePath, "the-very-first-version-of-a-package-must-be-promoted-by-release-management")}";
+            }
+            
+            if (message != String.Empty)
+                AddPromotionConditionalError(message);
         }
 
         private void PreReleaseChecks(ManifestData currentManifest)
@@ -256,12 +237,6 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
                         ErrorDocumentation.GetLinkMessage(docsFilePath,
                             "previous-version-of-this-package-is-not-a-pre-release-version"));
                 }
-            }
-            else 
-            {
-                errorMsg = string.Format(
-                    "There does not seem to be a previous version of this package in production. By Lifecycle V2 rules, the first Pre-Release iteration of a package can only be promoted to production by Release Management. Please contact Release Management to promote your package. {0}",
-                    ErrorDocumentation.GetLinkMessage(docsFilePath, "previous-version-of-this-package-is-not-a-pre-release-version"));
             }
 
             if (errorMsg != String.Empty)

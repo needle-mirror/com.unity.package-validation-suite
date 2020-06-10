@@ -20,11 +20,6 @@ namespace UnityEditor.PackageManager.ValidationSuite
         /// Package Version
         /// </summary>
         public string PackageVersion;
-
-        /// <summary>
-        /// Internal value to keep track whether exception was used or not
-        /// </summary>
-        public bool Used;
     }
 
     [Serializable]

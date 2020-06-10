@@ -36,12 +36,15 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
 
         public bool CanUseValidationExceptions { get; set; }
 
+        public bool CanUseCompleteTestExceptions { get; set; }
+
         protected BaseValidation()
         {
             TestState = TestState.NotRun;
             TestOutput = new List<ValidationTestOutput>();
             ShouldRun = true;
             CanUseValidationExceptions = false;
+            CanUseCompleteTestExceptions = false;
             StartTime = DateTime.Now;
             EndTime = DateTime.Now;
             SupportedValidations = new[] { ValidationType.AssetStore, ValidationType.CI, ValidationType.LocalDevelopment, ValidationType.LocalDevelopmentInternal, ValidationType.Promotion, ValidationType.VerifiedSet };
@@ -55,9 +58,14 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
 
         public void RunTest()
         {
+            ActivityLogger.Log("Starting validation test \"{0}\"", TestName);
             StartTime = DateTime.Now;
             Run();
             EndTime = DateTime.Now;
+
+            var elapsedTime = EndTime - StartTime;
+            ActivityLogger.Log("Finished validation test \"{0}\" in {1}ms", TestName, elapsedTime.TotalMilliseconds);
+
         }
 
         // This needs to be implemented for every test
@@ -80,8 +88,14 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
 
         public void AddError(string message)
         {
-            // let's check for Validation Exceptions
+            // let's check for Validation Exceptions.
+            // #1 - Specific error exception
             if (CanUseValidationExceptions && Context.ValidationExceptionManager.IsException(TestName, message, Context.PublishPackageInfo.version))
+            {
+                TestOutput.Add(new ValidationTestOutput() { Type = TestOutputType.ErrorMarkedWithException, Output = message });
+            }
+            // #2 - Complete Test exception
+            else if (CanUseCompleteTestExceptions && Context.ValidationExceptionManager.IsException(TestName, Context.PublishPackageInfo.version))
             {
                 TestOutput.Add(new ValidationTestOutput() { Type = TestOutputType.ErrorMarkedWithException, Output = message });
             }
