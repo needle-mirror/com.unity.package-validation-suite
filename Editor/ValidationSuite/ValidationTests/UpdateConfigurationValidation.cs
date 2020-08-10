@@ -16,6 +16,7 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
             TestDescription = "Checks the validity of script updater code included with the package.";
             TestCategory = TestCategory.ApiValidation;
             SupportedValidations = new[] { ValidationType.CI, ValidationType.LocalDevelopmentInternal, ValidationType.Promotion };
+            SupportedPackageTypes = new[] { PackageType.Tooling };
             CanUseValidationExceptions = true;
             CanUseCompleteTestExceptions = true;
         }
@@ -29,7 +30,7 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
                 AddInformation("PackageValidationSuite update configurations tested by editor tests.");
                 return;
             }
-            
+
             if (info.Length == 0)
             {
                 TestState = TestState.Succeeded;
@@ -67,10 +68,10 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
             File.WriteAllLines(responseFilePath, references);
 
             var monoPath = Utilities.GetMonoPath();
-            
+
             var argumentsForValidator = ArgumentsForValidator();
             File.WriteAllText($"{Path.Combine(Path.GetTempPath(), Context.ProjectPackageInfo?.name)}.updater.validation.arguments", argumentsForValidator);
-            
+
             var processStartInfo = new ProcessStartInfo(monoPath, $@"""{validatorPath}"" {argumentsForValidator}")
             {
                 UseShellExecute = false,
@@ -101,7 +102,7 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
                     return true;
 
                 // This is a temporary workaround to unblock dots team.
-                var requiredEntries =  new[] 
+                var requiredEntries =  new[]
                 {
                     "Target of update (method ComponentSystemBase.GetEntityQuery) is less accessible than original (Unity.Entities.ComponentGroup Unity.Entities.ComponentSystemBase::GetComponentGroup(Unity.Entities.ComponentType[])).",
                     "Target of update (method ComponentSystemBase.GetEntityQuery) is less accessible than original (Unity.Entities.ComponentGroup Unity.Entities.ComponentSystemBase::GetComponentGroup(Unity.Collections.NativeArray`1<Unity.Entities.ComponentType>)).",
@@ -109,7 +110,7 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
                 };
 
                 return requiredEntries.All(stdContent.Contains);
-#endif                
+#endif
             }
 
             string ArgumentsForValidator()

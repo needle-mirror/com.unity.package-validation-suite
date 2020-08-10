@@ -9,6 +9,8 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
     {
         public ValidationType[] SupportedValidations { get; set; }
 
+        public PackageType[] SupportedPackageTypes { get; set; }
+
         public ValidationSuite Suite { get; set; }
 
         public string TestName { get; protected set; }
@@ -23,7 +25,7 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
         public TestState TestState { get; set; }
 
         public List<ValidationTestOutput> TestOutput { get; set; }
-       
+
         public List<VettingReportEntry> VettingEntries { get; set; }
 
         public DateTime StartTime { get; private set; }
@@ -48,6 +50,7 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
             StartTime = DateTime.Now;
             EndTime = DateTime.Now;
             SupportedValidations = new[] { ValidationType.AssetStore, ValidationType.CI, ValidationType.LocalDevelopment, ValidationType.LocalDevelopmentInternal, ValidationType.Promotion, ValidationType.VerifiedSet };
+            SupportedPackageTypes = new[] { PackageType.Tooling, PackageType.Template };
         }
 
         // This method is called synchronously during initialization,
@@ -123,9 +126,9 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
 
         protected void AddPromotionConditionalError(string message)
         {
-            if (Context.ValidationType == ValidationType.Promotion) 
+            if (Context.ValidationType == ValidationType.Promotion)
                 AddError(message);
-            else 
+            else
                 AddWarning(message);
         }
 

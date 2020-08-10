@@ -4,6 +4,11 @@ All notable changes to this package will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## [0.14.0] - 2020-08-10
+- Changed LifecycleValidationV1 to support 6 digit version number for preview packages.
+- Added mechanism to execute tests on specific package types
+- Added internal exceptions for Roslyn binaries
+
 ## [0.13.0] - 2020-06-10
 - Fixed System.InvalidCastException during "API Validation"
 - Fixed System.NullReferenceException at Unity.APIComparison.Framework.CecilExtensions.IsPublicAPI() during "API Validation"

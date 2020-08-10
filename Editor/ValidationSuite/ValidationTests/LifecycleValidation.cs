@@ -81,11 +81,11 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
 
             // The only pre-release tag we support is -preview
             if (!versionTag.IsEmpty() && !(versionTag.Tag == "preview" && versionTag.Feature == "" &&
-                                              versionTag.Iteration <= 999))
+                                              versionTag.Iteration <= 999999))
             {
 
                 AddError(
-                    "In package.json, \"version\": the only pre-release filter supported is \"-preview.[num < 999]\". " + ErrorDocumentation.GetLinkMessage(docsFilePath, "version-the-only-pre-release-filter-supported-is--preview-num-999"));
+                    "In package.json, \"version\": the only pre-release filter supported is \"-preview.[num < 999999]\". " + ErrorDocumentation.GetLinkMessage(docsFilePath, "version-the-only-pre-release-filter-supported-is--preview-num-999999"));
             }
         }
 

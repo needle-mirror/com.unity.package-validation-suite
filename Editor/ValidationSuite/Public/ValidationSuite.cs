@@ -69,7 +69,7 @@ namespace UnityEditor.PackageManager.ValidationSuite
 
         internal IEnumerable<BaseValidation> ValidationTests
         {
-            get { return validationTests.Where(test => test.SupportedValidations.Contains(context.ValidationType)); }
+            get { return validationTests.Where(test => (test.SupportedValidations.Contains(context.ValidationType) && test.SupportedPackageTypes.Contains(context.PackageType))); }
             set { validationTests = value; }
         }
 
@@ -128,7 +128,7 @@ namespace UnityEditor.PackageManager.ValidationSuite
             {
                 validationType = ValidationType.Promotion;
             }
-            
+
             // publish locally for embedded and local packages
             var context = VettingContext.CreatePackmanContext(packageId, validationType);
             return ValidatePackage(context, validationType, out report);
@@ -290,7 +290,7 @@ namespace UnityEditor.PackageManager.ValidationSuite
                                             where typeof(BaseValidation).IsAssignableFrom(t) && t.GetConstructor(Type.EmptyTypes) != null && !t.IsAbstract
                                             select (BaseValidation)Activator.CreateInstance(t)).ToList());
                 } catch (System.Reflection.ReflectionTypeLoadException) {
-                    // There seems to be an isue with assembly.GetTypes throwing an exception. 
+                    // There seems to be an isue with assembly.GetTypes throwing an exception.
                     // This quick fix is to allow validation suite to work without blocking anyone
                     // while the owner of this code is contacted.
                     continue;
@@ -407,7 +407,7 @@ namespace UnityEditor.PackageManager.ValidationSuite
         {
             return ValidationSuiteReport.JsonReportExists(packageId);
         }
-            
+
         /// <summary>
         /// Get the validation suite report for the given package id.
         /// </summary>
@@ -417,7 +417,7 @@ namespace UnityEditor.PackageManager.ValidationSuite
         {
             return ValidationSuiteReport.GetReport(packageId);
         }
-        
+
         static string FindPackagePath(string packageId)
         {
             var path = string.Format("Packages/{0}/package.json", packageId);

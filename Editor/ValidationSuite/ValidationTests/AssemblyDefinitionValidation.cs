@@ -37,14 +37,14 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
             var simplifiedPath = assemblyDefinitionPath.Replace(Context.PublishPackageInfo.path, "{Package-Root}");
             var isInEditorFolder = assemblyDefinitionPath.IndexOf(Path.DirectorySeparatorChar+"Editor"+Path.DirectorySeparatorChar) >= 0;
             var isInTestFolder = assemblyDefinitionPath.IndexOf(Path.DirectorySeparatorChar+"Tests"+Path.DirectorySeparatorChar) >= 0;
-            
+
             try
             {
                 var assemblyDefinitionData = Utilities.GetDataFromJson<AssemblyDefinition>(assemblyDefinitionPath);
                 var editorInIncludePlatforms = FindValueInArray(assemblyDefinitionData.includePlatforms, "Editor");
 
                 var isTestAssembly = FindValueInArray(assemblyDefinitionData.optionalUnityReferences, "TestAssemblies") || FindValueInArray(assemblyDefinitionData.precompiledReferences, "nunit.framework.dll");
-                
+
                 // Assemblies in the Editor folder should not have any other platforms defined
                 if (!isTestAssembly && isInEditorFolder && assemblyDefinitionData.includePlatforms.Length > 1)
                 {

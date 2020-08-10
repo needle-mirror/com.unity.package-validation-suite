@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using System.Globalization;
 using UnityEditor.PackageManager.ValidationSuite.ValidationTests;
 using UnityEngine;
 
@@ -33,8 +34,8 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
             double unityVersionNumber = 0;
             double packageUnityVersionNumber = 0;
             
-            if (!double.TryParse(unityVersion.Substring(0, unityVersion.LastIndexOf(".")), out unityVersionNumber) ||
-                (!string.IsNullOrEmpty(Context.ProjectPackageInfo.unity) && !double.TryParse(Context.ProjectPackageInfo.unity, out packageUnityVersionNumber)) ||
+            if (!double.TryParse(unityVersion.Substring(0, unityVersion.LastIndexOf(".")), NumberStyles.Any, CultureInfo.InvariantCulture, out unityVersionNumber) ||
+                (!string.IsNullOrEmpty(Context.ProjectPackageInfo.unity) && !double.TryParse(Context.ProjectPackageInfo.unity, NumberStyles.Any, CultureInfo.InvariantCulture, out packageUnityVersionNumber)) ||
                 unityVersionNumber < packageUnityVersionNumber)
             {
                 AddError($"In package.json, \"unity\" is pointing to a version higher ({packageUnityVersionNumber}) than the editor you are currently using ({unityVersionNumber}). " +

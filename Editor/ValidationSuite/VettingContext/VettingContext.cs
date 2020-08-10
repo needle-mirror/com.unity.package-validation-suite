@@ -26,11 +26,12 @@ namespace UnityEditor.PackageManager.ValidationSuite
         public string[] AllVersions { get; set; }
 
         public ManifestData VSuiteInfo { get; set; }
-        
+
         public bool PackageExistsOnProduction { get; set; }
 
         public string PreviousPackageBinaryDirectory { get; set; }
         public ValidationType ValidationType { get; set; }
+        public PackageType PackageType { get; set; }
         public const string PreviousVersionBinaryPath = "Temp/ApiValidationBinaries";
         public List<RelatedPackage> relatedPackages = new List<RelatedPackage>();
         public ValidationExceptionManager ValidationExceptionManager { get; set; }
@@ -57,8 +58,10 @@ namespace UnityEditor.PackageManager.ValidationSuite
 #else
         context.IsCore = false; // there are no core packages before 2019.1
 #endif
+
             context.ValidationType = validationType;
             context.ProjectPackageInfo = GetManifest(packageInfo.resolvedPath);
+            context.PackageType = GetPackageType(context.ProjectPackageInfo);
 
             if (context.ValidationType != ValidationType.VerifiedSet)
             {
@@ -103,7 +106,7 @@ namespace UnityEditor.PackageManager.ValidationSuite
 
                 // List out available versions for a package
                 var foundPackages = Utilities.UpmSearch(context.ProjectPackageInfo.name);
-                
+
                 // If it exists, get the last one from that list.
                 if (foundPackages != null && foundPackages.Length > 0)
                 {
@@ -114,7 +117,7 @@ namespace UnityEditor.PackageManager.ValidationSuite
                         context.PreviousPackageInfo = GetManifest(previousPackagePath);
                         context.DownloadAssembliesForPreviousVersion();
                     }
-                    
+
                     // Fill the versions for later use
                     context.AllVersions = foundPackages[0].versions.all;
                 }
@@ -168,6 +171,11 @@ namespace UnityEditor.PackageManager.ValidationSuite
             Profiler.EndSample();
 
             return manifest;
+        }
+
+        private static PackageType GetPackageType(ManifestData manifestData)
+        {
+          return manifestData.IsProjectTemplate ? PackageType.Template : PackageType.Tooling;
         }
 
         private static Dictionary<string, string> ParseDictionary(string json, string key)
@@ -284,7 +292,7 @@ namespace UnityEditor.PackageManager.ValidationSuite
                         EditorUtility.DisplayDialog("Data: " + exception.Message, "Failed", "ok");
                 }
             }
-            
+
             return string.Empty;
         }
 
@@ -308,7 +316,7 @@ namespace UnityEditor.PackageManager.ValidationSuite
             var operation = request.SendWebRequest();
             while (!operation.isDone)
                 Thread.Sleep(1);
-            
+
             // Starting in 2020_1, isHttpError and isNetworkError are deprecated
             // which caused API obsolete errors to be shown for PVS
             // https://jira.unity3d.com/browse/PAI-1215

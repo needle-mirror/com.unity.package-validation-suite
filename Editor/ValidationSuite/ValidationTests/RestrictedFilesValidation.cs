@@ -67,6 +67,7 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
             "vswhere.exe",            // required for com.unity.ide.visualstudio
             "bcl.exe",                // required for com.unity.burst
             "lld.exe",                // required for com.unity.burst
+            "llvm-lipo.exe",          // required for com.unity.burst
             "dsymutil.exe",           // required for com.unity.burst
             "burst-llvm.lib",         // required for com.unity.burst
             "burst-llvm.dll",         // required for com.unity.burst
@@ -90,7 +91,9 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
             "ilspycmd.exe",             // required for com.unity.entities
             "bee.dll",                  // required by com.unity.platforms
             "pram.exe",                 // required by com.unity.platforms
-            "tundra2.exe"               // required by com.unity.platforms
+            "tundra2.exe",              // required by com.unity.platforms
+            "csc.exe",                  // required by com.unity.roslyn
+            "VBCSCompiler.exe"          // required by com.unity.roslyn
         };
 
         private readonly string[] restrictedFileList =
