@@ -76,7 +76,7 @@ namespace UnityEditor.PackageManager.ValidationSuite.Utils {
                     supportedVersions = LifecyclePhase.PreRelease | LifecyclePhase.ReleaseCandidate | LifecyclePhase.Release;
                     break;
                 case LifecyclePhase.Experimental:
-                    supportedVersions = LifecyclePhase.Experimental | LifecyclePhase.PreRelease | LifecyclePhase.ReleaseCandidate | LifecyclePhase.Release;
+                    supportedVersions = LifecyclePhase.Preview | LifecyclePhase.Experimental | LifecyclePhase.PreRelease | LifecyclePhase.ReleaseCandidate | LifecyclePhase.Release;
                     break;
                 case LifecyclePhase.Preview:
                     supportedVersions = LifecyclePhase.Preview | LifecyclePhase.Experimental | LifecyclePhase.PreRelease | LifecyclePhase.ReleaseCandidate | LifecyclePhase.Release;

@@ -27,16 +27,15 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
             {
                 ValidateVersion(Context.PublishPackageInfo, LifecycleV1VersionValidator);
             } else {
-                AddError(@"2021.1 Packages are not supported yet! We are working on transitioning to the package lifecycle version 2 in 2021.1, and the minimum required parts aren't ready.  Until further notice, please ensure the unity field in your package's package.json file is less than 2021.1.");
-
                 ValidateVersion(Context.PublishPackageInfo, LifecycleV2VersionValidator);
-                ValidateDependenciesLifecyclePhase(Context.ProjectPackageInfo.dependencies);
 
                 // We don't check this on the verified set since it relies on previous package information and reaching the internet
                 if (Context.PublishPackageInfo.LifecyclePhase == LifecyclePhase.PreRelease &&
                     Context.ValidationType != ValidationType.VerifiedSet)
                     PreReleaseChecks(Context.ProjectPackageInfo);
             }
+            
+            ValidateDependenciesLifecyclePhase(Context.ProjectPackageInfo.dependencies);
         }
 
         private void ValidateVersion(ManifestData manifestData, Action<SemVersion, VersionTag> lifecycleVersionValidator)
@@ -164,6 +163,12 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
          */
         private void ValidateVersionAbilityToPromote(SemVersion packageVersionNumber, VersionTag versionTag)
         {
+            // Make this check only in promotion, to avoid network calls 
+            if (Context.PackageVersionExistsOnProduction)
+            {
+                AddPromotionConditionalError("Version " + Context.ProjectPackageInfo.version + " of this package already exists in production.");
+            }
+            
             var message = String.Empty;
             if (PackageLifecyclePhase.IsReleasedVersion(packageVersionNumber, versionTag) ||
                 PackageLifecyclePhase.IsRCVersion(packageVersionNumber, versionTag))

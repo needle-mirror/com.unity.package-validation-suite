@@ -66,7 +66,7 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
                     {
                         if (previousAssemblyDefinition.includePlatforms.Length == 0 &&
                             (versionChangeType == VersionChangeType.Minor || versionChangeType == VersionChangeType.Patch))
-                            AddError("Adding the first entry in inlcudePlatforms requires a new major version. " + includePlatformsDiff);
+                            AddError("Adding the first entry in includePlatforms requires a new major version. " + includePlatformsDiff);
                         else if (versionChangeType == VersionChangeType.Patch)
                             AddError("Adding to includePlatforms requires a new minor or major version. " + includePlatformsDiff);
                     }
@@ -243,7 +243,7 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
                 return;
 
             if (Context.ProjectPackageInfo.LifecyclePhase == LifecyclePhase.Preview || Context.ProjectPackageInfo.LifecyclePhase == LifecyclePhase.Experimental)
-                PreReleasePackageValidateApiDiffs(diff, changeType);
+                ExperimentalPackageValidateApiDiffs(diff, changeType);
             else
                 ReleasePackageValidateApiDiffs(diff, changeType);
 #endif
@@ -251,16 +251,16 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
 
 #if UNITY_2019_1_OR_NEWER
 
-        private void PreReleasePackageValidateApiDiffs(ApiDiff diff, VersionChangeType changeType)
+        private void ExperimentalPackageValidateApiDiffs(ApiDiff diff, VersionChangeType changeType)
         {
             if (diff.breakingChanges > 0 && changeType == VersionChangeType.Patch)
-                AddError("For Preview Packages, breaking changes require a new minor version.");
+                AddError("For Experimental or Preview Packages, breaking changes require a new minor version.");
 
             if (changeType == VersionChangeType.Patch)
             {
                 foreach (var assembly in diff.missingAssemblies)
                 {
-                    AddError("Assembly \"{0}\" no longer exists or is no longer included in build. For Preview Packages, this change requires a new minor version.", assembly);
+                    AddError("Assembly \"{0}\" no longer exists or is no longer included in build. For Experimental or Preview Packages, this change requires a new minor version.", assembly);
                 }
             }
         }

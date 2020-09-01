@@ -28,6 +28,7 @@ namespace UnityEditor.PackageManager.ValidationSuite
         public ManifestData VSuiteInfo { get; set; }
 
         public bool PackageExistsOnProduction { get; set; }
+        public bool PackageVersionExistsOnProduction { get; set; }
 
         public string PreviousPackageBinaryDirectory { get; set; }
         public ValidationType ValidationType { get; set; }
@@ -65,9 +66,13 @@ namespace UnityEditor.PackageManager.ValidationSuite
 
             if (context.ValidationType != ValidationType.VerifiedSet)
             {
-                ActivityLogger.Log("Checking if package {0} has been promoted to production", packageInfo.name);
+                ActivityLogger.Log($"Checking if package {packageInfo.name} has been promoted to production");
                 context.PackageExistsOnProduction = Utilities.PackageExistsOnProduction(packageInfo.name);
-                ActivityLogger.Log("Package {0} {1} in production", packageInfo.name, context.PackageExistsOnProduction ? "is" : "is not");
+                ActivityLogger.Log($"Package {packageInfo.name} {(context.PackageExistsOnProduction ? "is" : "is not")} in production");
+                
+                ActivityLogger.Log($"Checking if package {packageInfo.packageId} has been promoted to production");
+                context.PackageVersionExistsOnProduction = Utilities.PackageExistsOnProduction(packageInfo.packageId);
+                ActivityLogger.Log($"Package {packageInfo.packageId} {(context.PackageExistsOnProduction ? "is" : "is not")} in production");
             }
 
             if (context.ValidationType == ValidationType.LocalDevelopment || context.ValidationType == ValidationType.LocalDevelopmentInternal)
@@ -166,7 +171,7 @@ namespace UnityEditor.PackageManager.ValidationSuite
             manifest.dependencies = ParseDictionary(textManifestData, "dependencies");
             manifest.relatedPackages = ParseDictionary(textManifestData, "relatedPackages");
             manifest.repository = ParseDictionary(textManifestData, "repository");
-            manifest.lifecycle = ManifestData.EvaluateLifecycle(manifest.unity);
+            manifest.lifecycle = ManifestData.EvaluateLifecycle(manifest.version);
 
             Profiler.EndSample();
 

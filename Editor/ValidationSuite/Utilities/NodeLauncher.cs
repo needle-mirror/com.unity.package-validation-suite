@@ -55,7 +55,6 @@ namespace UnityEditor.PackageManager.ValidationSuite
         }
 
         public const string ProductionRepositoryUrl = "https://packages.unity.com/";
-        internal const string StagingRepositoryUrl = "https://api.bintray.com/npm/unity/unity-staging";
         internal const string BintrayNpmRegistryUrl = "https://api.bintray.com/npm/unity/unity-npm";
 
         public string NpmRegistry { get; set; }

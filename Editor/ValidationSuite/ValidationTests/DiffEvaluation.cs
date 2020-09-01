@@ -45,7 +45,7 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
 
             // Flag certain file types are requiring special attention.
             // Asmdef - can cause breaks on client's updates to packages.
-            // package.json - Will change infomation in UI
+            // package.json - Will change information in UI
             //      - Diff actual file, report what changed...
             // Meta files - if all meta files have changed, that's a red flag
             // if there are no common files, all files have changed,

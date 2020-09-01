@@ -43,9 +43,15 @@ namespace UnityEditor.PackageManager.ValidationSuite
             return name + "@" + version;
         }
 
-        public static double EvaluateLifecycle(string unityVersion)
+        /// <summary>
+        /// If the package we are evaluating is trying to release a -preview, then this is against lifecycle v1 rules
+        /// Otherwise, we evaluate against lifecycle v2 rules for all packages
+        /// </summary>
+        /// <param name="version"></param>
+        /// <returns></returns>
+        public static double EvaluateLifecycle(string version)
         {
-            return (SemVersion.Parse(unityVersion) < new SemVersion(2021, 1, 0)) ? 1.0 : 2.0;
+            return PackageLifecyclePhase.GetLifecyclePhase(version.ToLower()) == LifecyclePhase.Preview ? 1.0 : 2.0;
         }
     }
 

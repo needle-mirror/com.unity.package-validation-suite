@@ -47,7 +47,7 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
             {
                 AddError(samplesDir + " folder exists but no `.sample.json` files found in it." +
                     "A `.sample.json` file is required for a sample to be recognized." +
-                    "Please refer to https://gitlab.internal.unity3d.com/upm-packages/upm-package-template/blob/master/Samples/Example/.sample.json for more info.");
+                    "Please refer to https://github.cds.internal.unity3d.com/unity/com.unity.package-starter-kit/blob/master/Samples/Example/.sample.json for more info.");
             }
 
             if (Context.ValidationType == ValidationType.Promotion || Context.ValidationType == ValidationType.VerifiedSet)
