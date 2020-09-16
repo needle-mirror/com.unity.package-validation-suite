@@ -183,7 +183,11 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
                         Context.ProjectPackageInfo.path // make sure to add the package folder as well, because it may contain .dll files
                     };
 
-                    File.WriteAllText("Logs/ApiValidationParameters.txt", $"previous: {oldAssemblyPath}\ncurrent: {info.assembly.outputPath}\nsearch path: {string.Join("\n", assemblySearchFolder)}");
+                    const string logsDirectory = "Logs";
+                    if (!Directory.Exists(logsDirectory))
+                        Directory.CreateDirectory(logsDirectory);
+                    
+                    File.WriteAllText($"{logsDirectory}/ApiValidationParameters.txt", $"previous: {oldAssemblyPath}\ncurrent: {info.assembly.outputPath}\nsearch path: {string.Join("\n", assemblySearchFolder)}");
                     var apiChangesAssemblyInfo = new APIChangesCollector.AssemblyInfo()
                     {
                         BaseAssemblyPath = oldAssemblyPath,

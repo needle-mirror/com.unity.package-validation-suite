@@ -63,12 +63,25 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
         {
             ActivityLogger.Log("Starting validation test \"{0}\"", TestName);
             StartTime = DateTime.Now;
-            Run();
-            EndTime = DateTime.Now;
+            try
+            {
+                Run();
+            }
+            catch (Exception e)
+            {
+                if (CompleteTestExcepted())
+                {
+                    TestOutput.Add(new ValidationTestOutput() { Type = TestOutputType.ErrorMarkedWithException, Output = e.Message + e.StackTrace });
+                }
+                else
+                {
+                    throw;
+                }
+            }
 
+            EndTime = DateTime.Now;
             var elapsedTime = EndTime - StartTime;
             ActivityLogger.Log("Finished validation test \"{0}\" in {1}ms", TestName, elapsedTime.TotalMilliseconds);
-
         }
 
         // This needs to be implemented for every test
@@ -98,7 +111,7 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
                 TestOutput.Add(new ValidationTestOutput() { Type = TestOutputType.ErrorMarkedWithException, Output = message });
             }
             // #2 - Complete Test exception
-            else if (CanUseCompleteTestExceptions && Context.ValidationExceptionManager.IsException(TestName, Context.PublishPackageInfo.version))
+            else if (CompleteTestExcepted())
             {
                 TestOutput.Add(new ValidationTestOutput() { Type = TestOutputType.ErrorMarkedWithException, Output = message });
             }
@@ -143,6 +156,12 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
 
             foreach (string subDir in Directory.GetDirectories(path))
                 DirectorySearch(subDir, searchPattern, ref matches);
+        }
+
+        private bool CompleteTestExcepted()
+        {
+            return CanUseCompleteTestExceptions &&
+                   Context.ValidationExceptionManager.IsException(TestName, Context.PublishPackageInfo.version);
         }
     }
 }

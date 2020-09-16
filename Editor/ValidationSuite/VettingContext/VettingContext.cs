@@ -37,6 +37,16 @@ namespace UnityEditor.PackageManager.ValidationSuite
         public List<RelatedPackage> relatedPackages = new List<RelatedPackage>();
         public ValidationExceptionManager ValidationExceptionManager { get; set; }
 
+        // Used for template package validation
+        public string[] ProjectManifestKeys { 
+            get
+            {
+                return GetProjectManifestKeys(ProjectManifestPath);
+            }
+        }
+
+        public string ProjectManifestPath { get; set; }
+
         public static VettingContext CreatePackmanContext(string packageId, ValidationType validationType)
         {
             Profiler.BeginSample("CreatePackmanContext");
@@ -84,6 +94,8 @@ namespace UnityEditor.PackageManager.ValidationSuite
             {
                 context.PublishPackageInfo = GetManifest(packageInfo.resolvedPath);
             }
+            
+            context.SetProjectManifestPath();
 
             Profiler.BeginSample("RelatedPackages");
             foreach (var relatedPackage in context.PublishPackageInfo.relatedPackages)
@@ -142,6 +154,14 @@ namespace UnityEditor.PackageManager.ValidationSuite
             return context;
         }
 
+        // Method to set the right manifest path for the TemplateProjectManifestValidation test
+        internal void SetProjectManifestPath()
+        {
+            ProjectManifestPath = PackageType == PackageType.Template && ValidationType == ValidationType.CI ? 
+                Path.Combine(PublishPackageInfo.path, "ProjectData~", "Packages", "manifest.json") : 
+                Path.GetFullPath("Packages/manifest.json");
+        }
+
         public static VettingContext CreateAssetStoreContext(string packageName, string packageVersion, string packagePath, string previousPackagePath)
         {
             VettingContext context = new VettingContext();
@@ -150,6 +170,17 @@ namespace UnityEditor.PackageManager.ValidationSuite
             context.PreviousPackageInfo = string.IsNullOrEmpty(previousPackagePath) ? null : new ManifestData() { path = previousPackagePath, name = packageName, version = "Previous" };
             context.ValidationType = ValidationType.AssetStore;
             return context;
+        }
+
+        internal static string[] GetProjectManifestKeys(string manifestPath)
+        {
+            Profiler.BeginSample("GetProjectManifestKeys");
+            
+            if (!File.Exists(manifestPath))
+                throw new FileNotFoundException($"A project manifest file could not be found in {manifestPath}");
+
+            var contents = File.ReadAllText(manifestPath);
+            return ParseFirstLevelKeys(contents);
         }
 
         public static ManifestData GetManifest(string packagePath)
@@ -183,6 +214,23 @@ namespace UnityEditor.PackageManager.ValidationSuite
           return manifestData.IsProjectTemplate ? PackageType.Template : PackageType.Tooling;
         }
 
+        // Method that attempts to extract only the first level keys of a given json
+        // but the regex does get confused right now by any key coming after a comma
+        private static string[] ParseFirstLevelKeys(string json)
+        {
+            
+            string minified = new Regex("[\\s]").Replace(json, "");
+            var regex = new Regex("(?<=^{|,)\"(\\w*)\"");
+
+            if (!regex.IsMatch(minified)) // json is not a dictionary
+                return new string[0];
+            
+            List<string> results = new List<string>();
+            var matches = regex.Matches(minified).OfType<Match>().Select(m => m.Value.Replace("\"", "")).ToArray();
+
+            return matches;
+        }
+        
         private static Dictionary<string, string> ParseDictionary(string json, string key)
         {
             string minified = new Regex("[\"\\s]").Replace(json, "");

@@ -4,6 +4,12 @@ All notable changes to this package will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## [0.16.0] - 2020-09-16
+- Fixed System.IO.DirectoryNotFoundException which can occur if Logs folder is missing
+- Fixed Validation Suite tests to succeed when exceptions are used despite errors being thrown
+- Added validation to prevent too big gaps in package versions relative to the previous one
+- Added template validation that errors when not allowed fields are used in the template project manifest
+
 ## [0.15.0] - 2020-09-01
 - Fixed dependency check not being run for Lifecycle V1 validations
 - Enabled Lifecycle V2 checks
