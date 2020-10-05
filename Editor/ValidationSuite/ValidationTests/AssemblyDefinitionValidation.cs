@@ -11,6 +11,7 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
     internal class AssemblyDefinitionValidation : BaseValidation
     {
         private const string AssemblyFileDefinitionExtension = "*.asmdef";
+        private const string AssemblyFileDefinitionReferenceExtension = "*.asmref";
         private const string CSharpScriptExtension = "*.cs";
 
         public AssemblyDefinitionValidation()
@@ -87,7 +88,8 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
             // filter out `ApiValidationTestAssemblies` folder as the content of the folder is for testing only.
             Func<string, bool> filterTestAssemblies = f => !(isValidationSuite && f.IndexOf("ApiValidationTestAssemblies") >= 0);
 
-            var asmdefFiles = Directory.GetFiles(packagePath, AssemblyFileDefinitionExtension, SearchOption.AllDirectories).Where(filterTestAssemblies);
+            var asmDefinitionFiles = Directory.GetFiles(packagePath, AssemblyFileDefinitionExtension, SearchOption.AllDirectories).Where(filterTestAssemblies);
+            var asmDefinitionReferencefFiles = Directory.GetFiles(packagePath, AssemblyFileDefinitionReferenceExtension, SearchOption.AllDirectories).Where(filterTestAssemblies);
 
             // check the existence of valid asmdef file if there are c# scripts in the Editor or Tests folder
             var foldersToCheck = new string[] {"Editor", "Tests"};
@@ -97,19 +99,21 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
                 if (!Directory.Exists(folderPath))
                     continue;
 
-                var foldersWithAsmdefFile = asmdefFiles.Where(f => f.IndexOf(folderPath) >= 0).Select(f => Path.GetDirectoryName(f));
+                var foldersWithAsmDefinitionFile = asmDefinitionFiles.Where(f => f.IndexOf(folderPath) >= 0).Select(f => Path.GetDirectoryName(f));
+                var foldersWithAsmDefinitionReferenceFile = asmDefinitionReferencefFiles.Where(f => f.IndexOf(folderPath) >= 0).Select(f => Path.GetDirectoryName(f));
                 var csFiles = Directory.GetFiles(folderPath, CSharpScriptExtension, SearchOption.AllDirectories).Where(filterTestAssemblies);
                 foreach (var csFile in csFiles)
                 {
                     // check if the cs file is not in any folder that has asmdef file
-                    if (foldersWithAsmdefFile.All(f => csFile.IndexOf(f) < 0))
+                    if (foldersWithAsmDefinitionFile.All(f => csFile.IndexOf(f) < 0) &&
+                        foldersWithAsmDefinitionReferenceFile.All(f => csFile.IndexOf(f) < 0))
                     {
-                        AddError("C# script found in \"" + folder + "\" folder, but no corresponding asmdef file: " + csFile);
+                        AddError("C# script found in \"" + folder + "\" folder, but no corresponding asmdef or asmref file: " + csFile);
                     }
                 }
             }
 
-            foreach (var asmdef in asmdefFiles)
+            foreach (var asmdef in asmDefinitionFiles)
                 CheckAssemblyDefinitionContent(asmdef);
         }
     }

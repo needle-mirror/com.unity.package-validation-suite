@@ -186,7 +186,7 @@ namespace UnityEditor.PackageManager.ValidationSuite
         public static ManifestData GetManifest(string packagePath)
         {
             Profiler.BeginSample("GetManifest");
-
+            
             // Start by parsing the package's manifest data.
             var manifestPath = Path.Combine(packagePath, Utilities.PackageJsonFilename);
 
@@ -196,17 +196,37 @@ namespace UnityEditor.PackageManager.ValidationSuite
             }
 
             // Read manifest json data, and convert it.
-            var textManifestData = File.ReadAllText(manifestPath);
-            var manifest = JsonUtility.FromJson<ManifestData>(textManifestData);
-            manifest.path = packagePath;
-            manifest.dependencies = ParseDictionary(textManifestData, "dependencies");
-            manifest.relatedPackages = ParseDictionary(textManifestData, "relatedPackages");
-            manifest.repository = ParseDictionary(textManifestData, "repository");
-            manifest.lifecycle = ManifestData.EvaluateLifecycle(manifest.version);
+            try
+            {
+                var textManifestData = File.ReadAllText(manifestPath);
+                var manifest = JsonUtility.FromJson<ManifestData>(textManifestData);
+                manifest.path = packagePath;
+                manifest.dependencies = ParseDictionary(textManifestData, "dependencies");
+                manifest.relatedPackages = ParseDictionary(textManifestData, "relatedPackages");
+                manifest.repository = ParseDictionary(textManifestData, "repository");
+                manifest.lifecycle = ManifestData.EvaluateLifecycle(manifest.version);
+                manifest.authorDetails = GetAuthorDetails(textManifestData);
 
-            Profiler.EndSample();
+                Profiler.EndSample();
 
-            return manifest;
+                return manifest;
+            }
+            catch (ArgumentException e)
+            {
+                Profiler.EndSample();
+                throw new Exception($"Could not parse json in file {manifestPath} because of: {e.Message}");
+            }
+        }
+
+        private static AuthorDetails GetAuthorDetails(string json)
+        {
+            string authorString = GetFieldValueFromJson(json, "author");
+            if (authorString.Contains("{"))
+            {
+                return JsonUtility.FromJson<AuthorDetails>(authorString);
+            }
+
+            return null;
         }
 
         private static PackageType GetPackageType(ManifestData manifestData)
@@ -230,7 +250,7 @@ namespace UnityEditor.PackageManager.ValidationSuite
 
             return matches;
         }
-        
+
         private static Dictionary<string, string> ParseDictionary(string json, string key)
         {
             string minified = new Regex("[\"\\s]").Replace(json, "");
@@ -245,6 +265,23 @@ namespace UnityEditor.PackageManager.ValidationSuite
 
             string[] keyValuePairs = match.Split(',');
             return keyValuePairs.Select(kvp => kvp.Split(':')).ToDictionary(k => k[0], v => v[1]);
+        }
+
+        private static string GetFieldValueFromJson(string json, string key)
+        {
+            string minified = new Regex("[\\s]").Replace(json, "");
+            var regex = new Regex("\"" + key + "\":((\"(.*?)\")|({(.*?)}))");
+            MatchCollection matches = regex.Matches(minified);
+            if (matches.Count == 0)
+                return "";
+
+            if (!String.IsNullOrEmpty(matches[0].Groups[3].Value))
+                return matches[0].Groups[3].Value; // Group 0 is full match, group 3 is capture group "(.*)"
+
+            if (!String.IsNullOrEmpty(matches[0].Groups[4].Value))
+                return matches[0].Groups[4].Value; // Group 0 is full match, group 4 is capture group {(.*)}
+
+            return "";
         }
 
         internal VersionChangeType VersionChangeType

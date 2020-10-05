@@ -88,7 +88,7 @@ namespace UnityEditor.PackageManager.ValidationSuite
                 var issuesList = context.ValidationExceptionManager.CheckValidationExceptions(context.PublishPackageInfo.version);
                 foreach (var issue in issuesList)
                 {
-                    str += "\r\n- Error: " + issue + "\r\n";
+                    str += "\r\n- Issue: " + issue + "\r\n";
                 }
                 str += "***************************************\r\n";
             }

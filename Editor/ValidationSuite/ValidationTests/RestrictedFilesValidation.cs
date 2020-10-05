@@ -55,8 +55,9 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
                 {
                     foreach (var file in matchingFiles)
                     {
-                        if (!isExtensionRestriction || (Path.GetExtension(fileType.ToLower()) == Path.GetExtension(file.ToLower())))
-                            AddWarning(file + " should not be included in packages unless absolutely necessary.  " + "Please confirm that it's inclusion is deliberate and intentional.");
+                        var packageRelativeFilePath = Utilities.GetOSAgnosticPath(Utilities.GetPathFromRoot(file, Context.PublishPackageInfo.path));
+                        if (!isExtensionRestriction || Path.GetExtension(fileType.ToLower()) == Path.GetExtension(packageRelativeFilePath.ToLower()))
+                            AddWarning(packageRelativeFilePath + " should not be included in packages unless absolutely necessary. Please confirm that its inclusion is deliberate and intentional.");
                     }
                 }
             }

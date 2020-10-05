@@ -69,7 +69,7 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
             }
             catch (Exception e)
             {
-                if (CompleteTestExcepted())
+                if (AllTestErrorsExcepted())
                 {
                     TestOutput.Add(new ValidationTestOutput() { Type = TestOutputType.ErrorMarkedWithException, Output = e.Message + e.StackTrace });
                 }
@@ -106,12 +106,12 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
         {
             // let's check for Validation Exceptions.
             // #1 - Specific error exception
-            if (CanUseValidationExceptions && Context.ValidationExceptionManager.IsException(TestName, message, Context.PublishPackageInfo.version))
+            if (CanUseValidationExceptions && Context.ValidationExceptionManager.IsErrorException(TestName, message, Context.PublishPackageInfo.version))
             {
                 TestOutput.Add(new ValidationTestOutput() { Type = TestOutputType.ErrorMarkedWithException, Output = message });
             }
-            // #2 - Complete Test exception
-            else if (CompleteTestExcepted())
+            // #2 - All test errors excepted
+            else if (AllTestErrorsExcepted())
             {
                 TestOutput.Add(new ValidationTestOutput() { Type = TestOutputType.ErrorMarkedWithException, Output = message });
             }
@@ -124,7 +124,21 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
 
         public void AddWarning(string message)
         {
-            TestOutput.Add(new ValidationTestOutput() { Type = TestOutputType.Warning, Output = message });
+            // let's check for Validation Exceptions.
+            // #1 - Specific warning exception
+            if (Context.ValidationExceptionManager.IsWarningException(TestName, message, Context.PublishPackageInfo.version))
+            {
+                TestOutput.Add(new ValidationTestOutput() { Type = TestOutputType.WarningMarkedWithException, Output = message });
+            }
+            // #2 - All test warnings excepted
+            else if (AllTestWarningsExcepted())
+            {
+                TestOutput.Add(new ValidationTestOutput() { Type = TestOutputType.WarningMarkedWithException, Output = message });
+            }
+            else
+            {
+                TestOutput.Add(new ValidationTestOutput() { Type = TestOutputType.Warning, Output = message });
+            }
         }
 
         protected void AddInformation(string message)
@@ -158,10 +172,15 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
                 DirectorySearch(subDir, searchPattern, ref matches);
         }
 
-        private bool CompleteTestExcepted()
+        private bool AllTestErrorsExcepted()
         {
             return CanUseCompleteTestExceptions &&
-                   Context.ValidationExceptionManager.IsException(TestName, Context.PublishPackageInfo.version);
+                Context.ValidationExceptionManager.IsErrorException(TestName, Context.PublishPackageInfo.version);
+        }
+
+        private bool AllTestWarningsExcepted()
+        {
+            return Context.ValidationExceptionManager.IsWarningException(TestName, Context.PublishPackageInfo.version);
         }
     }
 }

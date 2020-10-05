@@ -1,7 +1,5 @@
 using System;
-using System.Collections.Generic;
 using System.Globalization;
-using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
 using Semver;
@@ -40,6 +38,7 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
             }
 
             ValidateManifestData(manifestData);
+            ValidateAuthor(manifestData);
             ValidateVersion(manifestData);
 
             ValidateDependencies();
@@ -155,13 +154,13 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
                 AddError("In package.json, \"description\" is too short. Minimum Length = {0}. Current Length = {1}. {2}", MinDescriptionSize, manifestData.description.Length, ErrorDocumentation.GetLinkMessage(ManifestValidation.docsFilePath,  "description-is-too-short"));
             }
             
-            //check unity field, if it's there
+            // check unity field, if it's there
             if (!string.IsNullOrEmpty(manifestData.unity) && (manifestData.unity.Length > 6 || !Regex.Match(manifestData.unity, UnityRegex).Success))
             {
                 AddError($"In package.json, \"unity\" is invalid. It should only be <MAJOR>.<MINOR> (e.g. 2018.4). Current unity = {manifestData.unity}. {ErrorDocumentation.GetLinkMessage(ManifestValidation.docsFilePath,  "unity-is-invalid")}");
             }
             
-            //check unityRelease field, if it's there
+            // check unityRelease field, if it's there
             if (!string.IsNullOrEmpty(manifestData.unityRelease))
             {
                 // it should be valid
@@ -179,7 +178,7 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
                 }
             }
 
-
+            // check documentation url field
             if (Context.ValidationType == ValidationType.Promotion || Context.ValidationType == ValidationType.CI)
             {
                 if (!string.IsNullOrWhiteSpace(manifestData.documentationUrl))
@@ -197,6 +196,55 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
             else
             {
                 AddInformation("Skipping Git tags check as this is a package in development.");
+            }
+        }
+
+        private void ValidateAuthor(ManifestData manifestData)
+        {
+            if (manifestData.IsAuthoredByUnity())
+            {
+                ValidateUnityAuthor(manifestData);
+            } 
+            else
+            {
+                ValidateNonUnityAuthor(manifestData);
+            }
+        }
+
+        private void ValidateUnityAuthor(ManifestData manifestData)
+        {
+            if (manifestData.author != null)
+            {
+                // make sure it is not present in order to have a unified presentation of the author for all of our packages
+                AddError("A Unity package must not have an author field. Please remove the field. {0}",
+                    ErrorDocumentation.GetLinkMessage(ManifestValidation.docsFilePath,
+                        "a_unity_package_must_not_have_an_author_field"));
+            }
+        }
+
+        // the author field is required for non-unity packages
+        private void ValidateNonUnityAuthor(ManifestData manifestData) {
+            
+            // if authordetails is set, then author == ""
+            if (String.IsNullOrEmpty(manifestData.author) && manifestData.authorDetails == null)
+            {
+                AddError(
+                "The `author` field is mandatory. Please add an `author` field in your package.json file",
+                ErrorDocumentation.GetLinkMessage(ManifestValidation.docsFilePath, "author_is_mandatory"));
+                return;
+            }
+
+            if (!String.IsNullOrEmpty(manifestData.author) && manifestData.authorDetails == null)
+            {
+                return; // valid
+            }
+
+            // non unity packages should have either a string or AuthorDetails { name: ""*, email: "", url: ""}
+            if (String.IsNullOrEmpty(manifestData.authorDetails.name))
+            {
+                AddError(
+                    "Invalid `author` field. The `author` field in your package.json file can be a string or an object ( name, email, url ), where `name` is mandatory. {0}",
+                    ErrorDocumentation.GetLinkMessage(ManifestValidation.docsFilePath, "author_is_invalid"));
             }
         }
     }

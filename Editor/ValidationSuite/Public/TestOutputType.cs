@@ -13,6 +13,9 @@ namespace UnityEditor.PackageManager.ValidationSuite {
         /// <summary>The test output string is a warning</summary>
         Warning,
 
+        /// <summary>The test output string is a warning, but was part of the exception list</summary>
+        WarningMarkedWithException,
+
         /// <summary>The test output string is an error</summary>
         Error,
 

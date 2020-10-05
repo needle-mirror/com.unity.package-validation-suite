@@ -94,3 +94,20 @@ For packages that are published to the public registry, a `repository.url` field
 
 ## for a published package there must be a repository.revision field
 For packages that are published to the public registry, a `repository.revision` field needs to exist in package.json to make it easier to identify on what specific commit a package was published
+
+## A Unity package must not have an author field
+Normal packages can contain an `author` field, but packages authored by Unity must not contain one. This way, we can display the same name for every one of our packages.
+
+## author is invalid
+The `author` field can be either a string with the name of the author or an object { name, email, url }, where name is mandatory. Example:
+"author": "John Snow"
+or
+"author": {
+    "name": "Usagi Tsukino",
+    "email": "usagi@example.com",
+    "url": "https://www.rabbitonthemoon.com"
+}
+
+## author is mandatory
+The `author` field is required in your package manifest (package.json).  
+Packages that are NOT authored by Unity require an `author` field.

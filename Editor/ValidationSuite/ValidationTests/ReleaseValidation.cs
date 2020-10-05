@@ -28,6 +28,8 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
             
             var lastFullReleaseVersion = SemVersion.Parse(Context.PreviousPackageInfo != null ? Context.PreviousPackageInfo.version : "0.0.0");
             
+            // if previous version's major is greater than 0, then all is good
+            // if previous version's major is 0 and trying to release between [0, 1].y.z, then all is good
             if (lastFullReleaseVersion.Major >= 1 || thisVersion.Major - lastFullReleaseVersion.Major <= 1) {
                 return;
             }
@@ -35,7 +37,7 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
             var message = "Invalid major version " + thisVersion + " when publishing to production registry.";
             if (lastFullReleaseVersion == "0.0.0")
             {
-                message += " There has never been a full release of this package. The major must be 0 or 1.";
+                message += $" There has never been a full release of this package. The major should be 0 or 1.";
             }
             else
             {
@@ -43,7 +45,7 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
                            lastFullReleaseVersion + ").";
             }
 
-            AddError(message + " {0}", ErrorDocumentation.GetLinkMessage("release_validation_error.html",  "invalid-major-release"));
+            AddWarning(message + " {0}", ErrorDocumentation.GetLinkMessage("release_validation_error.html",  "invalid-major-release"));
         }
     }
 }

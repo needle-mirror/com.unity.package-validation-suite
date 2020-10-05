@@ -1,8 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 
-using UnityEngine;
-using Semver;
 using UnityEditor.PackageManager.ValidationSuite.Utils;
 
 namespace UnityEditor.PackageManager.ValidationSuite
@@ -19,6 +17,9 @@ namespace UnityEditor.PackageManager.ValidationSuite
         public string version = "";
         public double lifecycle = 1.0;
         public string type = "";
+        public string author;
+        [NonSerialized]
+        public AuthorDetails authorDetails;
         public List<SampleData> samples = new List<SampleData>();
         public Dictionary<string, string> repository = new Dictionary<string, string>();
         public Dictionary<string, string> dependencies = new Dictionary<string, string>();
@@ -53,6 +54,15 @@ namespace UnityEditor.PackageManager.ValidationSuite
         {
             return PackageLifecyclePhase.GetLifecyclePhase(version.ToLower()) == LifecyclePhase.Preview ? 1.0 : 2.0;
         }
+
+        /// <summary>
+        /// If the package we are evaluating is authored by Unity
+        /// </summary>
+        /// <returns></returns>
+        public bool IsAuthoredByUnity()
+        {
+            return name.StartsWith("com.unity.");
+        }
     }
 
     [Serializable]
@@ -61,6 +71,14 @@ namespace UnityEditor.PackageManager.ValidationSuite
         public string displayName = "";
         public string description = "";
         public string path = "";
+    }
+
+    [Serializable]
+    public class AuthorDetails
+    {
+        public string name = "";
+        public string email = "";
+        public string url = "";
     }
 
 }

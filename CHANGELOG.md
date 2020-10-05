@@ -4,6 +4,11 @@ All notable changes to this package will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## [0.17.0] - 2020-10-05
+- Changed the Release Validation into a warning instead of an Error
+- Added primed library validation which makes sure templates are packed with their Library folder for speedier creation of projects using those templates
+- Added Author field validation
+
 ## [0.16.0] - 2020-09-16
 - Fixed System.IO.DirectoryNotFoundException which can occur if Logs folder is missing
 - Fixed Validation Suite tests to succeed when exceptions are used despite errors being thrown
