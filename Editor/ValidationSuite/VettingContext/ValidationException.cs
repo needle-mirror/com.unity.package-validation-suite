@@ -4,7 +4,7 @@ using System.Collections.Generic;
 namespace UnityEditor.PackageManager.ValidationSuite
 {
     [Serializable]
-    internal class ValidationException
+    class ValidationException
     {
         /// <summary>
         /// Name of validaiton test in which the exception is requested.
@@ -14,7 +14,7 @@ namespace UnityEditor.PackageManager.ValidationSuite
         /// <summary>
         /// Error for which the exception is requested.
         /// </summary>
-        public string ExceptionError;
+        public string ExceptionMessage;
 
         /// <summary>
         /// Package Version
@@ -23,8 +23,8 @@ namespace UnityEditor.PackageManager.ValidationSuite
     }
 
     [Serializable]
-    internal class ValidationExceptions
+    class ValidationExceptions
     {
-        public ValidationException[] Exceptions;
+        public ValidationException[] ErrorExceptions;
     }
 }

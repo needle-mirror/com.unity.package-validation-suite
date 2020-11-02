@@ -93,12 +93,12 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
         {
             // let's check for Validation Exceptions.
             // #1 - Specific error exception
-            if (CanUseValidationExceptions && Context.ValidationExceptionManager.IsException(TestName, message, Context.PublishPackageInfo.version))
+            if (CanUseValidationExceptions && Context.ValidationExceptionManager.IsErrorException(TestName, message, Context.PublishPackageInfo.version))
             {
                 TestOutput.Add(new ValidationTestOutput() { Type = TestOutputType.ErrorMarkedWithException, Output = message });
             }
-            // #2 - Complete Test exception
-            else if (CanUseCompleteTestExceptions && Context.ValidationExceptionManager.IsException(TestName, Context.PublishPackageInfo.version))
+            // #2 - All test errors excepted
+            else if (AllTestErrorsExcepted())
             {
                 TestOutput.Add(new ValidationTestOutput() { Type = TestOutputType.ErrorMarkedWithException, Output = message });
             }
@@ -143,6 +143,12 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
 
             foreach (string subDir in Directory.GetDirectories(path))
                 DirectorySearch(subDir, searchPattern, ref matches);
+        }
+
+        private bool AllTestErrorsExcepted()
+        {
+            return CanUseCompleteTestExceptions &&
+                Context.ValidationExceptionManager.IsErrorException(TestName, Context.PublishPackageInfo.version);
         }
     }
 }

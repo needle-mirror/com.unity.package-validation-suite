@@ -1,4 +1,5 @@
-﻿using System.IO;
+﻿using System;
+using System.IO;
 using System.Linq;
 using System.Collections.Generic;
 
@@ -13,19 +14,24 @@ namespace UnityEditor.PackageManager.ValidationSuite
 
         private const string TestExceptionPrefix = "__**Test-";
 
-        private Dictionary<string, ValidationException> exceptionDictionary;
+        private Dictionary<string, ValidationException> errorExceptionDictionary;
+
+        /// <summary>
+        /// Will return true if the package contains 1 or more validation error exceptions
+        /// </summary>
+        public bool HasErrorExceptions
+        {
+            get { return errorExceptionDictionary.Any(); }
+        }
 
         /// <summary>
         /// Will return true if the package contains 1 or more validation exceptions
         /// </summary>
-        public bool HasExceptions
-        {
-            get { return exceptionDictionary.Any(); }
-        }
+        public bool HasExceptions => HasErrorExceptions;
 
-        internal IEnumerable<ValidationException> ExceptionsList
+        internal IEnumerable<ValidationException> ErrorExceptionsList
         {
-            get { return exceptionDictionary.Values; }
+            get { return errorExceptionDictionary.Values; }
         }
 
         /// <summary>
@@ -34,34 +40,72 @@ namespace UnityEditor.PackageManager.ValidationSuite
         /// <param name="packagePath">Path that contains the exception file.</param>
         public ValidationExceptionManager(string packagePath)
         {
-            exceptionDictionary = new Dictionary<string, ValidationException>();
+            errorExceptionDictionary = new Dictionary<string, ValidationException>();
             var filePath = Path.Combine(packagePath, ValidationExceptionsFileName);
 
             if (File.Exists(filePath))
             {
-                ValidationExceptions exceptions = Utilities.GetDataFromJson<ValidationExceptions>(filePath);
+                var exceptions = Utilities.GetDataFromJson<ValidationExceptions>(filePath);
 
                 // If there is an exception error specified, let's use it.
                 // If there isn't one specified, this is a test level exception, all errors for that test should be flagged as exceptions.
-                exceptionDictionary = exceptions.Exceptions.ToDictionary(ex => string.IsNullOrWhiteSpace(ex.ExceptionError) ? (TestExceptionPrefix + ex.ValidationTest) : ex.ExceptionError);
-            }
-            else
-            {
-                exceptionDictionary = new Dictionary<string, ValidationException>();
+                if (exceptions.ErrorExceptions != null)
+                    errorExceptionDictionary = exceptions.ErrorExceptions.ToDictionary(ex => string.IsNullOrWhiteSpace(ex.ExceptionMessage) ? (TestExceptionPrefix + ex.ValidationTest) : ex.ExceptionMessage);
+
+                // Handle backwards compatibility for old format (renamed fields)
+                // Sadly JsonUtility.FromJson doesn't support the FormerlySerializedAs attribute (case 1119033)
+                MergeWithOldFormat(filePath);
             }
         }
+
+        void MergeWithOldFormat(string filePath)
+        {
+            var oldExceptions = Utilities.GetDataFromJson<OldValidationExceptions>(filePath);
+            if (oldExceptions.Exceptions != null)
+            {
+                foreach (var oldException in oldExceptions.Exceptions)
+                {
+                    var errorException = new ValidationException
+                    {
+                        ValidationTest = oldException.ValidationTest,
+                        ExceptionMessage = oldException.ExceptionError,
+                        PackageVersion = oldException.PackageVersion,
+                    };
+
+                    var key = string.IsNullOrWhiteSpace(errorException.ExceptionMessage) ? (TestExceptionPrefix + errorException.ValidationTest) : errorException.ExceptionMessage;
+                    errorExceptionDictionary.Add(key, errorException);
+                }
+            }
+        }
+
+        // Helper classes for ValidationExceptions.json format backwards compatibility
+#pragma warning disable 0649
+        [Serializable]
+        class OldValidationException
+        {
+            public string ValidationTest;
+            public string ExceptionError;
+            public string PackageVersion;
+        }
+
+        [Serializable]
+        class OldValidationExceptions
+        {
+            public OldValidationException[] Exceptions;
+        }
+#pragma warning restore 0649
 
         /// <summary>
         /// Tests whether the requested error is part of the validation exception list.
         /// </summary>
         /// <param name="validationTest">Validation test display name</param>
-        /// <param name="validationError">Error string, verbatim</param>
+        /// <param name="validationMessage">Error string, verbatim</param>
         /// <param name="packageVersion">Version of the package this exception is for.</param>
         /// <returns>True if the error is part of the validation exception list.</returns>
-        public bool IsException(string validationTest, string validationError, string packageVersion)
+        public bool IsErrorException(string validationTest, string validationMessage, string packageVersion)
         {
             ValidationException validationException;
-            if (exceptionDictionary.TryGetValue(validationError, out validationException))
+            if (errorExceptionDictionary.TryGetValue(validationMessage, out validationException))
             {
                 if (validationException.ValidationTest == validationTest &&
                     validationException.PackageVersion == packageVersion)
@@ -74,15 +118,15 @@ namespace UnityEditor.PackageManager.ValidationSuite
         }
 
         /// <summary>
-        /// Tests whether a test class has been exceptioned completely.
+        /// Tests whether a test class has been exceptioned completely with respect to errors.
         /// </summary>
         /// <param name="validationTest">Validation test display name</param>
         /// <param name="packageVersion">Version of the package this exception is for.</param>
         /// <returns>True if the error is part of the validation exception list.</returns>
-        public bool IsException(string validationTest, string packageVersion)
+        public bool IsErrorException(string validationTest, string packageVersion)
         {
             ValidationException validationException;
-            if (exceptionDictionary.TryGetValue(TestExceptionPrefix + validationTest, out validationException))
+            if (errorExceptionDictionary.TryGetValue(TestExceptionPrefix + validationTest, out validationException))
             {
                 if (validationException.PackageVersion == packageVersion)
                 {
@@ -100,13 +144,17 @@ namespace UnityEditor.PackageManager.ValidationSuite
         /// <returns> Returns a list of issues found with the exception list.  That list will be empty when no issues are found.</returns>
         public IEnumerable<string> CheckValidationExceptions(string packageVersion)
         {
+            var formatString = "The following {0} was tagged as an exception to validation, but for a different version of the package. " +
+                $"Please consider getting this exception fixed and removed from \"{ValidationExceptionsFileName}\" before updating its package version field.\r\n"+
+                "    \"{1}\" - \"{2}\"";
+
             List<string> issuesList = new List<string>();
-            foreach (var validationException in ExceptionsList)
+            foreach (var validationException in ErrorExceptionsList)
             {
-                // Validate that all exceptions that were used had the right package version.
+                // Validate that all error exceptions that were used had the right package version.
                 if (validationException.PackageVersion != packageVersion)
                 {
-                    issuesList.Add(string.Format("The following error was tagged as an exception to validation, but for a previous version of the package.  Please consider getting this exception fixed and removed from \"ValidationExceptions.json\" before updating its package version field.\r\n    \"{0}\" - \"{1}\"", validationException.ValidationTest, validationException.ExceptionError));
+                    issuesList.Add(string.Format(formatString, "error", validationException.ValidationTest, validationException.ExceptionMessage));
                 }
             }
 
