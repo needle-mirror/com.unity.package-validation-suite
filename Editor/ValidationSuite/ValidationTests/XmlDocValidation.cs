@@ -25,6 +25,8 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
             TestDescription = "Checks public API to ensure xmldocs exist.";
             TestCategory = TestCategory.ApiValidation;
             SupportedValidations = new[] { ValidationType.CI, ValidationType.LocalDevelopment, ValidationType.LocalDevelopmentInternal, ValidationType.Promotion };
+            CanUseValidationExceptions = true;
+            CanUseCompleteTestExceptions = true;
         }
         protected override void Run(AssemblyInfo[] info)
         {
@@ -66,6 +68,14 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
             process.WaitForExit();
             var stdoutLines = stdout.GetOutput();
             var stderrLines = stderr.GetOutput();
+            if (process.ExitCode != 0)
+            {
+                // If FindMissingDocs fails and returns a non-zero exit code (like an unhandled exception) it means that
+                // we couldn't validate the XmdDocValidation because the result is inconclusive. For that reason, we
+                // should add it as an error to be addressed by the developer. If there's any bug with the tool itself
+                // then that will need to be addressed in the XmlDoc repo and rebuild the binaries from PVS.
+                AddError($"FindMissingDocs.exe returned {process.ExitCode}, a non-zero exit code and XmlDocValidation test is inconclusive.");
+            }
             if (stderrLines.Length > 0)
             {
                 AddWarning($"Internal Error running FindMissingDocs. Output:\n{string.Join("\n",stderrLines)}");

@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
+using System.Text;
 using Semver;
 using UnityEngine;
 using UnityEngine.Profiling;
@@ -23,7 +24,6 @@ namespace UnityEditor.PackageManager.ValidationSuite
         internal const string ThirdPartyNoticeFile = "Third-Party Notices.md";
         internal const string LicenseFile = "LICENSE.md";
         internal const string VSuiteName = "com.unity.package-validation-suite";
-
 
         public static bool NetworkNotReachable { get { return Application.internetReachability == NetworkReachability.NotReachable; } }
 
@@ -353,5 +353,7 @@ namespace UnityEditor.PackageManager.ValidationSuite
             var asmdefPath = Path.GetFullPath(path);
             return new AssemblyInfo(assembly, asmdefPath);
         }
+        
+        
     }
 }

@@ -4,8 +4,13 @@ All notable changes to this package will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
-## [0.17.1] - 2020-11-04
-- No changes to behavior. New version released solely for the purpose of moving the `latest` tag on the registry.
+## [0.18.0] - 2020-11-11
+- Added Template Validation that errors when _Enable Preview Packages_ or _Enable Pre-release Packages_ is set in Package Manager settings.
+- Moved restricted file extensions `.jpg` and `.jpeg` to new Asset Validation where they are allowed in `Documentation~` and `Tests` directories.
+- Added Package Unity Version Validation that errors when the minimum Unity version requirement is made more strict without also bumping (at least) the minor version of the package. A warning is added instead for non-Unity authored packages. In addition, a warning is added when the minimum Unity version requirement is made less strict.
+- Fixed compilation warnings.
+- Changed the `XmlDocValidation` test warning to an error when the underlying tool `FindMissingDocs` fails by throwing unhandled exceptions.
+- Fixed `XmlDocValidation` support for `CDATA` sections in Xml documentation.
 
 ## [0.17.0] - 2020-10-05
 - Changed the Release Validation into a warning instead of an Error

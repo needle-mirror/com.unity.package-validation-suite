@@ -37,15 +37,7 @@ namespace UnityEditor.PackageManager.ValidationSuite
         public List<RelatedPackage> relatedPackages = new List<RelatedPackage>();
         public ValidationExceptionManager ValidationExceptionManager { get; set; }
 
-        // Used for template package validation
-        public string[] ProjectManifestKeys { 
-            get
-            {
-                return GetProjectManifestKeys(ProjectManifestPath);
-            }
-        }
-
-        public string ProjectManifestPath { get; set; }
+        internal ProjectInfo ProjectInfo { get; set; }
 
         public static VettingContext CreatePackmanContext(string packageId, ValidationType validationType)
         {
@@ -94,8 +86,8 @@ namespace UnityEditor.PackageManager.ValidationSuite
             {
                 context.PublishPackageInfo = GetManifest(packageInfo.resolvedPath);
             }
-            
-            context.SetProjectManifestPath();
+
+            context.ProjectInfo = new ProjectInfo(context);
 
             Profiler.BeginSample("RelatedPackages");
             foreach (var relatedPackage in context.PublishPackageInfo.relatedPackages)
@@ -154,14 +146,6 @@ namespace UnityEditor.PackageManager.ValidationSuite
             return context;
         }
 
-        // Method to set the right manifest path for the TemplateProjectManifestValidation test
-        internal void SetProjectManifestPath()
-        {
-            ProjectManifestPath = PackageType == PackageType.Template && ValidationType == ValidationType.CI ? 
-                Path.Combine(PublishPackageInfo.path, "ProjectData~", "Packages", "manifest.json") : 
-                Path.GetFullPath("Packages/manifest.json");
-        }
-
         public static VettingContext CreateAssetStoreContext(string packageName, string packageVersion, string packagePath, string previousPackagePath)
         {
             VettingContext context = new VettingContext();
@@ -170,17 +154,6 @@ namespace UnityEditor.PackageManager.ValidationSuite
             context.PreviousPackageInfo = string.IsNullOrEmpty(previousPackagePath) ? null : new ManifestData() { path = previousPackagePath, name = packageName, version = "Previous" };
             context.ValidationType = ValidationType.AssetStore;
             return context;
-        }
-
-        internal static string[] GetProjectManifestKeys(string manifestPath)
-        {
-            Profiler.BeginSample("GetProjectManifestKeys");
-            
-            if (!File.Exists(manifestPath))
-                throw new FileNotFoundException($"A project manifest file could not be found in {manifestPath}");
-
-            var contents = File.ReadAllText(manifestPath);
-            return ParseFirstLevelKeys(contents);
         }
 
         public static ManifestData GetManifest(string packagePath)

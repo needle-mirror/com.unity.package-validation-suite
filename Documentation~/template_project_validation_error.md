@@ -21,3 +21,9 @@ A blocked field has been found in the Project Manifest of the Template. Remove t
 During **Local Development**: This check validates that the file `Packages/manifest.json` does not contain any of the blocked fields.
 
 During **CI**: This check validates that the file packed into `ProjectData~/Packages/manifest.json` does not contain any of the blocked fields.
+
+### Preview|PreRelease packages are not allowed to be enabled on template packages
+
+The option to enable Preview (<2021) or PreRelease (>=2021) packages has been enabled on the template project. This option is not allowed for template packages, and needs to be disabled in:
+
+`ProjectSettings > PackageManager > Advanced Settings`

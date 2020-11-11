@@ -1,0 +1,3 @@
+[submodule "Source~/XmlDoc"]
+	path = Source~/XmlDoc
+	url = git@github.cds.internal.unity3d.com:unity/XmlDoc.git

@@ -106,8 +106,6 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
             "*.dom",
             "*.exe",
             "*.jse",
-            "*.jpg",
-            "*.jpeg",
             "*.msi",
             "*.msp",
             "*.mst",

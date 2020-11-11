@@ -99,8 +99,9 @@ namespace UnityEditor.PackageManager.ValidationSuite
         }
 
         // Helper classes for ValidationExceptions.json format backwards compatibility
+#pragma warning disable 0649
         [Serializable]
-        public class OldValidationException
+        class OldValidationException
         {
             public string ValidationTest;
             public string ExceptionError;
@@ -112,6 +113,7 @@ namespace UnityEditor.PackageManager.ValidationSuite
         {
             public OldValidationException[] Exceptions;
         }
+#pragma warning restore 0649
 
         /// <summary>
         /// Tests whether the requested error is part of the validation exception list.

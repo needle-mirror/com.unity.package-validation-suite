@@ -159,6 +159,14 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
                 AddWarning(message);
         }
 
+        protected void AddUnityAuthoredConditionalError(ManifestData manifest, string message)
+        {
+            if (manifest.IsAuthoredByUnity())
+                AddError(message);
+            else
+                AddWarning(message);
+        }
+
         protected void DirectorySearch(string path, string searchPattern, ref List<string> matches)
         {
             if (!Directory.Exists(path))
