@@ -2,7 +2,7 @@ using System;
 using System.Text.RegularExpressions;
 using Semver;
 
-namespace Editor.ValidationSuite.Utilities
+namespace UnityEditor.PackageManager.ValidationSuite
 {
     static class UnityVersion
     {

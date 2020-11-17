@@ -4,7 +4,10 @@ All notable changes to this package will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
-## [0.18.0] - 2020-11-11
+## [0.18.1] - 2020-11-17
+- Fixed `Editor` namespace clashing with `Editor` type (introduced in 0.18.0).
+
+## [0.18.0] - 2020-11-16
 - Added Template Validation that errors when _Enable Preview Packages_ or _Enable Pre-release Packages_ is set in Package Manager settings.
 - Moved restricted file extensions `.jpg` and `.jpeg` to new Asset Validation where they are allowed in `Documentation~` and `Tests` directories.
 - Added Package Unity Version Validation that errors when the minimum Unity version requirement is made more strict without also bumping (at least) the minor version of the package. A warning is added instead for non-Unity authored packages. In addition, a warning is added when the minimum Unity version requirement is made less strict.
