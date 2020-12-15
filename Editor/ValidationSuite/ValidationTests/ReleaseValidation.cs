@@ -8,6 +8,8 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
 {
     internal class ReleaseValidation : BaseValidation
     {
+        static readonly string  k_DocsFilePath = "release_validation_error.html";
+        
         public ReleaseValidation()
         {
             TestName = "Release Validation";
@@ -45,7 +47,7 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
                            lastFullReleaseVersion + ").";
             }
 
-            AddWarning(message + " {0}", ErrorDocumentation.GetLinkMessage("release_validation_error.html",  "invalid-major-release"));
+            AddWarning(message + " {0}", ErrorDocumentation.GetLinkMessage(k_DocsFilePath,  "invalid-major-release"));
         }
     }
 }

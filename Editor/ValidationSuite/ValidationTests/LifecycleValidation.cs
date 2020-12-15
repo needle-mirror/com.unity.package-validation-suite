@@ -3,13 +3,12 @@ using System.Collections.Generic;
 using System.Linq;
 using Semver;
 using UnityEditor.PackageManager.ValidationSuite.Utils;
-using UnityEngine;
 
 namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
 {
     internal class LifecycleValidation : BaseValidation
     {
-        internal static readonly string docsFilePath = "lifecycle_validation_error.html";
+        internal static readonly string k_DocsFilePath = "lifecycle_validation_error.html";
 
         public LifecycleValidation()
         {
@@ -44,7 +43,7 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
             SemVersion packageVersionNumber;
             if (!SemVersion.TryParse(manifestData.version, out packageVersionNumber))
             {
-                AddError("In package.json, \"version\" needs to be a valid \"Semver\". {0}", ErrorDocumentation.GetLinkMessage(docsFilePath,  "version-needs-to-be-a-valid-semver"));
+                AddError("In package.json, \"version\" needs to be a valid \"Semver\". {0}", ErrorDocumentation.GetLinkMessage(k_DocsFilePath,  "version-needs-to-be-a-valid-semver"));
                 return;
             }
 
@@ -56,25 +55,25 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
             }
             catch (ArgumentException e)
             {
-                AddError("In package.json, \"version\" doesn't follow our lifecycle rules. {0}. {1}", e.Message, ErrorDocumentation.GetLinkMessage(docsFilePath, "version-is-invalid-tag-must-follow-lifecycle-rules"));
+                AddError("In package.json, \"version\" doesn't follow our lifecycle rules. {0}. {1}", e.Message, ErrorDocumentation.GetLinkMessage(k_DocsFilePath, "version-is-invalid-tag-must-follow-lifecycle-rules"));
                 return;
             }
 
             lifecycleVersionValidator(packageVersionNumber, versionTag);
-            ValidateVersionAbilityToPromote(packageVersionNumber, versionTag);
+            ValidateVersionAbilityToPromote(packageVersionNumber, versionTag, manifestData);
         }
 
         private void LifecycleV1VersionValidator(SemVersion packageVersionNumber, VersionTag versionTag)
         {
             if (Context.IsCore && (!versionTag.IsEmpty() || packageVersionNumber.Major < 1))
             {
-                AddError("Core packages cannot be preview. " + ErrorDocumentation.GetLinkMessage(docsFilePath, "core-packages-cannot-be-preview"));
+                AddError("Core packages cannot be preview. " + ErrorDocumentation.GetLinkMessage(k_DocsFilePath, "core-packages-cannot-be-preview"));
                 return;
             }
 
             if (packageVersionNumber.Major < 1 && (versionTag.IsEmpty() || versionTag.Tag != "preview"))
             {
-                AddError("In package.json, \"version\" < 1, please tag the package as " + packageVersionNumber.VersionOnly() + "-preview. " + ErrorDocumentation.GetLinkMessage(docsFilePath, "version-1-please-tag-the-package-as-xxx-preview"));
+                AddError("In package.json, \"version\" < 1, please tag the package as " + packageVersionNumber.VersionOnly() + "-preview. " + ErrorDocumentation.GetLinkMessage(k_DocsFilePath, "version-1-please-tag-the-package-as-xxx-preview"));
                 return;
             }
 
@@ -84,7 +83,7 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
             {
 
                 AddError(
-                    "In package.json, \"version\": the only pre-release filter supported is \"-preview.[num < 999999]\". " + ErrorDocumentation.GetLinkMessage(docsFilePath, "version-the-only-pre-release-filter-supported-is--preview-num-999999"));
+                    "In package.json, \"version\": the only pre-release filter supported is \"-preview.[num < 999999]\". " + ErrorDocumentation.GetLinkMessage(k_DocsFilePath, "version-the-only-pre-release-filter-supported-is--preview-num-999999"));
             }
         }
 
@@ -137,7 +136,7 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
 
             // Extract the current track, since otherwise we'd be potentially parsing the version
             // multiple times
-            var currentTrack = Context.ProjectPackageInfo.LifecyclePhase;
+            var currentTrack = PackageLifecyclePhase.GetLifecyclePhaseOrRelation(Context.ProjectPackageInfo.version, Context.ProjectPackageInfo.name, Context);
 
             var supportedVersions = PackageLifecyclePhase.GetPhaseSupportedVersions(currentTrack);
 
@@ -148,10 +147,10 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
                 SemVersion depVersion;
                 if (!SemVersion.TryParse(dependency.Value, out depVersion)) continue;
 
-                LifecyclePhase dependencyTrack = PackageLifecyclePhase.GetLifecyclePhase(dependency.Value.ToLower());
+                LifecyclePhase dependencyTrack = PackageLifecyclePhase.GetLifecyclePhaseOrRelation(dependency.Value.ToLower(), dependency.Key.ToLower(), Context);
                 var depId = Utilities.CreatePackageId(dependency.Key, dependency.Value);
                 if (!supportedVersions.HasFlag(dependencyTrack))
-                    AddError("Package {0} depends on package {1} which is in an invalid track for release purposes. {2} versions can only depend on {3} versions. {4}", Context.ProjectPackageInfo.Id, depId, currentTrack, supportedVersions.ToString(), ErrorDocumentation.GetLinkMessage(docsFilePath, "package-depends-on-a-package-which-is-in-an-invalid-track-for-release-purposes"));
+                    AddError($"Package {Context.ProjectPackageInfo.Id} depends on package {depId} which is in an invalid track for release purposes. {currentTrack} versions can only depend on {supportedVersions.ToString()} versions. {ErrorDocumentation.GetLinkMessage(k_DocsFilePath, "package-depends-on-a-package-which-is-in-an-invalid-track-for-release-purposes")}");
             }
         }
 
@@ -161,7 +160,7 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
          * Error in Promotion
          * Only warn when in CI
          */
-        private void ValidateVersionAbilityToPromote(SemVersion packageVersionNumber, VersionTag versionTag)
+        private void ValidateVersionAbilityToPromote(SemVersion packageVersionNumber, VersionTag versionTag, ManifestData manifestData)
         {
             // Make this check only in promotion, to avoid network calls 
             if (Context.PackageVersionExistsOnProduction)
@@ -171,16 +170,15 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
             
             var message = String.Empty;
             if (PackageLifecyclePhase.IsReleasedVersion(packageVersionNumber, versionTag) ||
-                PackageLifecyclePhase.IsRCVersion(packageVersionNumber, versionTag))
+                PackageLifecyclePhase.IsRCForThisEditor(manifestData.name, Context))
             {
-                message =
-                    $"Automated promotion of Release packages is not allowed. Release Management are the only ones that can promote Release packages, if you need this to happen, please go to #devs-pkg-promotion. {ErrorDocumentation.GetLinkMessage(docsFilePath, "a-release-package-must-be-manually-promoted-by-release-management")}";
+                message = $"Automated promotion of Release or Release Candidate packages is not allowed. Release Management are the only ones that can promote Release and Release Candidate packages to production, if you need this to happen, please go to #devs-pkg-promotion. {ErrorDocumentation.GetLinkMessage(k_DocsFilePath, "a-release-package-must-be-manually-promoted-by-release-management")}";
             }
             else
             {
                 // We send a message if this is the first version of the package being promoted
                 if (!Context.PackageExistsOnProduction)
-                    message = $"{Context.PublishPackageInfo.name} has never been promoted to production before. Please contact Release Management through slack in #devs-pkg-promotion to promote the first version of your package before trying to use this automated pipeline. {ErrorDocumentation.GetLinkMessage(docsFilePath, "the-very-first-version-of-a-package-must-be-promoted-by-release-management")}";
+                    message = $"{Context.PublishPackageInfo.name} has never been promoted to production before. Please contact Release Management through slack in #devs-pkg-promotion to promote the first version of your package before trying to use this automated pipeline. {ErrorDocumentation.GetLinkMessage(k_DocsFilePath, "the-very-first-version-of-a-package-must-be-promoted-by-release-management")}";
             }
             
             if (message != String.Empty)
@@ -206,7 +204,7 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
                         errorMsg = string.Format(
                             "The previous version of this package ({0}) is not a Pre-Release. By Lifecycle V2 rules, a Pre-Release package can only be promoted automatically to production when the previous version is also a Pre-Release version. {1}",
                             prevVersion.ToString(),
-                            ErrorDocumentation.GetLinkMessage(docsFilePath,
+                            ErrorDocumentation.GetLinkMessage(k_DocsFilePath,
                                 "previous-version-of-this-package-is-not-a-pre-release-version"));
                     }
                     else
@@ -229,7 +227,7 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
                                     lastTag.Iteration,
                                     string.Format("{0}-{1}.{2}", pkgVersion.VersionOnly(), pkgTag.Tag,
                                         lastTag.Iteration + 1),
-                                    ErrorDocumentation.GetLinkMessage(docsFilePath,
+                                    ErrorDocumentation.GetLinkMessage(k_DocsFilePath,
                                         "this-package-iteration-(x)-must-be-higher-than-the-highest-published-iteration-(y)"));
                             }
                         }
@@ -239,7 +237,7 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
                 {
                     errorMsg = string.Format(
                         "There is no previous Pre-Release version of this package available. By Lifecycle V2 rules, the first Pre-Release iteration of a new version needs to be approved and promoted by Release Management. Please contact Release Management to promote your package. {0}",
-                        ErrorDocumentation.GetLinkMessage(docsFilePath,
+                        ErrorDocumentation.GetLinkMessage(k_DocsFilePath,
                             "previous-version-of-this-package-is-not-a-pre-release-version"));
                 }
             }

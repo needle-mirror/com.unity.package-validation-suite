@@ -5,6 +5,7 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
 {
     class PrimedLibraryValidation : BaseValidation
     {
+        static readonly string  k_DocsFilePath = "primed_library_validation_error.html";
         static readonly string k_LibraryPath = Path.Combine("ProjectData~", "Library");
         static readonly string[] k_PrimedLibraryPaths =
         {
@@ -43,7 +44,7 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
                 if (!(File.Exists(fullPath) || Directory.Exists(fullPath)))
                 {
                     var documentationLink = ErrorDocumentation.GetLinkMessage(
-                        "primed_library_validation_error.html", "template-is-missing-primed-library-path");
+                        k_DocsFilePath, "template-is-missing-primed-library-path");
                     AddError($"Template is missing primed library path at {packageRelativePath}. " +
                         $"It should have been added automatically in the CI packing process. {documentationLink}");
                 }

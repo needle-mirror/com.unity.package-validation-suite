@@ -8,7 +8,8 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
 {
     class PackageUnityVersionValidation : BaseValidation
     {
-        const string k_DocsFilePath = "package_unity_version_validation.md";
+        private static readonly string k_DocsFilePath = "package_unity_version_validation_error.html";
+
         const string k_DocsMoreStrictSection =
             "the-unity-version-requirement-is-more-strict-than-in-the-previous-version-of-the-package";
         const string k_DocsLessStrictSection =

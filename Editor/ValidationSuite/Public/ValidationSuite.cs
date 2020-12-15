@@ -121,20 +121,37 @@ namespace UnityEditor.PackageManager.ValidationSuite
                 report.OutputErrorReport(string.Format("Unable to find package \"{0}\" on disk.", packageName));
                 return false;
             }
-
-            // temporary overwrite of the validationType for retro-compatibility:
-            // this should be removed once upm-ci's stable version is correctly using promotion instead of publishing
-            if (validationType == ValidationType.Publishing)
-            {
-                validationType = ValidationType.Promotion;
-            }
-
+            
             // publish locally for embedded and local packages
             var context = VettingContext.CreatePackmanContext(packageId, validationType);
-            return ValidatePackage(context, validationType, out report);
+            return ValidatePackage(context, out report);
         }
 
-        public static bool ValidatePackage(VettingContext context, ValidationType validationType, out ValidationSuiteReport report)
+        public static bool ValidatePackage(string packageName, string packageVersion, string[] packageIdsForPromotion)
+        {
+            if (string.IsNullOrEmpty(packageName))
+                throw new ArgumentNullException(packageName);
+
+            if (string.IsNullOrEmpty(packageVersion))
+                throw new ArgumentNullException(packageVersion);
+
+            var packageId = Utilities.CreatePackageId(packageName, packageVersion);
+            var packagePath = FindPackagePath(packageName);
+            var report = new ValidationSuiteReport(packageId, packageName, packageVersion, packagePath);
+
+            if (string.IsNullOrEmpty(packagePath))
+            {
+                report.OutputErrorReport(string.Format("Unable to find package \"{0}\" on disk.", packageName));
+                return false;
+            }
+            
+            // publish locally for embedded and local packages
+            var context = VettingContext.CreatePackmanContext(packageId, ValidationType.Promotion);
+            context.packageIdsForPromotion = packageIdsForPromotion;
+            return ValidatePackage(context, out report);
+        }
+
+        public static bool ValidatePackage(VettingContext context, out ValidationSuiteReport report)
         {
             Profiler.BeginSample("ValidatePackage");
 
@@ -157,6 +174,10 @@ namespace UnityEditor.PackageManager.ValidationSuite
                 return false;
             }
         }
+#if UNITY_2020_1_OR_NEWER
+        [Obsolete("Providing validationType to ValidatePackage has been deprecated, please set validationType in VettingContext (UnityUpgradable) -> !1", false)]
+#endif
+        public static bool ValidatePackage(VettingContext context, ValidationType validationType, out ValidationSuiteReport report) => ValidatePackage(context, out report);
 
         internal static void ValidateEmbeddedPackages(ValidationType validationType)
         {

@@ -36,9 +36,25 @@ namespace UnityEditor.PackageManager.ValidationSuite
         public const string PreviousVersionBinaryPath = "Temp/ApiValidationBinaries";
         public List<RelatedPackage> relatedPackages = new List<RelatedPackage>();
         public ValidationExceptionManager ValidationExceptionManager { get; set; }
+        public string[] packageIdsForPromotion { get; set; }
 
         internal ProjectInfo ProjectInfo { get; set; }
 
+#if UNITY_2021_1_OR_NEWER
+        public Dictionary<string, PackageInfo> PackageInfoList = new Dictionary<string, PackageInfo>();
+
+        public PackageInfo GetPackageInfo(string packageName)
+        {
+            if (PackageInfoList.ContainsKey(packageName))
+            {
+                return PackageInfoList[packageName];
+            }
+
+            PackageInfo packageInfo = PackageInfo.FindForAssetPath($"Packages/{packageName}");
+            PackageInfoList.Add(packageName, packageInfo);
+            return packageInfo;
+        }
+#endif        
         public static VettingContext CreatePackmanContext(string packageId, ValidationType validationType)
         {
             Profiler.BeginSample("CreatePackmanContext");

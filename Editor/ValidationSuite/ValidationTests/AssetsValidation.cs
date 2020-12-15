@@ -12,6 +12,7 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
             TestName = "Assets Validation";
             TestDescription = "Make sure assets included with the package meet Unity standards.";
             TestCategory = TestCategory.ContentScan;
+            CanUseValidationExceptions = true;
         }
 
         protected override void Run()

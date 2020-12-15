@@ -48,7 +48,7 @@ namespace UnityEditor.PackageManager.ValidationSuite
         /// If the package we are evaluating is trying to release a -preview, then this is against lifecycle v1 rules
         /// Otherwise, we evaluate against lifecycle v2 rules for all packages
         /// </summary>
-        /// <param name="version"></param>
+        /// <param name="version">Version of the package we are evaluating</param>
         /// <returns></returns>
         public static double EvaluateLifecycle(string version)
         {
