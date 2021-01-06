@@ -36,8 +36,8 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
         void CheckAssemblyDefinitionContent(string assemblyDefinitionPath)
         {
             var simplifiedPath = assemblyDefinitionPath.Replace(Context.PublishPackageInfo.path, "{Package-Root}");
-            var isInEditorFolder = assemblyDefinitionPath.IndexOf(Path.DirectorySeparatorChar+"Editor"+Path.DirectorySeparatorChar) >= 0;
-            var isInTestFolder = assemblyDefinitionPath.IndexOf(Path.DirectorySeparatorChar+"Tests"+Path.DirectorySeparatorChar) >= 0;
+            var isInEditorFolder = assemblyDefinitionPath.IndexOf(Path.DirectorySeparatorChar + "Editor" + Path.DirectorySeparatorChar) >= 0;
+            var isInTestFolder = assemblyDefinitionPath.IndexOf(Path.DirectorySeparatorChar + "Tests" + Path.DirectorySeparatorChar) >= 0;
 
             try
             {
@@ -63,7 +63,6 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
                 {
                     AddError("Assembly {0} is not a test assembly and should not be present in the Tests folder of your package", simplifiedPath);
                 }
-
             }
             catch (Exception e)
             {

@@ -21,7 +21,7 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
             TestDescription = "Validate Unity and package version relationship";
             TestCategory = TestCategory.DataValidation;
             SupportedValidations = new[] { ValidationType.CI, ValidationType.LocalDevelopment,
-                ValidationType.LocalDevelopmentInternal, ValidationType.Promotion, ValidationType.VerifiedSet };
+                                           ValidationType.LocalDevelopmentInternal, ValidationType.Promotion, ValidationType.VerifiedSet };
         }
 
         protected override void Run()

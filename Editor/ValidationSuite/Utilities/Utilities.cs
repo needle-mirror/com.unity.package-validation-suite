@@ -183,7 +183,7 @@ namespace UnityEditor.PackageManager.ValidationSuite
 
             //See if the tar exists and unzip that
             var tgzFileName = Path.GetFileName(fullPackagePath);
-            var targetTarPath = Path.Combine(workingPath, packageName +"-tar");
+            var targetTarPath = Path.Combine(workingPath, packageName + "-tar");
             if (Directory.Exists(targetTarPath))
             {
                 Directory.Delete(targetTarPath, true);
@@ -353,7 +353,5 @@ namespace UnityEditor.PackageManager.ValidationSuite
             var asmdefPath = Path.GetFullPath(path);
             return new AssemblyInfo(assembly, asmdefPath);
         }
-        
-        
     }
 }

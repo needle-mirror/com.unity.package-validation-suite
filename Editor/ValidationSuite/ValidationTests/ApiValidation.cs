@@ -186,7 +186,7 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
                     const string logsDirectory = "Logs";
                     if (!Directory.Exists(logsDirectory))
                         Directory.CreateDirectory(logsDirectory);
-                    
+
                     File.WriteAllText($"{logsDirectory}/ApiValidationParameters.txt", $"previous: {oldAssemblyPath}\ncurrent: {info.assembly.outputPath}\nsearch path: {string.Join("\n", assemblySearchFolder)}");
                     var apiChangesAssemblyInfo = new APIChangesCollector.AssemblyInfo()
                     {
@@ -201,7 +201,7 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
                     {
                         additions = entityChanges.Where(c => c.IsAdd()).Select(c => c.ToString()).ToList(),
                         // Among all attribute changes, only the Obsolete attribute should be considered a breaking change
-                        breakingChanges = entityChanges.Where(c => !c.IsAdd() && !((c.GetType()).Equals(typeof (AttributeChange)))).Select(c => c.ToString()).ToList()
+                        breakingChanges = entityChanges.Where(c => !c.IsAdd() && !((c.GetType()).Equals(typeof(AttributeChange)))).Select(c => c.ToString()).ToList()
                     };
 
                     if (entityChanges.Count > 0)
@@ -290,6 +290,7 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
                 }
             }
         }
+
 #endif
     }
 }

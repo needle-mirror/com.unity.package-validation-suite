@@ -65,7 +65,7 @@ namespace UnityEditor.PackageManager.ValidationSuite
         public void Replace(string text, string replacement)
         {
             string str = File.ReadAllText(FilePath);
-            str = str.Replace(text,replacement);
+            str = str.Replace(text, replacement);
             File.WriteAllText(FilePath, str);
         }
 
@@ -108,7 +108,7 @@ namespace UnityEditor.PackageManager.ValidationSuite
                 Append(string.Format("\r\n{0} - \"{1}\"\r\n    ", testResult.TestState, testResult.TestName));
                 if (testResult.TestOutput.Any())
                     Append(string.Join("\r\n\n    ", testResult.TestOutput.Select(o => o.ToString()).ToArray()) +
-                           "\r\n    ");
+                        "\r\n    ");
             }
         }
 

@@ -1,7 +1,7 @@
 using System;
 
-namespace UnityEditor.PackageManager.ValidationSuite {
-
+namespace UnityEditor.PackageManager.ValidationSuite
+{
     /// <summary>
     /// The various states a test can be in
     /// </summary>

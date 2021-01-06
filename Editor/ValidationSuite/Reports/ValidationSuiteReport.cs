@@ -77,7 +77,7 @@ namespace UnityEditor.PackageManager.ValidationSuite
         {
             return Path.Combine(ResultsPath, packageId + ".json");
         }
-        
+
         public static bool JsonReportExists(string packageId)
         {
             return File.Exists(GetJsonReportPath(packageId));
@@ -88,7 +88,7 @@ namespace UnityEditor.PackageManager.ValidationSuite
             var deltaReportPath = Path.Combine(ResultsPath, packageId + ".delta");
             return File.Exists(deltaReportPath);
         }
-        
+
         public static ValidationSuiteReportData GetReport(string packageId)
         {
             if (!JsonReportExists(packageId))

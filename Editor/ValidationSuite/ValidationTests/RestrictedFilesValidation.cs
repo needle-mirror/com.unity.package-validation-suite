@@ -24,7 +24,7 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
             foreach (var fileType in restrictedFileList)
             {
                 var isExtensionRestriction = fileType.StartsWith("*.");
-                List < string> matchingFiles = new List<string>();
+                List<string> matchingFiles = new List<string>();
                 DirectorySearch(Context.PublishPackageInfo.path, fileType, ref matchingFiles);
 
                 if (matchingFiles.Any())

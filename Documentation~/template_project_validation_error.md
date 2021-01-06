@@ -13,7 +13,7 @@ The following fields are **not allowed** to be present in a template project man
 * resolutionStrategy
 * useSatSolver
 
-## Errors          
+## Errors
 ### The `{fieldName}` field in the project manifest is not a valid field for template packages
 
 A blocked field has been found in the Project Manifest of the Template. Remove this field completely from the project manifest to pass validation.

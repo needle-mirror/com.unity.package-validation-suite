@@ -65,7 +65,8 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
             {
                 // Check if the dependency semver is valid before doing anything else
                 SemVersion depVersion;
-                if (!SemVersion.TryParse(dependency.Value, out depVersion)) {
+                if (!SemVersion.TryParse(dependency.Value, out depVersion))
+                {
                     AddError(@"In package.json, dependency ""{0}"" : ""{1}"" needs to be a valid ""Semver"". {2}", dependency.Key, dependency.Value, ErrorDocumentation.GetLinkMessage(ManifestValidation.k_DocsFilePath,  "dependency_needs_to_be_a_valid_Semver"));
                     continue;
                 }
@@ -77,14 +78,14 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
                 {
                     continue;
                 }
-                
+
                 // Check if this package's dependencies are in production. That is a requirement for promotion.
-				// make sure to check the version actually resolved by upm and not the one necessarily listed by the package
-                // If the packageId is included in Context.packageIdsForPromotion then we can skip this check, as the package 
+                // make sure to check the version actually resolved by upm and not the one necessarily listed by the package
+                // If the packageId is included in Context.packageIdsForPromotion then we can skip this check, as the package
                 // is expected to be promoted by another process
                 var version = dependencyInfo != null ? dependencyInfo.version : dependency.Value;
                 var packageId = Utilities.CreatePackageId(dependency.Key, version);
-                
+
                 if (Context.ValidationType != ValidationType.VerifiedSet && (Context.packageIdsForPromotion == null || Context.packageIdsForPromotion.Length < 1 || !Context.packageIdsForPromotion.Contains(packageId)) && !Utilities.PackageExistsOnProduction(packageId))
                 {
                     // ignore if  package is part of the context already
@@ -96,7 +97,8 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
 
                 // only check this in CI or internal local development
                 // Make sure the dependencies I ask for that exist in the project have the good version
-                if (Context.ValidationType == ValidationType.CI || Context.ValidationType == ValidationType.LocalDevelopmentInternal) {
+                if (Context.ValidationType == ValidationType.CI || Context.ValidationType == ValidationType.LocalDevelopmentInternal)
+                {
                     PackageInfo packageInfo = Utilities.UpmListOffline(dependency.Key).FirstOrDefault();
                     if (packageInfo != null && packageInfo.version != dependency.Value)
                     {
@@ -130,13 +132,15 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
                 AddError("In package.json, \"name\" is not a valid name. {0}", ErrorDocumentation.GetLinkMessage(ManifestValidation.k_DocsFilePath,  "name-is-not-a-valid-name"));
             }
 
-			// Package name cannot end with .framework, .plugin or .bundle.
+            // Package name cannot end with .framework, .plugin or .bundle.
             String[] strings = { ".framework", ".bundle", ".plugin" };
-			foreach (var value in strings) {
- 				if (manifestData.name.EndsWith(value)) {
-					AddError("In package.json, \"name\" cannot end with .plugin, .bundle or .framework. {0}", ErrorDocumentation.GetLinkMessage(ManifestValidation.k_DocsFilePath,  "name-cannot-end-with"));
-				}
-			} 
+            foreach (var value in strings)
+            {
+                if (manifestData.name.EndsWith(value))
+                {
+                    AddError("In package.json, \"name\" cannot end with .plugin, .bundle or .framework. {0}", ErrorDocumentation.GetLinkMessage(ManifestValidation.k_DocsFilePath,  "name-cannot-end-with"));
+                }
+            }
 
             if (string.IsNullOrEmpty(manifestData.displayName))
             {
@@ -156,13 +160,13 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
             {
                 AddError("In package.json, \"description\" is too short. Minimum Length = {0}. Current Length = {1}. {2}", MinDescriptionSize, manifestData.description.Length, ErrorDocumentation.GetLinkMessage(ManifestValidation.k_DocsFilePath,  "description-is-too-short"));
             }
-            
+
             // check unity field, if it's there
             if (!string.IsNullOrEmpty(manifestData.unity) && (manifestData.unity.Length > 6 || !Regex.Match(manifestData.unity, UnityRegex).Success))
             {
                 AddError($"In package.json, \"unity\" is invalid. It should only be <MAJOR>.<MINOR> (e.g. 2018.4). Current unity = {manifestData.unity}. {ErrorDocumentation.GetLinkMessage(ManifestValidation.k_DocsFilePath,  "unity-is-invalid")}");
             }
-            
+
             // check unityRelease field, if it's there
             if (!string.IsNullOrEmpty(manifestData.unityRelease))
             {
@@ -172,7 +176,7 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
                     AddError(
                         $"In package.json, \"unityRelease\" is invalid. Current unityRelease = {manifestData.unityRelease}. {ErrorDocumentation.GetLinkMessage(ManifestValidation.k_DocsFilePath, "unityrelease-is-invalid")}");
                 }
-                
+
                 // it should be accompanied of a unity field
                 if (string.IsNullOrEmpty(manifestData.unity))
                 {
@@ -207,7 +211,7 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
             if (manifestData.IsAuthoredByUnity())
             {
                 ValidateUnityAuthor(manifestData);
-            } 
+            }
             else
             {
                 ValidateNonUnityAuthor(manifestData);
@@ -226,14 +230,14 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
         }
 
         // the author field is required for non-unity packages
-        private void ValidateNonUnityAuthor(ManifestData manifestData) {
-            
+        private void ValidateNonUnityAuthor(ManifestData manifestData)
+        {
             // if authordetails is set, then author == ""
             if (String.IsNullOrEmpty(manifestData.author) && manifestData.authorDetails == null)
             {
                 AddError(
-                "The `author` field is mandatory. Please add an `author` field in your package.json file",
-                ErrorDocumentation.GetLinkMessage(ManifestValidation.k_DocsFilePath, "author_is_mandatory"));
+                    "The `author` field is mandatory. Please add an `author` field in your package.json file",
+                    ErrorDocumentation.GetLinkMessage(ManifestValidation.k_DocsFilePath, "author_is_mandatory"));
                 return;
             }
 

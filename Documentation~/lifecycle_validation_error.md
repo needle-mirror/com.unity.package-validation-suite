@@ -89,9 +89,9 @@ An entirely new package must go through Release Management in order to be promot
 
 ## A release package must be manually promoted by Release Management
 
-A release package is a package version X.Y.Z, without a pre-release tag. 
-Those packages should be manually promoted by Release Management.  
-You can ask for your package to be promoted by going to the #devs-pkg-promotion slack channel.  
+A release package is a package version X.Y.Z, without a pre-release tag.
+Those packages should be manually promoted by Release Management.
+You can ask for your package to be promoted by going to the #devs-pkg-promotion slack channel.
 
 ## Previous version of this package is not a Pre-Release version
 

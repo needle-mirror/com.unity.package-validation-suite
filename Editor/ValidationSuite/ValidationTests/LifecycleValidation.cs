@@ -25,7 +25,9 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
             if (Context.PublishPackageInfo.lifecycle == 1.0)
             {
                 ValidateVersion(Context.PublishPackageInfo, LifecycleV1VersionValidator);
-            } else {
+            }
+            else
+            {
                 ValidateVersion(Context.PublishPackageInfo, LifecycleV2VersionValidator);
 
                 // We don't check this on the verified set since it relies on previous package information and reaching the internet
@@ -33,7 +35,7 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
                     Context.ValidationType != ValidationType.VerifiedSet)
                     PreReleaseChecks(Context.ProjectPackageInfo);
             }
-            
+
             ValidateDependenciesLifecyclePhase(Context.ProjectPackageInfo.dependencies);
         }
 
@@ -79,9 +81,8 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
 
             // The only pre-release tag we support is -preview
             if (!versionTag.IsEmpty() && !(versionTag.Tag == "preview" && versionTag.Feature == "" &&
-                                              versionTag.Iteration <= 999999))
+                                           versionTag.Iteration <= 999999))
             {
-
                 AddError(
                     "In package.json, \"version\": the only pre-release filter supported is \"-preview.[num < 999999]\". " + ErrorDocumentation.GetLinkMessage(k_DocsFilePath, "version-the-only-pre-release-filter-supported-is--preview-num-999999"));
             }
@@ -126,7 +127,6 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
                 AddError("In package.json, \"version\" must be a valid tag. Iteration is required to be 1 or greater. " + ErrorDocumentation.GetLinkMessage(ErrorTypes.InvalidLifecycleV2));
                 return;
             }
-
         }
 
         private void ValidateDependenciesLifecyclePhase(Dictionary<string, string> dependencies)
@@ -162,12 +162,12 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
          */
         private void ValidateVersionAbilityToPromote(SemVersion packageVersionNumber, VersionTag versionTag, ManifestData manifestData)
         {
-            // Make this check only in promotion, to avoid network calls 
+            // Make this check only in promotion, to avoid network calls
             if (Context.PackageVersionExistsOnProduction)
             {
                 AddPromotionConditionalError("Version " + Context.ProjectPackageInfo.version + " of this package already exists in production.");
             }
-            
+
             var message = String.Empty;
             if (PackageLifecyclePhase.IsReleasedVersion(packageVersionNumber, versionTag) ||
                 PackageLifecyclePhase.IsRCForThisEditor(manifestData.name, Context))
@@ -180,7 +180,7 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
                 if (!Context.PackageExistsOnProduction)
                     message = $"{Context.PublishPackageInfo.name} has never been promoted to production before. Please contact Release Management through slack in #devs-pkg-promotion to promote the first version of your package before trying to use this automated pipeline. {ErrorDocumentation.GetLinkMessage(k_DocsFilePath, "the-very-first-version-of-a-package-must-be-promoted-by-release-management")}";
             }
-            
+
             if (message != String.Empty)
                 AddPromotionConditionalError(message);
         }

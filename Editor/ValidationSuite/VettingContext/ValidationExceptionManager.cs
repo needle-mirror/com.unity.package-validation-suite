@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.IO;
 using System.Linq;
 using System.Collections.Generic;
@@ -207,7 +207,7 @@ namespace UnityEditor.PackageManager.ValidationSuite
         public IEnumerable<string> CheckValidationExceptions(string packageVersion)
         {
             var formatString = "The following {0} was tagged as an exception to validation, but for a different version of the package. " +
-                $"Please consider getting this exception fixed and removed from \"{ValidationExceptionsFileName}\" before updating its package version field.\r\n"+
+                $"Please consider getting this exception fixed and removed from \"{ValidationExceptionsFileName}\" before updating its package version field.\r\n" +
                 "    \"{1}\" - \"{2}\"";
 
             List<string> issuesList = new List<string>();

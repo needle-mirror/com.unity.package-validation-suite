@@ -72,21 +72,21 @@ This is validated through the following regular expression: `^[a-zA-Z0-9 ]+$`
 The `description` field is too short. This field needs to contain relevant information about the package since it is presented in the UI to the user.
 
 ## unity is invalid
-The `unity` field is an invalid value. This field indicates the lowest Unity version the package is compatible with. The expected format is <MAJOR>.<MINOR> (e.g 2018.4).   
-If omitted, the package is considered compatible with all Unity versions.  
-If you want to specify a minimum Unity release version, please use a combination of unity and unityRelease fields, for example:  
-* unity: 2018.4  
-* unityRelease: 0b4  
+The `unity` field is an invalid value. This field indicates the lowest Unity version the package is compatible with. The expected format is <MAJOR>.<MINOR> (e.g 2018.4).
+If omitted, the package is considered compatible with all Unity versions.
+If you want to specify a minimum Unity release version, please use a combination of unity and unityRelease fields, for example:
+* unity: 2018.4
+* unityRelease: 0b4
 
 ## unityRelease is invalid
-The `unityRelease` field is an invalid value. This field indicates the specific release of Unity that the package is compatible with. The expected format is <UPDATE><RELEASE> (e.g. 0b4).  
-If the unity field is omitted, this field is ignored.  
-If you want to specify a minimum Unity release version, please use a combination of unity and unityRelease fields, for example:  
-* unity: 2018.4  
-* unityRelease: 0b4  
+The `unityRelease` field is an invalid value. This field indicates the specific release of Unity that the package is compatible with. The expected format is <UPDATE><RELEASE> (e.g. 0b4).
+If the unity field is omitted, this field is ignored.
+If you want to specify a minimum Unity release version, please use a combination of unity and unityRelease fields, for example:
+* unity: 2018.4
+* unityRelease: 0b4
 
 ## unityRelease without unity
-The `unityRelease` field is included, while the `unity` field is not present.  
+The `unityRelease` field is included, while the `unity` field is not present.
 Add the `unity` field or remove the `unityRelease` field.
 
 ## for a published package there must be a repository.url field
@@ -109,5 +109,5 @@ or
 }
 
 ## author is mandatory
-The `author` field is required in your package manifest (package.json).  
+The `author` field is required in your package manifest (package.json).
 Packages that are NOT authored by Unity require an `author` field.

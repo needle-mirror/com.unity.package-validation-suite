@@ -28,6 +28,7 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
             CanUseValidationExceptions = true;
             CanUseCompleteTestExceptions = true;
         }
+
         protected override void Run(AssemblyInfo[] info)
         {
             TestState = TestState.Succeeded;

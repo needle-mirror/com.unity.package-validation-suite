@@ -1,7 +1,8 @@
 using System;
 using System.Collections.Generic;
 
-namespace UnityEditor.PackageManager.ValidationSuite {
+namespace UnityEditor.PackageManager.ValidationSuite
+{
     /// <summary>
     /// The validation suite report.
     ///

@@ -2,9 +2,11 @@ using System;
 using System.Reflection;
 using Semver;
 
-namespace UnityEditor.PackageManager.ValidationSuite.Utils {
+namespace UnityEditor.PackageManager.ValidationSuite.Utils
+{
     [Flags]
-    internal enum LifecyclePhase {
+    internal enum LifecyclePhase
+    {
         InvalidVersionTag = 0,
         Preview = 2,
         Experimental = 4,
@@ -13,7 +15,8 @@ namespace UnityEditor.PackageManager.ValidationSuite.Utils {
         Release = 32
     }
 
-    internal static class PackageLifecyclePhase {
+    internal static class PackageLifecyclePhase
+    {
         internal static bool IsRCForThisEditor(string packageName, VettingContext context)
         {
             // RC is a joined state between a package and an editor version (package a is a candidate for editor x)
@@ -31,7 +34,7 @@ namespace UnityEditor.PackageManager.ValidationSuite.Utils {
                 var unityLifecycleVersion = Type.GetType("UnityEditor.PackageManager.UnityLifecycle.UnityLifecycleInfo, UnityEditor.CoreModule, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null")
                     .GetField("m_Version", BindingFlags.NonPublic | BindingFlags.Instance)
                     .GetValue(unityLifecycle);
-                return packageInfo.version == (string) unityLifecycleVersion && packageInfo.version.Contains("-");
+                return packageInfo.version == (string)unityLifecycleVersion && packageInfo.version.Contains("-");
             }
 
             return false;
@@ -65,21 +68,24 @@ namespace UnityEditor.PackageManager.ValidationSuite.Utils {
         }
 
         /**
-         * Use this to know which package phase or which relationship it has for a given editor. Release Candidate (RC) is not a phase. It is a status that is applied on top of the existing phase, meaning that the package is being stabilised towards release. 
+         * Use this to know which package phase or which relationship it has for a given editor. Release Candidate (RC) is not a phase. It is a status that is applied on top of the existing phase, meaning that the package is being stabilised towards release.
          * However, if you need to know only the phase of the package, then use GetLifecyclePhase
          */
-        internal static LifecyclePhase GetLifecyclePhaseOrRelation(string version, string packageName, VettingContext context) {
+        internal static LifecyclePhase GetLifecyclePhaseOrRelation(string version, string packageName, VettingContext context)
+        {
             if (IsRCForThisEditor(packageName, context)) return LifecyclePhase.ReleaseCandidate;
             return GetLifecyclePhase(version);
         }
-        
+
         /**
          * Use this to know with package phase the version infers
          * However, if you need to know if this package is a release candidate, then use GetLifecyclePhaseOrRelation instead
          */
-        internal static LifecyclePhase GetLifecyclePhase(string version) {
+        internal static LifecyclePhase GetLifecyclePhase(string version)
+        {
             SemVersion semVer = SemVersion.Parse(version);
-            try {
+            try
+            {
                 VersionTag pre = VersionTag.Parse(semVer.Prerelease);
 
                 if (IsPreviewVersion(semVer, pre)) return LifecyclePhase.Preview;
@@ -87,14 +93,17 @@ namespace UnityEditor.PackageManager.ValidationSuite.Utils {
                 if (IsExperimentalVersion(semVer, pre)) return LifecyclePhase.Experimental;
                 if (IsPreReleaseVersion(semVer, pre)) return LifecyclePhase.PreRelease;
                 return LifecyclePhase.InvalidVersionTag;
-            } catch (ArgumentException e) {
+            }
+            catch (ArgumentException e)
+            {
                 if (e.Message.Contains("invalid version tag"))
                     return LifecyclePhase.InvalidVersionTag;
                 throw e;
             }
         }
-        
-        internal static LifecyclePhase GetPhaseSupportedVersions(LifecyclePhase phase) {
+
+        internal static LifecyclePhase GetPhaseSupportedVersions(LifecyclePhase phase)
+        {
             var supportedVersions = phase;
             // Set extra supported versions for other tracks
             switch (phase)

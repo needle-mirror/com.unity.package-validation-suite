@@ -1,10 +1,10 @@
 using System;
 using System.Collections.Generic;
 
-namespace UnityEditor.PackageManager.ValidationSuite {
-
+namespace UnityEditor.PackageManager.ValidationSuite
+{
     /// <summary>
-    /// The result of a single test for the validation suite. 
+    /// The result of a single test for the validation suite.
     /// </summary>
     [Serializable]
     public class ValidationTestReport

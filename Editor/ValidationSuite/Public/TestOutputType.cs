@@ -1,7 +1,7 @@
 using System;
 
-namespace UnityEditor.PackageManager.ValidationSuite {
-
+namespace UnityEditor.PackageManager.ValidationSuite
+{
     /// <summary>
     /// Type of output data returns by a validation suite test.
     /// </summary>

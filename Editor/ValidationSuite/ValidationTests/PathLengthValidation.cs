@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.IO;
 
 namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
@@ -26,10 +26,10 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
 
         private bool IsHiddenDirectory(string path)
         {
-            if (path.Length > 0 
-            && (path[path.Length-1] == Path.DirectorySeparatorChar
-            ||  path[path.Length-1] == Path.AltDirectorySeparatorChar))
-                path = path.Substring(0, path.Length-1);
+            if (path.Length > 0
+                && (path[path.Length - 1] == Path.DirectorySeparatorChar
+                    ||  path[path.Length - 1] == Path.AltDirectorySeparatorChar))
+                path = path.Substring(0, path.Length - 1);
 
             string dir = Path.GetFileName(path);
 
@@ -72,7 +72,7 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
             TestState = TestState.Succeeded;
 
             var rootPath = Context.PublishPackageInfo.path;
-            if (!Path.IsPathRooted(Context.PublishPackageInfo.path)) 
+            if (!Path.IsPathRooted(Context.PublishPackageInfo.path))
                 rootPath = Path.GetFullPath(rootPath);
 
             //check if each file/folder has a sufficiently short path relative to the base

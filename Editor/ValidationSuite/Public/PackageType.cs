@@ -12,7 +12,7 @@ namespace UnityEditor.PackageManager.ValidationSuite
     {
         /// <summary>Package containing editor and runtime code to be used within the Unity Editor.</summary>
         Tooling,
-        
+
         /// <summary>Package containing a Unity Template</summary>
         Template,
     }

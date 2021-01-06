@@ -7,10 +7,10 @@ echo "Building XmlDoc..."
 pushd XmlDoc
 nuget restore
 msbuild /p:Configuration=$CONFIG \
-	/p:AllowedReferenceRelatedFileExtensions="-" \
-	/p:DebugType=$DEBUGTYPE \
-	/t:Build \
-	Unity.XmlDoc.FindMissingDocs.Driver/Unity.XmlDoc.FindMissingDocs.Driver.csproj
+    /p:AllowedReferenceRelatedFileExtensions="-" \
+    /p:DebugType=$DEBUGTYPE \
+    /t:Build \
+    Unity.XmlDoc.FindMissingDocs.Driver/Unity.XmlDoc.FindMissingDocs.Driver.csproj
 popd
 
 echo "Overwriting new version of XmlDoc ..."

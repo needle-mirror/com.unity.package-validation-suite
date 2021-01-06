@@ -51,7 +51,7 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
             var changeLogLineRegex = @"## \[(?<version>.*)]( - (?<date>.*))?";
 
             var textChangeLog = File.ReadAllLines(changeLogPath);
-            
+
             // We match each line individually so we won't end up with line ending characters etc in the match
             List<Match> matches = new List<Match>();
             foreach (var line in textChangeLog)
@@ -83,12 +83,12 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
                         found = match;
                         foundIndex = currentIndex;
                     }
-                    
+
                     if (currentIndex != 1)
                     {
                         AddWarningWithLine(string.Format("Unreleased section has to be the first section in the Changelog but it was number {0}. Please move it to the top or remove duplicate entries. {1}", currentIndex, ErrorDocumentation.GetLinkMessage(ErrorTypes.UnreleasedSectionFirst)), match.ToString());
                     }
-                    
+
                     if (Context.ValidationType == ValidationType.CI)
                     {
                         AddWarningWithLine(
@@ -97,11 +97,11 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
                                 + " but is not accepted when sharing externally with clients. Please curate your unreleased section to reflect the package version before promoting your package to production. {1}",
                                 changeLogPath,
                                 ErrorDocumentation.GetLinkMessage(ErrorTypes.UnreleasedNotAllowedInPromoting)
-                            ), 
+                                ),
                             match.ToString()
                         );
                     }
-                    
+
                     if (Context.ValidationType == ValidationType.Promotion)
                     {
                         AddErrorWithLine(
@@ -110,7 +110,7 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
                                 + " but is not accepted when sharing externally with clients. Please curate your unreleased section to reflect the package version before promoting your package to production. {1}",
                                 changeLogPath,
                                 ErrorDocumentation.GetLinkMessage(ErrorTypes.UnreleasedNotAllowedInPromoting)
-                            ), 
+                                ),
                             match.ToString()
                         );
                     }
@@ -118,7 +118,7 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
                     currentIndex++;
                     continue;
                 }
-                
+
                 if (!SemVersion.TryParse(versionString, out versionInChangelog, true))
                 {
                     AddErrorWithDeprecationFallback(string.Format("Version format '{0}' is not valid in '{1}'. Please correct the version format. {2}", match.Groups["version"].ToString(), changeLogPath, ErrorDocumentation.GetLinkMessage(ErrorTypes.VersionFormatIsNotValid)), match.ToString(), foundIndex, currentIndex);
@@ -156,9 +156,9 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
                     out date))
                 {
                     string errorString = string.Format(
-                            "Date '{0}' does not follow ISO 8601 in '{1}'. Expecting format 'YYYY-MM-DD'. Update the date to one of the supported values. {2}",
-                            dateToCheck, changeLogPath,
-                            ErrorDocumentation.GetLinkMessage(ErrorTypes.ChangelogDateIsNotValid));
+                        "Date '{0}' does not follow ISO 8601 in '{1}'. Expecting format 'YYYY-MM-DD'. Update the date to one of the supported values. {2}",
+                        dateToCheck, changeLogPath,
+                        ErrorDocumentation.GetLinkMessage(ErrorTypes.ChangelogDateIsNotValid));
                     if (DateTime.TryParseExact(dateToCheck,
                         dateWarningFormats,
                         CultureInfo.InvariantCulture,
@@ -171,11 +171,9 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
                     {
                         AddErrorWithDeprecationFallback(errorString, match.ToString(), foundIndex, currentIndex);
                     }
-                    
                 }
 
                 currentIndex++;
-
             }
 
             if (found == null)
@@ -193,7 +191,7 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
         {
             AddWarning("For '{0}': {1}", lineMatch, message);
         }
-        
+
         private void AddErrorWithLine(string message, string lineMatch)
         {
             AddError("For '{0}': {1}", lineMatch, message);
@@ -209,7 +207,7 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
             }
             else
             {
-                AddErrorWithLine(errorString, line);    
+                AddErrorWithLine(errorString, line);
             }
         }
     }

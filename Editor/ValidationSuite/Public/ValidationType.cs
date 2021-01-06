@@ -10,19 +10,19 @@ namespace UnityEditor.PackageManager.ValidationSuite
     /// </summary>
     public enum ValidationType
     {
-        /// <summary>Validation for local development.</summary>        
+        /// <summary>Validation for local development.</summary>
         LocalDevelopment,
-        /// <summary>Validation for local development internal to Unity.</summary>        
+        /// <summary>Validation for local development internal to Unity.</summary>
         LocalDevelopmentInternal,
-        /// <summary>Validation for verified packages.</summary>        
+        /// <summary>Validation for verified packages.</summary>
         VerifiedSet,
-        /// <summary>Validation for continuous integration.</summary>        
+        /// <summary>Validation for continuous integration.</summary>
         CI,
-        /// <summary>Validation for package publishing.</summary>        
+        /// <summary>Validation for package publishing.</summary>
         Publishing,
-        /// <summary>Validation for package promotion.</summary>        
+        /// <summary>Validation for package promotion.</summary>
         Promotion,
-        /// <summary>Validation for the asset store.</summary>        
+        /// <summary>Validation for the asset store.</summary>
         AssetStore,
         /// <summary>Running just tests marked for InternalTesting</summary>
         InternalTesting

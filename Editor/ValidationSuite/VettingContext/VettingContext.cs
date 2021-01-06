@@ -54,7 +54,8 @@ namespace UnityEditor.PackageManager.ValidationSuite
             PackageInfoList.Add(packageName, packageInfo);
             return packageInfo;
         }
-#endif        
+
+#endif
         public static VettingContext CreatePackmanContext(string packageId, ValidationType validationType)
         {
             Profiler.BeginSample("CreatePackmanContext");
@@ -75,7 +76,7 @@ namespace UnityEditor.PackageManager.ValidationSuite
 #if UNITY_2019_1_OR_NEWER
             context.IsCore = packageInfo.source == PackageSource.BuiltIn && packageInfo.type != "module";
 #else
-        context.IsCore = false; // there are no core packages before 2019.1
+            context.IsCore = false; // there are no core packages before 2019.1
 #endif
 
             context.ValidationType = validationType;
@@ -87,7 +88,7 @@ namespace UnityEditor.PackageManager.ValidationSuite
                 ActivityLogger.Log($"Checking if package {packageInfo.name} has been promoted to production");
                 context.PackageExistsOnProduction = Utilities.PackageExistsOnProduction(packageInfo.name);
                 ActivityLogger.Log($"Package {packageInfo.name} {(context.PackageExistsOnProduction ? "is" : "is not")} in production");
-                
+
                 ActivityLogger.Log($"Checking if package {packageInfo.packageId} has been promoted to production");
                 context.PackageVersionExistsOnProduction = Utilities.PackageExistsOnProduction(packageInfo.packageId);
                 ActivityLogger.Log($"Package {packageInfo.packageId} {(context.PackageExistsOnProduction ? "is" : "is not")} in production");
@@ -175,7 +176,7 @@ namespace UnityEditor.PackageManager.ValidationSuite
         public static ManifestData GetManifest(string packagePath)
         {
             Profiler.BeginSample("GetManifest");
-            
+
             // Start by parsing the package's manifest data.
             var manifestPath = Path.Combine(packagePath, Utilities.PackageJsonFilename);
 
@@ -220,20 +221,19 @@ namespace UnityEditor.PackageManager.ValidationSuite
 
         private static PackageType GetPackageType(ManifestData manifestData)
         {
-          return manifestData.IsProjectTemplate ? PackageType.Template : PackageType.Tooling;
+            return manifestData.IsProjectTemplate ? PackageType.Template : PackageType.Tooling;
         }
 
         // Method that attempts to extract only the first level keys of a given json
         // but the regex does get confused right now by any key coming after a comma
         private static string[] ParseFirstLevelKeys(string json)
         {
-            
             string minified = new Regex("[\\s]").Replace(json, "");
             var regex = new Regex("(?<=^{|,)\"(\\w*)\"");
 
             if (!regex.IsMatch(minified)) // json is not a dictionary
                 return new string[0];
-            
+
             List<string> results = new List<string>();
             var matches = regex.Matches(minified).OfType<Match>().Select(m => m.Value.Replace("\"", "")).ToArray();
 
@@ -336,8 +336,8 @@ namespace UnityEditor.PackageManager.ValidationSuite
             var previousVersions = packageInfo.versions.all.Where(v =>
             {
                 var prevVersion = SemVersion.Parse(v);
-            // ignore pre-release and build tags when finding previous version
-            return prevVersion < version && !(prevVersion.Major == version.Major && prevVersion.Minor == version.Minor && prevVersion.Patch == version.Patch);
+                // ignore pre-release and build tags when finding previous version
+                return prevVersion < version && !(prevVersion.Major == version.Major && prevVersion.Minor == version.Minor && prevVersion.Patch == version.Patch);
             });
 
             // Find the last version on Production
@@ -402,7 +402,7 @@ namespace UnityEditor.PackageManager.ValidationSuite
             var requestError = false;
             #if UNITY_2020_1_OR_NEWER
             requestError = request.result == UnityWebRequest.Result.ProtocolError ||
-                           request.result == UnityWebRequest.Result.ConnectionError;
+                request.result == UnityWebRequest.Result.ConnectionError;
             #else
             requestError = request.isHttpError || request.isNetworkError;
             #endif

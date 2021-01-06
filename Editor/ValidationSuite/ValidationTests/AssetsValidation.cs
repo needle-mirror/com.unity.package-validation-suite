@@ -24,7 +24,7 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
         }
 
         private void ValidateImageQuality()
-        { 
+        {
             foreach (var fileType in restrictedImageFileList)
             {
                 List<string> matchingFiles = new List<string>();

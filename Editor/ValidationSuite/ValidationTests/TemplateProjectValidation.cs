@@ -8,7 +8,7 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
         public bool m_EnablePreviewPackages;
         public bool m_EnablePreReleasePackages;
     }
-    
+
     internal class TemplateProjectValidation : BaseValidation
     {
         private readonly string[] _allowedFields =
@@ -17,7 +17,7 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
         };
 
         internal static readonly string k_DocsFilePath = "template_project_validation_errors.html";
-        
+
         public TemplateProjectValidation()
         {
             TestName = "Template Project Manifest Validation";
@@ -30,7 +30,7 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
         protected override void Run()
         {
             TestState = TestState.Succeeded;
-            
+
             ValidateProjectManifest();
             ValidatePackageManagerSettings();
         }
@@ -48,7 +48,7 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
 
             if (Context.ProjectInfo.PackageManagerSettingsValidation.m_EnablePreviewPackages)
                 AddError($"Preview packages are not allowed to be enabled on template packages. Please disable the `Enable Preview Packages` option in ProjectSettings > PackageManager > Advanced Settings. {ErrorDocumentation.GetLinkMessage(k_DocsFilePath, "preview|prerelease-packages-are-not-allowed-to-be-enabled-on-template-packages")}");
-    
+
             if (Context.ProjectInfo.PackageManagerSettingsValidation.m_EnablePreReleasePackages)
                 AddError($"PreRelease packages are not allowed to be enabled on template packages. Please disable the `Enable PreRelease Packages` option in ProjectSettings > PackageManager > Advanced Settings. {ErrorDocumentation.GetLinkMessage(k_DocsFilePath, "preview|prerelease-packages-are-not-allowed-to-be-enabled-on-template-packages")}");
         }
@@ -58,7 +58,7 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
         {
             string docsLink = ErrorDocumentation.GetLinkMessage(k_DocsFilePath,
                 "The-{fieldName}-field-in-the-project-manifest-is-not-a-valid-field-for-template-packages");
-            
+
             return $"The `{fieldName}` field in the project manifest is not a valid field for template packages. Please remove this field from {Context.ProjectInfo.ManifestPath}. {docsLink}";
         }
 
@@ -68,7 +68,7 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
             {
                 if (_allowedFields.Contains(fieldName))
                     continue;
-                
+
                 AddError(CreateFieldErrorMessage(fieldName));
             }
         }

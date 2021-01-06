@@ -21,7 +21,7 @@ namespace UnityEditor.PackageManager.ValidationSuite
         };
 
         public ProjectInfo() {}
-        
+
         /// <summary>
         /// Contains project information that is relevant for Template testing. During testing, the used manifest path
         /// and package manager settings path will be defined by the existence of those files within the package's
@@ -42,22 +42,22 @@ namespace UnityEditor.PackageManager.ValidationSuite
             PackageManagerSettingsPath = File.Exists(packmanSettingsPath)
                 ? packmanSettingsPath
                 : Path.GetFullPath("ProjectSettings/PackageManagerSettings.asset");
-            
+
             SetProjectManifestKeys();
             SetPackageManagerSettings();
         }
-        
+
         internal void SetProjectManifestKeys()
         {
             Profiler.BeginSample("GetProjectManifestKeys");
-            
+
             if (!File.Exists(ManifestPath))
                 throw new FileNotFoundException($"A project manifest file could not be found in {ManifestPath}");
 
             var contents = File.ReadAllText(ManifestPath);
-            
+
             ProjectManifestKeys = ParseFirstLevelKeys(contents);
-            
+
             Profiler.EndSample();
         }
 
@@ -78,7 +78,7 @@ namespace UnityEditor.PackageManager.ValidationSuite
                 m_EnablePreReleasePackages = Regex.IsMatch(contents, "m_EnablePreReleasePackages: 1")
             };
         }
-        
+
         /// <summary>
         /// Retrieve first level keys for a given json string
         /// </summary>
@@ -91,7 +91,7 @@ namespace UnityEditor.PackageManager.ValidationSuite
 
             if (!regex.IsMatch(minified)) // json is not a dictionary
                 return new string[0];
-            
+
             List<string> results = new List<string>();
             var matches = regex.Matches(minified).OfType<Match>().Select(m => m.Groups[1].Value).ToArray();
 

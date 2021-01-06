@@ -78,7 +78,6 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
                 RedirectStandardError = true,
                 RedirectStandardOutput = true,
                 CreateNoWindow = true
-
             };
             var process = Process.Start(processStartInfo);
             var stderr = new ProcessOutputStreamReader(process, process.StandardError);
@@ -122,8 +121,8 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
                 //      - ApiUpdater~/{Editor Version Without Alpha/Beta/RC/Final info} (ex: 2019.3)
                 //      - ApiUpdater~/
                 // first one found will be used.
-                var probingFolders = new [] {$"{UnityEngine.Application.unityVersion}", $"{Regex.Replace(UnityEngine.Application.unityVersion, @"(?<=20[1-5][0-9]\.\d{1,3})\.[0-9]{1,4}.*", string.Empty)}", "."};
-                foreach(var path in probingFolders)
+                var probingFolders = new[] {$"{UnityEngine.Application.unityVersion}", $"{Regex.Replace(UnityEngine.Application.unityVersion, @"(?<=20[1-5][0-9]\.\d{1,3})\.[0-9]{1,4}.*", string.Empty)}", "."};
+                foreach (var path in probingFolders)
                 {
                     var whitelistPath = Path.Combine(Context.ProjectPackageInfo.path, $"ApiUpdater~/{path}/ValidationWhiteList.txt");
                     if (File.Exists(whitelistPath))

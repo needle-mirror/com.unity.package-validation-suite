@@ -28,7 +28,6 @@ namespace UnityEditor.PackageManager.ValidationSuite
 
         public void GenerateReport(ValidationSuite suite)
         {
-            
         }
     }
 }

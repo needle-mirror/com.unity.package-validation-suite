@@ -12,11 +12,11 @@ namespace UnityEditor.PackageManager.ValidationSuite
 {
     // Attribute for methods to be called before any tests are run, prototype is "void MyMethod(VettingContext)"
     [AttributeUsage(AttributeTargets.Method)]
-    public class ValidationSuiteSetup : Attribute { }
+    public class ValidationSuiteSetup : Attribute {}
 
     // Attribute for methods to be called after all tests are run, prototype is "void MyMethod(VettingContext)"
     [AttributeUsage(AttributeTargets.Method)]
-    public class ValidationSuiteTeardown : Attribute { }
+    public class ValidationSuiteTeardown : Attribute {}
 
     // Delegate called after every test to provide immediate feedback on single test results.
     internal delegate void SingleTestCompletedDelegate(IValidationTestResult testResult);
@@ -121,7 +121,7 @@ namespace UnityEditor.PackageManager.ValidationSuite
                 report.OutputErrorReport(string.Format("Unable to find package \"{0}\" on disk.", packageName));
                 return false;
             }
-            
+
             // publish locally for embedded and local packages
             var context = VettingContext.CreatePackmanContext(packageId, validationType);
             return ValidatePackage(context, out report);
@@ -144,7 +144,7 @@ namespace UnityEditor.PackageManager.ValidationSuite
                 report.OutputErrorReport(string.Format("Unable to find package \"{0}\" on disk.", packageName));
                 return false;
             }
-            
+
             // publish locally for embedded and local packages
             var context = VettingContext.CreatePackmanContext(packageId, ValidationType.Promotion);
             context.packageIdsForPromotion = packageIdsForPromotion;
@@ -174,6 +174,7 @@ namespace UnityEditor.PackageManager.ValidationSuite
                 return false;
             }
         }
+
 #if UNITY_2020_1_OR_NEWER
         [Obsolete("Providing validationType to ValidatePackage has been deprecated, please set validationType in VettingContext (UnityUpgradable) -> !1", false)]
 #endif
@@ -306,11 +307,14 @@ namespace UnityEditor.PackageManager.ValidationSuite
             Assembly[] currentDomainAssemblies = AppDomain.CurrentDomain.GetAssemblies();
             foreach (Assembly assembly in currentDomainAssemblies)
             {
-                try {
+                try
+                {
                     testList.AddRange((from t in Utilities.GetTypesSafe(assembly)
-                                            where typeof(BaseValidation).IsAssignableFrom(t) && t.GetConstructor(Type.EmptyTypes) != null && !t.IsAbstract
-                                            select (BaseValidation)Activator.CreateInstance(t)).ToList());
-                } catch (System.Reflection.ReflectionTypeLoadException) {
+                        where typeof(BaseValidation).IsAssignableFrom(t) && t.GetConstructor(Type.EmptyTypes) != null && !t.IsAbstract
+                        select(BaseValidation) Activator.CreateInstance(t)).ToList());
+                }
+                catch (System.Reflection.ReflectionTypeLoadException)
+                {
                     // There seems to be an isue with assembly.GetTypes throwing an exception.
                     // This quick fix is to allow validation suite to work without blocking anyone
                     // while the owner of this code is contacted.
@@ -332,9 +336,9 @@ namespace UnityEditor.PackageManager.ValidationSuite
             {
                 try
                 {
-                    foreach(Type type in Utilities.GetTypesSafe(assembly))
+                    foreach (Type type in Utilities.GetTypesSafe(assembly))
                     {
-                        foreach(MethodInfo method in type.GetMethods(BindingFlags.Static | BindingFlags.NonPublic | BindingFlags.Public).Where(methodInfo => methodInfo.GetCustomAttributes(handlerAttributeType, false).Length > 0))
+                        foreach (MethodInfo method in type.GetMethods(BindingFlags.Static | BindingFlags.NonPublic | BindingFlags.Public).Where(methodInfo => methodInfo.GetCustomAttributes(handlerAttributeType, false).Length > 0))
                         {
                             ParameterInfo[] methodParameters = method.GetParameters();
                             if ((method.ReturnType != typeof(void)) || (methodParameters.Length != 1) || (methodParameters[0].ParameterType != typeof(VettingContext)))

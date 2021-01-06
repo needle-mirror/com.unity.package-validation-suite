@@ -1,6 +1,7 @@
 using System;
 using System.IO;
 using System.Linq;
+using System.Text.RegularExpressions;
 
 namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
 {
@@ -61,17 +62,17 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
             }
 
             // check that the license is valid.  We expect the first line to look like this:
-            var expectedLicenseHeader1 = string.Format("{0} copyright \u00a9 {1} Unity Technologies ApS", Context.PublishPackageInfo.name, DateTime.UtcNow.Year);
-            var expectedLicenseHeader2 = string.Format("{0} copyright \u00a9 {1} Unity Technologies ApS", Context.PublishPackageInfo.displayName, DateTime.UtcNow.Year);
-            if (string.Compare(licenseContent[0], expectedLicenseHeader1, StringComparison.CurrentCultureIgnoreCase) != 0 &&
-                string.Compare(licenseContent[0], expectedLicenseHeader2, StringComparison.CurrentCultureIgnoreCase) != 0)
+            var escapedName = Regex.Escape(Context.PublishPackageInfo.name);
+            var escapedDisplayName = Regex.Escape(Context.PublishPackageInfo.displayName);
+            var expectedLicenseHeader = $"^({escapedName}|{escapedDisplayName}) copyright \u00a9 20\\d{{2}} Unity Technologies ApS$";
+            if (!Regex.IsMatch(licenseContent[0], expectedLicenseHeader, RegexOptions.IgnoreCase))
             {
                 // TODO: Make this an error at some point soon.
                 var message = string.Format("A LICENSE.md file exists in the package, but is in the wrong format.  " +
-                                            "Ensure the copyright year is set properly, otherwise, please check the package starter kit's license file as reference.  " +
-                                            "https://github.cds.internal.unity3d.com/unity/com.unity.package-validation-suite/blob/dev/LICENSE.md  " +
-                                            "It was `{0}` but was expecting `{1}` or `{2}`",
-                    licenseContent[0], expectedLicenseHeader1, expectedLicenseHeader2);
+                    "Ensure the copyright year is set properly, otherwise, please check the package starter kit's license file as reference.  " +
+                    "https://github.cds.internal.unity3d.com/unity/com.unity.package-validation-suite/blob/dev/LICENSE.md  " +
+                    "It was `{0}` but was expecting it to match regex `{1}`",
+                    licenseContent[0], expectedLicenseHeader);
                 AddWarning(message);
             }
         }
@@ -99,7 +100,7 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
                 {
                     if (!lookForLicenseType)
                     {
-                        AddError("Invalid 3rd Party Notice File.  Found License Type line without a previous Component Name line. Please follow the model outlined here: https://github.cds.internal.unity3d.com/unity/com.unity.package-starter-kit/blob/master/Third%20Party%20Notices.md" );
+                        AddError("Invalid 3rd Party Notice File.  Found License Type line without a previous Component Name line. Please follow the model outlined here: https://github.cds.internal.unity3d.com/unity/com.unity.package-starter-kit/blob/master/Third%20Party%20Notices.md");
                         return;
                     }
 
@@ -133,7 +134,6 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
 
         protected void CheckForCopyrightMaterial()
         {
-            
         }
     }
 }

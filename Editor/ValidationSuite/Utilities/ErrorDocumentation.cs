@@ -41,7 +41,6 @@ namespace UnityEditor.PackageManager.ValidationSuite
 
         public static string GetLinkMessage(ErrorTypes error)
         {
-
             ErrorLink errorLink;
             if (!_links.TryGetValue(error, out errorLink))
             {

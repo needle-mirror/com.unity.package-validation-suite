@@ -33,13 +33,13 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
             // Check Unity Version, make sure it's valid given current version of Unity
             double unityVersionNumber = 0;
             double packageUnityVersionNumber = 0;
-            
+
             if (!double.TryParse(unityVersion.Substring(0, unityVersion.LastIndexOf(".")), NumberStyles.Any, CultureInfo.InvariantCulture, out unityVersionNumber) ||
                 (!string.IsNullOrEmpty(Context.ProjectPackageInfo.unity) && !double.TryParse(Context.ProjectPackageInfo.unity, NumberStyles.Any, CultureInfo.InvariantCulture, out packageUnityVersionNumber)) ||
                 unityVersionNumber < packageUnityVersionNumber)
             {
                 AddError($"In package.json, \"unity\" is pointing to a version higher ({packageUnityVersionNumber}) than the editor you are currently using ({unityVersionNumber}). " +
-                               $"Validation needs to happen on a version of the editor that is supported by the package.");
+                    $"Validation needs to happen on a version of the editor that is supported by the package.");
             }
         }
     }

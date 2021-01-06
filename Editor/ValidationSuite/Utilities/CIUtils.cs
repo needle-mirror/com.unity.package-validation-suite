@@ -55,7 +55,8 @@ namespace UnityEditor.PackageManager.ValidationSuite
 
             var paths = Directory.GetFiles(Path.Combine(path, "upm-ci~", "packages"), "*tgz");
 
-            foreach (var packagePath in paths) {
+            foreach (var packagePath in paths)
+            {
                 //Copy the file to the destinationPath
                 string packageName = Path.GetFileName(packagePath);
                 string finalPackagePath = Path.Combine(destinationPath, packageName);
@@ -68,7 +69,7 @@ namespace UnityEditor.PackageManager.ValidationSuite
                 File.Move(packagePath, finalPackagePath);
                 packagePaths.Add(finalPackagePath);
             }
-            
+
             // TODO: Remove this part when we switch to Packman API pack function
             var packagesJsonPath = Path.Combine(path, "packages.json");
             if (File.Exists(packagesJsonPath))
@@ -81,7 +82,7 @@ namespace UnityEditor.PackageManager.ValidationSuite
             {
                 Directory.Delete(Path.Combine(path, "upm-ci~"), true);
             }
-            
+
             return packagePaths;
         }
     }

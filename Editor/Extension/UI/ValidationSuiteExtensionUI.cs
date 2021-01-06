@@ -112,7 +112,6 @@ namespace UnityEditor.PackageManager.ValidationSuite.UI
                 ValidationResults.text = "Success";
                 root.style.backgroundColor = Color.green;
             }
-
         }
 
         private void ViewResults()

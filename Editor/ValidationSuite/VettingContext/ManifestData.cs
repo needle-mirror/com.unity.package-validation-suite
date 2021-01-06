@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 
 using UnityEditor.PackageManager.ValidationSuite.Utils;
@@ -25,7 +25,8 @@ namespace UnityEditor.PackageManager.ValidationSuite
         public Dictionary<string, string> dependencies = new Dictionary<string, string>();
         public Dictionary<string, string> relatedPackages = new Dictionary<string, string>();
 
-        internal LifecyclePhase LifecyclePhase {
+        internal LifecyclePhase LifecyclePhase
+        {
             get { return PackageLifecyclePhase.GetLifecyclePhase(version.ToLower()); }
         }
 
@@ -80,5 +81,4 @@ namespace UnityEditor.PackageManager.ValidationSuite
         public string email = "";
         public string url = "";
     }
-
 }
