@@ -63,7 +63,12 @@ namespace UnityEditor.PackageManager.ValidationSuite.UI
             if (root == null)
                 return;
 
+#if UNITY_2019_2_OR_NEWER
+            var installedPackageInfo = PackageInfo.FindForAssetPath($"Packages/{packageInfo.name}");
+            var isAvailable = installedPackageInfo != null && packageInfo != null && installedPackageInfo.version == packageInfo.version;
+#else
             var isAvailable = packageInfo != null && (packageInfo.status == PackageStatus.Available || packageInfo.status == PackageStatus.Error);
+#endif
             var showValidationUI = packageInfo != null && isAvailable && SourceSupported(packageInfo);
             UIUtils.SetElementDisplay(this, showValidationUI);
             if (!showValidationUI)

@@ -4,6 +4,9 @@ All notable changes to this package will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## [0.19.2] - 2021-01-11
+- Fixed Unity Version Validation for versions with dot in version suffix.
+
 ## [0.19.1] - 2021-01-06
 - Fixed License Validation warning about incorrect format when year is not current. Year should be the year in which the package was first made publicly available under the current licensing agreement.
 - Fixed activity log messages to not show stacktrace for a cleaner editor log.
