@@ -5,6 +5,10 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
 
+## [0.20.0] - 2021-03-30
+- Added validation that ensures type correctness on the fields of package.json
+- Fixed crash in *API Validation* when a type contains multiple method overloads which only differ in generic type parameters.
+
 ## [0.19.3] - 2021-02-08
 - Fixed `XmlDocValixdation` to properly Xml-escape default parameters containing `<` and `>`.
 - Added support for excepting Package Unity Version Validation errors.

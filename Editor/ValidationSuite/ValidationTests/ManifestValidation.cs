@@ -37,11 +37,20 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
                 return;
             }
 
+            ValidateManifestMarshalling(manifestData);
             ValidateManifestData(manifestData);
             ValidateAuthor(manifestData);
             ValidateVersion(manifestData);
 
             ValidateDependencies();
+        }
+
+        private void ValidateManifestMarshalling(ManifestData manifestData)
+        {
+            foreach (var marshallError in manifestData.decodingErrors)
+            {
+                AddError(marshallError.Message);
+            }
         }
 
         private void ValidateVersion(ManifestData manifestData)

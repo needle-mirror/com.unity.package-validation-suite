@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Text.RegularExpressions;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Threading;
 using Semver;
 
@@ -189,13 +190,19 @@ namespace UnityEditor.PackageManager.ValidationSuite
             try
             {
                 var textManifestData = File.ReadAllText(manifestPath);
-                var manifest = JsonUtility.FromJson<ManifestData>(textManifestData);
+
+                var parsedManifest = SimpleJsonReader.ReadObject(textManifestData);
+                if (parsedManifest == null)
+                    throw new ArgumentException("invalid JSON");
+
+                ManifestData manifest = new ManifestData();
+
+                var unmarshallingErrors = new List<UnmarshallingException>();
+                manifest = JsonUnmarshaller.GetValue<ManifestData>(parsedManifest, ref unmarshallingErrors);
+                manifest.decodingErrors.AddRange(unmarshallingErrors);
+
                 manifest.path = packagePath;
-                manifest.dependencies = ParseDictionary(textManifestData, "dependencies");
-                manifest.relatedPackages = ParseDictionary(textManifestData, "relatedPackages");
-                manifest.repository = ParseDictionary(textManifestData, "repository");
                 manifest.lifecycle = ManifestData.EvaluateLifecycle(manifest.version);
-                manifest.authorDetails = GetAuthorDetails(textManifestData);
 
                 Profiler.EndSample();
 
@@ -204,73 +211,13 @@ namespace UnityEditor.PackageManager.ValidationSuite
             catch (ArgumentException e)
             {
                 Profiler.EndSample();
-                throw new Exception($"Could not parse json in file {manifestPath} because of: {e.Message}");
+                throw new Exception($"Could not parse json in file {manifestPath} because of: {e}");
             }
-        }
-
-        private static AuthorDetails GetAuthorDetails(string json)
-        {
-            string authorString = GetFieldValueFromJson(json, "author");
-            if (authorString.Contains("{"))
-            {
-                return JsonUtility.FromJson<AuthorDetails>(authorString);
-            }
-
-            return null;
         }
 
         private static PackageType GetPackageType(ManifestData manifestData)
         {
             return manifestData.IsProjectTemplate ? PackageType.Template : PackageType.Tooling;
-        }
-
-        // Method that attempts to extract only the first level keys of a given json
-        // but the regex does get confused right now by any key coming after a comma
-        private static string[] ParseFirstLevelKeys(string json)
-        {
-            string minified = new Regex("[\\s]").Replace(json, "");
-            var regex = new Regex("(?<=^{|,)\"(\\w*)\"");
-
-            if (!regex.IsMatch(minified)) // json is not a dictionary
-                return new string[0];
-
-            List<string> results = new List<string>();
-            var matches = regex.Matches(minified).OfType<Match>().Select(m => m.Value.Replace("\"", "")).ToArray();
-
-            return matches;
-        }
-
-        private static Dictionary<string, string> ParseDictionary(string json, string key)
-        {
-            string minified = new Regex("[\"\\s]").Replace(json, "");
-            var regex = new Regex(key + ":{(.*?)}");
-            MatchCollection matches = regex.Matches(minified);
-            if (matches.Count == 0)
-                return new Dictionary<string, string>();
-
-            string match = matches[0].Groups[1].Value;    // Group 0 is full match, group 1 is capture group
-            if (match.Length == 0)                        // Found empty dictionary {}
-                return new Dictionary<string, string>();
-
-            string[] keyValuePairs = match.Split(',');
-            return keyValuePairs.Select(kvp => kvp.Split(':')).ToDictionary(k => k[0], v => v[1]);
-        }
-
-        private static string GetFieldValueFromJson(string json, string key)
-        {
-            string minified = new Regex("[\\s]").Replace(json, "");
-            var regex = new Regex("\"" + key + "\":((\"(.*?)\")|({(.*?)}))");
-            MatchCollection matches = regex.Matches(minified);
-            if (matches.Count == 0)
-                return "";
-
-            if (!String.IsNullOrEmpty(matches[0].Groups[3].Value))
-                return matches[0].Groups[3].Value; // Group 0 is full match, group 3 is capture group "(.*)"
-
-            if (!String.IsNullOrEmpty(matches[0].Groups[4].Value))
-                return matches[0].Groups[4].Value; // Group 0 is full match, group 4 is capture group {(.*)}
-
-            return "";
         }
 
         internal VersionChangeType VersionChangeType

@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-
 using UnityEditor.PackageManager.ValidationSuite.Utils;
 
 namespace UnityEditor.PackageManager.ValidationSuite
@@ -17,6 +16,7 @@ namespace UnityEditor.PackageManager.ValidationSuite
         public string version = "";
         public double lifecycle = 1.0;
         public string type = "";
+        [AlternativeSerializationFormat(nameof(authorDetails))]
         public string author;
         [NonSerialized]
         public AuthorDetails authorDetails;
@@ -24,6 +24,12 @@ namespace UnityEditor.PackageManager.ValidationSuite
         public Dictionary<string, string> repository = new Dictionary<string, string>();
         public Dictionary<string, string> dependencies = new Dictionary<string, string>();
         public Dictionary<string, string> relatedPackages = new Dictionary<string, string>();
+        public List<string> keywords = new List<string>();
+
+        //Errors during parsing time - to be passed for validation
+        [NonSerialized]
+        internal List<UnmarshallingException> decodingErrors = new List<UnmarshallingException>();
+
 
         internal LifecyclePhase LifecyclePhase
         {
