@@ -82,7 +82,7 @@ namespace UnityEditor.PackageManager.ValidationSuite
 
             context.ValidationType = validationType;
             context.ProjectPackageInfo = GetManifest(packageInfo.resolvedPath);
-            context.PackageType = GetPackageType(context.ProjectPackageInfo);
+            context.PackageType = context.ProjectPackageInfo.PackageType;
 
             if (context.ValidationType != ValidationType.VerifiedSet)
             {
@@ -215,11 +215,6 @@ namespace UnityEditor.PackageManager.ValidationSuite
             }
         }
 
-        private static PackageType GetPackageType(ManifestData manifestData)
-        {
-            return manifestData.IsProjectTemplate ? PackageType.Template : PackageType.Tooling;
-        }
-
         internal VersionChangeType VersionChangeType
         {
             get
@@ -249,32 +244,30 @@ namespace UnityEditor.PackageManager.ValidationSuite
         private static string PublishPackage(VettingContext context)
         {
             var packagePath = context.ProjectPackageInfo.path;
-            if (context.ProjectPackageInfo.IsProjectTemplate)
+            if (!context.ProjectPackageInfo.PackageType.NeedsLocalPublishing())
             {
                 return packagePath;
             }
-            else
+
+            Profiler.BeginSample("PublishPackage");
+
+            var tempPath = System.IO.Path.GetTempPath();
+            string packageName = context.ProjectPackageInfo.Id.Replace("@", "-") + ".tgz";
+
+            //Use upm-template-tools package-ci
+            var packagesGenerated = PackageCIUtils.Pack(packagePath, tempPath);
+
+            var publishPackagePath = Path.Combine(tempPath, "publish-" + context.ProjectPackageInfo.Id);
+            var deleteOutput = true;
+            foreach (var packageTgzName in packagesGenerated)
             {
-                Profiler.BeginSample("PublishPackage");
-
-                var tempPath = System.IO.Path.GetTempPath();
-                string packageName = context.ProjectPackageInfo.Id.Replace("@", "-") + ".tgz";
-
-                //Use upm-template-tools package-ci
-                var packagesGenerated = PackageCIUtils.Pack(packagePath, tempPath);
-
-                var publishPackagePath = Path.Combine(tempPath, "publish-" + context.ProjectPackageInfo.Id);
-                var deleteOutput = true;
-                foreach (var packageTgzName in packagesGenerated)
-                {
-                    Utilities.ExtractPackage(packageTgzName, tempPath, publishPackagePath, context.ProjectPackageInfo.name, deleteOutput);
-                    deleteOutput = false;
-                }
-
-                Profiler.EndSample();
-
-                return publishPackagePath;
+                Utilities.ExtractPackage(packageTgzName, tempPath, publishPackagePath, context.ProjectPackageInfo.name, deleteOutput);
+                deleteOutput = false;
             }
+
+            Profiler.EndSample();
+
+            return publishPackagePath;
         }
 
         private static string GetPreviousReleasedPackage(ManifestData projectPackageInfo, PackageInfo packageInfo)

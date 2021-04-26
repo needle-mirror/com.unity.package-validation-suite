@@ -4,6 +4,13 @@ All notable changes to this package will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## [0.20.1] - 2021-04-26
+- Added more descriptive error message when API Validation is unable to compare assemblies.
+- Added validation exception helper text after every error with an example of how to add an exception for that error specifically.
+- Fixed NullReferenceException error when interacting with Package Manager window.
+- Fixed *API Validation* incorrectly reporting members implementing interface members as *virtual*.
+- Added initial support for FeatureSets that runs the Changelog and Manifest validation.
+- Fixed documentation hyperlinks to be clickable in Yamato UI.
 
 ## [0.20.0] - 2021-03-30
 - Added validation that ensures type correctness on the fields of package.json

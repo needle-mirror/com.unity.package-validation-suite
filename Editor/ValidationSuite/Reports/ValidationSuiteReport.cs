@@ -28,7 +28,7 @@ namespace UnityEditor.PackageManager.ValidationSuite
                 Directory.CreateDirectory(ResultsPath);
 
 #if !UNITY_PACKAGE_MANAGER_DEVELOP_EXISTS
-            TextReport = new TextReport(packageId);
+            TextReport = new TextReport(packageId, packageVersion);
 #endif
             TextReport?.Clear();
 

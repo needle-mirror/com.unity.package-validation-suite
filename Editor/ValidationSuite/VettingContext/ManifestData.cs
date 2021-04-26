@@ -36,9 +36,12 @@ namespace UnityEditor.PackageManager.ValidationSuite
             get { return PackageLifecyclePhase.GetLifecyclePhase(version.ToLower()); }
         }
 
+        public PackageType PackageType => PackageTypeParser.Parse(type);
+
+        [Obsolete("use PackageType instead")]
         public bool IsProjectTemplate
         {
-            get { return type.Equals("template", StringComparison.InvariantCultureIgnoreCase); }
+            get { return PackageType == PackageType.Template; }
         }
 
         public string Id

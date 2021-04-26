@@ -1,13 +1,17 @@
 {
     "name": "Unity.PackageValidationSuite.Editor",
+    "rootNamespace": "",
     "references": [],
     "includePlatforms": [
         "Editor"
     ],
     "excludePlatforms": [],
     "allowUnsafeCode": false,
-    "overrideReferences": false,
-    "precompiledReferences": [],
+    "overrideReferences": true,
+    "precompiledReferences": [
+        "Unity.APIComparison.Framework.dll",
+        "Mono.Cecil.dll"
+    ],
     "autoReferenced": true,
     "defineConstraints": [],
     "versionDefines": [
@@ -16,5 +20,6 @@
             "expression": "",
             "define": "UNITY_PACKAGE_MANAGER_DEVELOP_EXISTS"
         }
-    ]
+    ],
+    "noEngineReferences": false
 }

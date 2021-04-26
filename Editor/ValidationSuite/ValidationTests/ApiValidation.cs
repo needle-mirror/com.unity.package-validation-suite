@@ -9,6 +9,8 @@ using UnityEditor.Compilation;
 using UnityEditor.PackageManager.ValidationSuite.Utils;
 using UnityEngine;
 
+using AssemblyResolutionException = Mono.Cecil.AssemblyResolutionException;
+
 namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
 {
     internal class ApiValidation : BaseAssemblyValidation
@@ -196,7 +198,29 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
                         CurrentExtraSearchFolders = assemblySearchFolder
                     };
 
-                    var entityChanges = APIChangesCollector.Collect(apiChangesAssemblyInfo).SelectMany(c => c.Changes).ToList();
+                    List<IAPIChange> entityChanges;
+                    try
+                    {
+                        entityChanges = APIChangesCollector.Collect(apiChangesAssemblyInfo)
+                            .SelectMany(c => c.Changes).ToList();
+                    }
+                    catch (AssemblyResolutionException exception)
+                    {
+                        if (exception.AssemblyReference.Name == "UnityEditor.CoreModule" ||
+                            exception.AssemblyReference.Name == "UnityEngine.CoreModule")
+                        {
+                            AddError(
+                                "Failed comparing against assemblies of previously promoted version of package. \n" +
+                                "This is most likely because the assemblies that were compared against were built with a different version of Unity. \n" +
+                                "If you are certain that there are no API changes warranting bumping the package version then you can add an exception for this error:\n" +
+                                ErrorDocumentation.GetLinkMessage("validation_exceptions.html", ""));
+                            AddInformation($"APIChangesCollector.Collect threw exception:\n{exception}");
+                            return;
+                        }
+
+                        throw;
+                    }
+
                     var assemblyChange = new AssemblyChange(info.assembly.name)
                     {
                         additions = entityChanges.Where(c => c.IsAdd()).Select(c => c.ToString()).ToList(),

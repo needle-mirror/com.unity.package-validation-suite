@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using UnityEngine;
 
 namespace UnityEditor.PackageManager.ValidationSuite
 {
@@ -9,41 +10,49 @@ namespace UnityEditor.PackageManager.ValidationSuite
     {
         public string FilePath { get; set; }
 
-        private const string exceptionSectionPlaceholder = "\r\nExceptions section\r\n";
+        private const string exceptionSectionPlaceholder = "\nExceptions section\n";
+
+        readonly string m_PackageVersion;
 
         public TextReport(string packageId)
         {
             FilePath = ReportPath(packageId);
         }
 
+        internal TextReport(string packageId, string packageVersion)
+            : this(packageId)
+        {
+            m_PackageVersion = packageVersion;
+        }
+
         internal void Initialize(VettingContext context)
         {
             var packageInfo = context.ProjectPackageInfo;
             Write(
-                string.Format("Validation Suite Results for package \"{0}\"\r\n", packageInfo.name) +
-                string.Format(" - Path: {0}\r\n", packageInfo.path) +
-                string.Format(" - Version: {0}\r\n", packageInfo.version) +
-                string.Format(" - Type: {0}\r\n", context.PackageType) +
-                string.Format(" - Context: {0}\r\n", context.ValidationType) +
-                string.Format(" - Lifecycle: {0}\r\n", packageInfo.lifecycle) +
-                string.Format(" - Test Time: {0}\r\n", DateTime.Now) +
-                string.Format(" - Tested with {0} version: {1}\r\n", context.VSuiteInfo.name, context.VSuiteInfo.version)
+                string.Format("Validation Suite Results for package \"{0}\"\n", packageInfo.name) +
+                string.Format(" - Path: {0}\n", packageInfo.path) +
+                string.Format(" - Version: {0}\n", packageInfo.version) +
+                string.Format(" - Type: {0}\n", context.PackageType) +
+                string.Format(" - Context: {0}\n", context.ValidationType) +
+                string.Format(" - Lifecycle: {0}\n", packageInfo.lifecycle) +
+                string.Format(" - Test Time: {0}\n", DateTime.Now) +
+                string.Format(" - Tested with {0} version: {1}\n", context.VSuiteInfo.name, context.VSuiteInfo.version)
             );
 
             if (context.ProjectPackageInfo.dependencies.Any())
             {
-                Append("\r\nPACKAGE DEPENDENCIES:\r\n");
-                Append("--------------------\r\n");
+                Append("\nPACKAGE DEPENDENCIES:\n");
+                Append("--------------------\n");
                 foreach (var dependencies in context.ProjectPackageInfo.dependencies)
                 {
-                    Append(string.Format("    - {0}@{1}\r\n", dependencies.Key, dependencies.Value));
+                    Append(string.Format("    - {0}@{1}\n", dependencies.Key, dependencies.Value));
                 }
             }
 
             Append(exceptionSectionPlaceholder);
 
-            Append("\r\nVALIDATION RESULTS:\r\n");
-            Append("------------------\r\n");
+            Append("\nVALIDATION RESULTS:\n");
+            Append("------------------\n");
         }
 
         public void Clear()
@@ -83,14 +92,14 @@ namespace UnityEditor.PackageManager.ValidationSuite
             string str = "";
             if (context.ValidationExceptionManager.HasExceptions)
             {
-                str = "\r\n\r\n***************************************\r\n";
-                str += "PACKAGE CONTAINS VALIDATION EXCEPTIONS!\r\n";
+                str = "\n\n***************************************\n";
+                str += "PACKAGE CONTAINS VALIDATION EXCEPTIONS!\n";
                 var issuesList = context.ValidationExceptionManager.CheckValidationExceptions(context.PublishPackageInfo.version);
                 foreach (var issue in issuesList)
                 {
-                    str += "\r\n- Issue: " + issue + "\r\n";
+                    str += "\n- Issue: " + issue + "\n";
                 }
-                str += "***************************************\r\n";
+                str += "***************************************\n";
             }
 
             Replace(exceptionSectionPlaceholder, str);
@@ -105,10 +114,34 @@ namespace UnityEditor.PackageManager.ValidationSuite
 
             foreach (var testResult in suite.ValidationTests.Where(t => t.TestState == testState))
             {
-                Append(string.Format("\r\n{0} - \"{1}\"\r\n    ", testResult.TestState, testResult.TestName));
-                if (testResult.TestOutput.Any())
-                    Append(string.Join("\r\n\n    ", testResult.TestOutput.Select(o => o.ToString()).ToArray()) +
-                        "\r\n    ");
+                Append(string.Format("\n{0} - \"{1}\"\n    ", testResult.TestState, testResult.TestName));
+                foreach (var testOutput in testResult.TestOutput)
+                {
+                    Append(testOutput.ToString());
+                    Append("\n\n    ");
+
+                    // If test caused a failure show how to except it
+                    if (m_PackageVersion != null && testState == TestState.Failed &&
+                        testResult.CanUseValidationExceptions && testOutput.Type == TestOutputType.Error)
+                    {
+                        var validationExceptions = new ValidationExceptions
+                        {
+                            ErrorExceptions = new[]
+                            {
+                                new ValidationException
+                                {
+                                    ValidationTest = testResult.ValidationTest.TestName,
+                                    ExceptionMessage = testOutput.Output,
+                                    PackageVersion = m_PackageVersion,
+                                },
+                            },
+                        };
+
+                        Append("The above error can be excepted with the following ValidationExceptions.json contents:\n");
+                        Append(JsonUtility.ToJson(validationExceptions, true));
+                        Append("\n\n    ");
+                    }
+                }
             }
         }
 

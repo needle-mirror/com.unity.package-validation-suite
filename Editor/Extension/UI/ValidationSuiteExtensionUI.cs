@@ -43,6 +43,16 @@ namespace UnityEditor.PackageManager.ValidationSuite.UI
             ViewDiffButton.clickable.clicked += ViewDiffs;
         }
 
+        static bool PackageAvailable(PackageInfo packageInfo)
+        {
+#if UNITY_2019_2_OR_NEWER
+            var installedPackageInfo = PackageInfo.FindForAssetPath($"Packages/{packageInfo.name}");
+            return installedPackageInfo != null && installedPackageInfo.version == packageInfo.version;
+#else
+            return packageInfo.status == PackageStatus.Available || packageInfo.status == PackageStatus.Error;
+#endif
+        }
+
         public static bool SourceSupported(PackageInfo info)
         {
             PackageSource source = info.source;
@@ -63,13 +73,7 @@ namespace UnityEditor.PackageManager.ValidationSuite.UI
             if (root == null)
                 return;
 
-#if UNITY_2019_2_OR_NEWER
-            var installedPackageInfo = PackageInfo.FindForAssetPath($"Packages/{packageInfo.name}");
-            var isAvailable = installedPackageInfo != null && packageInfo != null && installedPackageInfo.version == packageInfo.version;
-#else
-            var isAvailable = packageInfo != null && (packageInfo.status == PackageStatus.Available || packageInfo.status == PackageStatus.Error);
-#endif
-            var showValidationUI = packageInfo != null && isAvailable && SourceSupported(packageInfo);
+            var showValidationUI = packageInfo != null && PackageAvailable(packageInfo) && SourceSupported(packageInfo);
             UIUtils.SetElementDisplay(this, showValidationUI);
             if (!showValidationUI)
                 return;

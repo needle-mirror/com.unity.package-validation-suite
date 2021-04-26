@@ -55,7 +55,7 @@ namespace UnityEditor.PackageManager.ValidationSuite
             var sb = new StringBuilder();
             sb.Append("Read more about this error and potential solutions at https://docs.unity3d.com/Packages/com.unity.package-validation-suite@latest/index.html?preview=1&subfolder=/manual/");
             sb.Append(filePath);
-            sb.Append("%23");
+            sb.Append("#");
             sb.Append(fileSection);
             return sb.ToString();
         }

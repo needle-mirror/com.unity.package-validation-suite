@@ -23,6 +23,9 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
             TestDescription = "Validate that the information found in the manifest is well formatted.";
             TestCategory = TestCategory.DataValidation;
             SupportedValidations = new[] { ValidationType.CI, ValidationType.LocalDevelopment, ValidationType.LocalDevelopmentInternal, ValidationType.Promotion, ValidationType.VerifiedSet };
+            //TODO: this validation contains many standards check, not sure if all of them should be run against FeatureSet
+            //We might need to somehow split the checks into their own classes so we can filter on that.
+            SupportedPackageTypes = new[] {PackageType.Template, PackageType.Tooling, PackageType.FeatureSet};
         }
 
         protected override void Run()
