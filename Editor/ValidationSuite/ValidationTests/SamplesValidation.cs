@@ -13,6 +13,7 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
             TestDescription = "Verify that samples meet expectation, if the package has samples.";
             TestCategory = TestCategory.DataValidation;
             SupportedValidations = new[] { ValidationType.CI, ValidationType.LocalDevelopment, ValidationType.LocalDevelopmentInternal, ValidationType.Promotion, ValidationType.VerifiedSet };
+            SupportedPackageTypes = new[] { PackageType.Tooling, PackageType.Template, PackageType.FeatureSet };
         }
 
         protected override void Run()

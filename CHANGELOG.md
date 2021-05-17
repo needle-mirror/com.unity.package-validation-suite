@@ -4,6 +4,10 @@ All notable changes to this package will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## [0.20.2] - 2021-05-17
+- The Manifest Validation dependency check is now aware of feature set packages and will behave accordingly by ensuring that all of their dependencies have their version specified as "default".
+- Enabling the SamplesValidation for FeatureSets
+
 ## [0.20.1] - 2021-04-26
 - Added more descriptive error message when API Validation is unable to compare assemblies.
 - Added validation exception helper text after every error with an example of how to add an exception for that error specifically.

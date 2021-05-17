@@ -72,14 +72,22 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
             if (Context.ProjectPackageInfo.dependencies.Count == 0)
                 return;
 
+            var isFeature = Context.ProjectPackageInfo.PackageType == PackageType.FeatureSet;
+
             // Make sure all dependencies are already published in production.
             foreach (var dependency in Context.ProjectPackageInfo.dependencies)
             {
+                if (isFeature && dependency.Value != "default")
+                {
+                    AddError(@"In package.json for a feature, dependency ""{0}"" : ""{1}"" needs to be set to ""default""", dependency.Key, dependency.Value);
+                    continue;
+                }
+
                 // Check if the dependency semver is valid before doing anything else
                 SemVersion depVersion;
-                if (!SemVersion.TryParse(dependency.Value, out depVersion))
+                if (!isFeature && !SemVersion.TryParse(dependency.Value, out depVersion))
                 {
-                    AddError(@"In package.json, dependency ""{0}"" : ""{1}"" needs to be a valid ""Semver"". {2}", dependency.Key, dependency.Value, ErrorDocumentation.GetLinkMessage(ManifestValidation.k_DocsFilePath,  "dependency_needs_to_be_a_valid_Semver"));
+                    AddError(@"In package.json, dependency ""{0}"" : ""{1}"" needs to be a valid ""Semver"". {2}", dependency.Key, dependency.Value, ErrorDocumentation.GetLinkMessage(ManifestValidation.k_DocsFilePath, "dependency_needs_to_be_a_valid_Semver"));
                     continue;
                 }
 

@@ -36,7 +36,15 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
                     PreReleaseChecks(Context.ProjectPackageInfo);
             }
 
-            ValidateDependenciesLifecyclePhase(Context.ProjectPackageInfo.dependencies);
+            /*
+             * TODO: this test is producing false failures, we need to rework it.
+             * Disabling so we don't block people trying to get into trunk, and to workaround they are adding full exemption to their packages
+             * We have guards further in the trunk katana process that will guard against packages depending on other packages outside the correct set.
+             * We have identified 2 challenges for making this check work in package CI:
+             *  - A new package version will never be part of the EditorManifest, so we need to tell PVS to pretend that this package will be RC
+             *  - Same as above, but for a set of related/dependent packages (think monorepos, or project context)
+            */
+            //ValidateDependenciesLifecyclePhase(Context.ProjectPackageInfo.dependencies);
         }
 
         private void ValidateVersion(ManifestData manifestData, Action<SemVersion, VersionTag> lifecycleVersionValidator)
