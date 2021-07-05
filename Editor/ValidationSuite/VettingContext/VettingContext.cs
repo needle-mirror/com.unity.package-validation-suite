@@ -327,7 +327,7 @@ namespace UnityEditor.PackageManager.ValidationSuite
             ActivityLogger.Log("Retrieving assemblies for previous package version {0}", PreviousPackageInfo.version);
             var packageDataZipFilename = PackageBinaryZipping.PackageDataZipFilename(PreviousPackageInfo.name, PreviousPackageInfo.version);
             var zipPath = Path.Combine(PreviousVersionBinaryPath, packageDataZipFilename);
-            var uri = Path.Combine("https://artifactory.eu-cph-1.unityops.net/pkg-api-validation", packageDataZipFilename);
+            var uri = Path.Combine("https://artifactory.prd.it.unity3d.com/artifactory/pkg-api-validation/", packageDataZipFilename);
 
             UnityWebRequest request = new UnityWebRequest(uri);
             request.timeout = 60; // 60 seconds time out
@@ -341,8 +341,9 @@ namespace UnityEditor.PackageManager.ValidationSuite
             // https://jira.unity3d.com/browse/PAI-1215
             var requestError = false;
             #if UNITY_2020_1_OR_NEWER
-            requestError = request.result == UnityWebRequest.Result.ProtocolError ||
-                request.result == UnityWebRequest.Result.ConnectionError;
+            requestError = request.result == UnityWebRequest.Result.ProtocolError
+                || request.result == UnityWebRequest.Result.ConnectionError
+                || request.result == UnityWebRequest.Result.DataProcessingError;
             #else
             requestError = request.isHttpError || request.isNetworkError;
             #endif

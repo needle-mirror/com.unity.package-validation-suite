@@ -1,11 +1,14 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Diagnostics;
 using System.IO;
+using UnityEditor.PackageManager.ValidationSuite.ValidationTests.Standards;
 using UnityEngine;
 
 #if UNITY_2019_1_OR_NEWER
 using UnityEngine.UIElements;
+using UnityEditor.UIElements;
 #endif
 
 namespace UnityEditor.PackageManager.ValidationSuite.UI
@@ -21,6 +24,16 @@ namespace UnityEditor.PackageManager.ValidationSuite.UI
 
         private VisualElement root;
 
+        private PopupField<string> validationPopupField;
+
+        private List<string> _validationChoices = ValidationTypeDropdown.ToList();
+        public List<string> ValidationChoices
+        {
+            get => _validationChoices;
+            private set => _validationChoices = value;
+        }
+
+        private PackageNamingConventionUS0006 _namingConventionUs0006 = new PackageNamingConventionUS0006();
         private PackageInfo CurrentPackageinfo { get; set; }
         private string PackageId { get; set; }
 
@@ -37,6 +50,9 @@ namespace UnityEditor.PackageManager.ValidationSuite.UI
             var styleSheet = EditorGUIUtility.Load(path) as StyleSheet;
             root.styleSheets.Add(styleSheet);
             Add(root);
+
+            validationPopupField = new PopupField<string>("", ValidationChoices, 0);
+            root.Q<VisualElement>("ValidationTypeDropdown").Add(validationPopupField);
 
             ValidateButton.clickable.clicked += Validate;
             ViewResultsButton.clickable.clicked += ViewResults;
@@ -82,10 +98,28 @@ namespace UnityEditor.PackageManager.ValidationSuite.UI
             PackageId = CurrentPackageinfo.name + "@" + CurrentPackageinfo.version;
             ValidationResults.text = string.Empty;
 
+            AddRemoveUnitySpecificValidations(NamePrefixEligibleForUnityStandardsOptions(CurrentPackageinfo.name));
+
+            validationPopupField.value = NamePrefixEligibleForUnityStandardsOptions(CurrentPackageinfo.name) ? ValidationTypeDropdown.UnityProductionStandardsLabelText : ValidationTypeDropdown.StructureLabelText;
+
             UIUtils.SetElementDisplay(ViewResultsButton, ValidationSuiteReport.ReportExists(PackageId));
             UIUtils.SetElementDisplay(ViewDiffButton, ValidationSuiteReport.DiffsReportExists(PackageId));
 
             root.style.backgroundColor = Color.gray;
+        }
+
+        public void AddRemoveUnitySpecificValidations(bool showUnityStandards)
+        {
+            ValidationChoices.Clear();
+
+            ValidationChoices.Add(ValidationTypeDropdown.StructureLabelText);
+            ValidationChoices.Add(ValidationTypeDropdown.AssetStoreLabelText);
+
+            if (showUnityStandards)
+            {
+                ValidationChoices.Add(ValidationTypeDropdown.UnityCandidatesStandardsLabelText);
+                ValidationChoices.Add(ValidationTypeDropdown.UnityProductionStandardsLabelText);
+            }
         }
 
         private void Validate()
@@ -99,7 +133,8 @@ namespace UnityEditor.PackageManager.ValidationSuite.UI
                 return;
             }
 
-            var validationType = CurrentPackageinfo.source == PackageSource.Registry ? ValidationType.Promotion : ValidationType.LocalDevelopmentInternal;
+            var validationType = ValidationTypeDropdown.ValidationTypeFromDropdown(validationPopupField.value, CurrentPackageinfo.source);
+
             var results = ValidationSuite.ValidatePackage(PackageId, validationType);
             var report = ValidationSuiteReport.GetReport(PackageId);
 
@@ -154,6 +189,12 @@ namespace UnityEditor.PackageManager.ValidationSuite.UI
             {
                 Application.OpenURL("file://" + Path.GetFullPath(ValidationSuiteReport.DiffsReportPath(PackageId)));
             }
+        }
+
+        public bool NamePrefixEligibleForUnityStandardsOptions(string packageName)
+        {
+            return _namingConventionUs0006.GetPackageNamePrefixList()
+                .Any(packageName.StartsWith);
         }
 
         internal Label ValidationResults { get { return root.Q<Label>("validationResults");} }

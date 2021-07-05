@@ -1,8 +1,17 @@
+using System.Collections.Generic;
 using System.Linq;
 using UnityEditor.PackageManager.ValidationSuite.Utils;
+using UnityEngine;
+using UnityEditor.PackageManager.ValidationSuite.ValidationTests.Standards;
 
 namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
 {
+    /*
+     * TODO: the description of this standard does not strictly match its implementation
+     * To be precise, the current check is not checking the dependencies of the templates. It checks if the project setting "Enable Preview Packages" or "Enable Pre release packages" are enabled or not.
+     * One of the side effects is that the template cannot have dependencies on preview o pre release packages, but it also means that a project created from a template will by default not allow the user to add an pre-release package as well.
+     */
+
     internal class PackageManagerSettingsValidation
     {
         public bool m_EnablePreviewPackages;
@@ -18,10 +27,23 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
 
         internal static readonly string k_DocsFilePath = "template_project_validation_errors.html";
 
+        readonly TemplateUsesOnlyReleasedPackagesUS0188 templateUsesOnlyReleasedPackagesUs0188 =  new TemplateUsesOnlyReleasedPackagesUS0188();
+        readonly AssetFolderNamingUS0061 assetFolderNamingUS0061 = new AssetFolderNamingUS0061();
+        readonly FolderStructureConventionsUS0063 folderStructureConventionsUs0063 = new FolderStructureConventionsUS0063();
+        readonly AssetNamingUS0057 assetNamingUS0057 = new AssetNamingUS0057();
+
+        internal override List<IStandardChecker> ImplementedStandardsList => new List<IStandardChecker>
+        {
+            templateUsesOnlyReleasedPackagesUs0188,
+            assetFolderNamingUS0061,
+            folderStructureConventionsUs0063,
+            assetNamingUS0057
+        };
+
         public TemplateProjectValidation()
         {
-            TestName = "Template Project Manifest Validation";
-            TestDescription = "Validate that the project manifest of a template package follows standards";
+            TestName = "Template Project Manifest and Assets Validation";
+            TestDescription = "Validate that the project manifest and assets included in a template package follow standards";
             TestCategory = TestCategory.DataValidation;
             SupportedPackageTypes = new[] { PackageType.Template };
             CanUseValidationExceptions = true;
@@ -32,25 +54,10 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
             TestState = TestState.Succeeded;
 
             ValidateProjectManifest();
-            ValidatePackageManagerSettings();
-        }
-
-        /// <summary>
-        /// For templates, we want to make sure that Show Preview Packages or Show Pre-Release packages
-        /// are not enabled.
-        /// For <=2019.4 this is saved on the profile preferences and is not bound to be
-        /// pre-enabled. For >2019.4 this is saved in ProjectSettings/PackageManagerSettings.asset
-        /// </summary>
-        private void ValidatePackageManagerSettings()
-        {
-            if (Context.ProjectInfo.PackageManagerSettingsValidation == null)
-                return;
-
-            if (Context.ProjectInfo.PackageManagerSettingsValidation.m_EnablePreviewPackages)
-                AddError($"Preview packages are not allowed to be enabled on template packages. Please disable the `Enable Preview Packages` option in ProjectSettings > PackageManager > Advanced Settings. {ErrorDocumentation.GetLinkMessage(k_DocsFilePath, "preview|prerelease-packages-are-not-allowed-to-be-enabled-on-template-packages")}");
-
-            if (Context.ProjectInfo.PackageManagerSettingsValidation.m_EnablePreReleasePackages)
-                AddError($"PreRelease packages are not allowed to be enabled on template packages. Please disable the `Enable PreRelease Packages` option in ProjectSettings > PackageManager > Advanced Settings. {ErrorDocumentation.GetLinkMessage(k_DocsFilePath, "preview|prerelease-packages-are-not-allowed-to-be-enabled-on-template-packages")}");
+            templateUsesOnlyReleasedPackagesUs0188.Check(Context.ProjectInfo.PackageManagerSettingsValidation);
+            assetFolderNamingUS0061.Check(Context.PublishPackageInfo.path);
+            folderStructureConventionsUs0063.Check(Context.PublishPackageInfo.path);
+            assetNamingUS0057.Check(Context.PublishPackageInfo.path);
         }
 
         // Generate a standard error message for project manifest field checks. This is also used during tests

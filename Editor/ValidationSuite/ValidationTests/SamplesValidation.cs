@@ -1,12 +1,14 @@
 using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Runtime.Remoting.Contexts;
+using UnityEditor.PackageManager.ValidationSuite.ValidationTests.Standards;
 
 namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
 {
     internal class SamplesValidation : BaseValidation
     {
+        SamplesUS0116 samplesUs0116 = new SamplesUS0116();
+
+        internal override List<IStandardChecker> ImplementedStandardsList => new List<IStandardChecker> {samplesUs0116};
+
         public SamplesValidation()
         {
             TestName = "Samples Validation";
@@ -21,61 +23,16 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
             // Start by declaring victory
             TestState = TestState.Succeeded;
 
-            var samplesDirExists = Directory.Exists(Path.Combine(Context.PublishPackageInfo.path, "Samples"));
-            var sampledTildeDirExists = Directory.Exists(Path.Combine(Context.PublishPackageInfo.path, "Samples~"));
-            if (!samplesDirExists && !sampledTildeDirExists && Context.PublishPackageInfo.samples.Count == 0)
+            var samplesDirInfo = SamplesUtilities.GetSampleDirectoriesInfo(Context.PublishPackageInfo.path);
+            //TODO: this is an implementation of Condition USC-0026, are we modeling Conditions as well?
+            if (!samplesDirInfo.SamplesDirExists && !samplesDirInfo.SamplesTildeDirExists && Context.PublishPackageInfo.samples.Count == 0)
             {
                 AddInformation("No samples found. Skipping Samples Validation.");
                 TestState = TestState.NotRun;
                 return;
             }
 
-            if (samplesDirExists && sampledTildeDirExists)
-            {
-                AddError("`Samples` and `Samples~` cannot both be present in the package.");
-            }
-
-            if ((Context.ValidationType == ValidationType.Promotion || Context.ValidationType == ValidationType.VerifiedSet) && samplesDirExists)
-            {
-                AddError("In a published package, the `Samples` needs to be renamed to `Samples~`. It should have been done automatically in the CI publishing process.");
-            }
-
-            var samplesDir = samplesDirExists ? "Samples" : "Samples~";
-            var matchingFiles = new List<string>();
-            DirectorySearch(Path.Combine(Context.PublishPackageInfo.path, samplesDir), ".sample.json", ref matchingFiles);
-
-            if (matchingFiles.Count == 0)
-            {
-                AddError(samplesDir + " folder exists but no `.sample.json` files found in it." +
-                    "A `.sample.json` file is required for a sample to be recognized." +
-                    "Please refer to https://github.cds.internal.unity3d.com/unity/com.unity.package-starter-kit/blob/master/Samples/Example/.sample.json for more info.");
-            }
-
-            if (Context.ValidationType == ValidationType.Promotion || Context.ValidationType == ValidationType.VerifiedSet)
-            {
-                if (Context.PublishPackageInfo.samples.Count != matchingFiles.Count)
-                {
-                    AddError("The number of samples in `package.json` does not match the number of `.sample.json` files found in `" + samplesDir + "`.");
-                }
-
-                foreach (var sample in Context.PublishPackageInfo.samples)
-                {
-                    if (string.IsNullOrEmpty(sample.path))
-                        AddError("Sample path must be set and non-empty in `package.json`.");
-                    if (string.IsNullOrEmpty(sample.displayName))
-                        AddError("Sample display name will be shown in the UI, and it must be set and non-empty in `package.json`.");
-                    var samplePath = Path.Combine(Context.PublishPackageInfo.path, sample.path);
-                    var sampleJsonPath = Path.Combine(samplePath, ".sample.json");
-                    if (!Directory.Exists(samplePath))
-                    {
-                        AddError("Sample path set in `package.json` does not exist: " + sample.path + ".");
-                    }
-                    else if (!File.Exists(sampleJsonPath))
-                    {
-                        AddError("Cannot find `.sample.json` file in the sample path: " + sample.path + ".");
-                    }
-                }
-            }
+            samplesUs0116.Check(Context.PublishPackageInfo.path, Context.PublishPackageInfo.samples, Context.ValidationType);
         }
     }
 }

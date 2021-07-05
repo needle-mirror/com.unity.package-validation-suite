@@ -4,9 +4,15 @@ All notable changes to this package will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## [0.21.0] - 2021-07-05
+- Added a validation type dropdown button to the ui so that users can choose between one of four validation types: Structure, Asset Store standards, Unity candidates standards, and Unity production standards.
+- Added support for DocFX filter.yml in Xmldoc Validation. Exclusion declared in the file Documentation~/filter.yml relative to the package root will be ignored.
+- Changed API Validation to fetch assemblies from IT Artifactory instead of decommissioned PRE Artifactory.
+
 ## [0.20.2] - 2021-05-17
 - The Manifest Validation dependency check is now aware of feature set packages and will behave accordingly by ensuring that all of their dependencies have their version specified as "default".
 - Enabling the SamplesValidation for FeatureSets
+- Added tests to Templates Validation for ensuring folder and asset names follow the naming conventions, checking for empty directories and validating that the folder hierarchy depth is not exceeded.
 
 ## [0.20.1] - 2021-04-26
 - Added more descriptive error message when API Validation is unable to compare assemblies.

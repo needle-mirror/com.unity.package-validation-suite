@@ -1,19 +1,29 @@
 using System;
-using System.Globalization;
+using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
 using Semver;
+using UnityEditor.PackageManager.ValidationSuite.ValidationTests.Standards;
 
 namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
 {
     internal class ManifestValidation : BaseValidation
     {
-        private string[] PackageNamePrefixList = { "com.unity.", "com.autodesk.", "com.havok.", "com.ptc." };
-        private const string UpmRegex = @"^[a-z0-9][a-z0-9-._]{0,213}$";
-        private const string UpmDisplayRegex = @"^[a-zA-Z0-9 ]+$";
+        readonly SemVerCheckUS0005 semVerCheckUS0005 = new SemVerCheckUS0005();
+        readonly PackageNamingConventionUS0006 packageNamingConventionUs0006 = new PackageNamingConventionUS0006();
+
+
+        internal override List<IStandardChecker> ImplementedStandardsList =>
+            new List<IStandardChecker>
+        {
+            semVerCheckUS0005,
+            packageNamingConventionUs0006,
+        };
+
+
         private const string UnityRegex = @"^[0-9]{4}\.[0-9]+$";
         private const string UnityReleaseRegex = @"^[0-9]+[a|b|f]{1}[0-9]+$";
-        internal static readonly int MinDescriptionSize = 50;
+        private static readonly int MinDescriptionSize = 50;
         internal static readonly int MaxDisplayNameLength = 50;
         internal static readonly string k_DocsFilePath = "manifest_validation_error.html";
 
@@ -42,9 +52,9 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
 
             ValidateManifestMarshalling(manifestData);
             ValidateManifestData(manifestData);
+            packageNamingConventionUs0006.Check(manifestData.name, manifestData.displayName);
             ValidateAuthor(manifestData);
-            ValidateVersion(manifestData);
-
+            semVerCheckUS0005.Check(manifestData.version);
             ValidateDependencies();
         }
 
@@ -53,16 +63,6 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
             foreach (var marshallError in manifestData.decodingErrors)
             {
                 AddError(marshallError.Message);
-            }
-        }
-
-        private void ValidateVersion(ManifestData manifestData)
-        {
-            SemVersion version;
-            // Check package version, make sure it's a valid SemVer string.
-            if (!SemVersion.TryParse(manifestData.version, out version))
-            {
-                AddError("In package.json, \"version\" needs to be a valid \"Semver\". {0}", ErrorDocumentation.GetLinkMessage(ManifestValidation.k_DocsFilePath,  "version-needs-to-be-a-valid-semver"));
             }
         }
 
@@ -132,49 +132,6 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
 
         private void ValidateManifestData(ManifestData manifestData)
         {
-            // Check the package Name, which needs to start with one of the approved company names.
-            // This should probably be executed only in internal development, CI and Promotion contexts
-            if (!PackageNamePrefixList.Any(namePrefix => (manifestData.name.StartsWith(namePrefix) && manifestData.name.Length > namePrefix.Length)))
-            {
-                AddError("In package.json, \"name\" needs to start with one of these approved company names: {0}. {1}", string.Join(", ", PackageNamePrefixList), ErrorDocumentation.GetLinkMessage(ManifestValidation.k_DocsFilePath,  "name-needs-to-start-with-one-of-these-approved-company-names"));
-            }
-
-            // There cannot be any capital letters in package names.
-            if (manifestData.name.ToLower(CultureInfo.InvariantCulture) != manifestData.name)
-            {
-                AddError("In package.json, \"name\" cannot contain capital letters. {0}", ErrorDocumentation.GetLinkMessage(ManifestValidation.k_DocsFilePath,  "name-cannot-contain-capital-letters"));
-            }
-
-            // Check name against our regex.
-            Match match = Regex.Match(manifestData.name, UpmRegex);
-            if (!match.Success)
-            {
-                AddError("In package.json, \"name\" is not a valid name. {0}", ErrorDocumentation.GetLinkMessage(ManifestValidation.k_DocsFilePath,  "name-is-not-a-valid-name"));
-            }
-
-            // Package name cannot end with .framework, .plugin or .bundle.
-            String[] strings = { ".framework", ".bundle", ".plugin" };
-            foreach (var value in strings)
-            {
-                if (manifestData.name.EndsWith(value))
-                {
-                    AddError("In package.json, \"name\" cannot end with .plugin, .bundle or .framework. {0}", ErrorDocumentation.GetLinkMessage(ManifestValidation.k_DocsFilePath,  "name-cannot-end-with"));
-                }
-            }
-
-            if (string.IsNullOrEmpty(manifestData.displayName))
-            {
-                AddError("In package.json, \"displayName\" must be set. {0}", ErrorDocumentation.GetLinkMessage(ManifestValidation.k_DocsFilePath,  "displayName-must-be-set"));
-            }
-            else if (manifestData.displayName.Length > MaxDisplayNameLength)
-            {
-                AddError("In package.json, \"displayName\" is too long. Max Length = {0}. Current Length = {1}. {2}", MaxDisplayNameLength, manifestData.displayName.Length, ErrorDocumentation.GetLinkMessage(ManifestValidation.k_DocsFilePath,  "displayName-is-too-long"));
-            }
-            else if (!Regex.Match(manifestData.displayName, UpmDisplayRegex).Success)
-            {
-                AddError("In package.json, \"displayName\" cannot have any special characters. {0}", ErrorDocumentation.GetLinkMessage(ManifestValidation.k_DocsFilePath,  "displayName-cannot-have-any-special-characters"));
-            }
-
             // Check Description, make sure it's there, and not too short.
             if (manifestData.description.Length < MinDescriptionSize)
             {

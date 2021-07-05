@@ -3,6 +3,8 @@
       <ui:VisualElement name="ValidationActionContainer">
         <ui:Button name="validateButton" text="Validate"/>
         <ui:Label name="validationResults"/>
+        <ui:Button name="ValidateTypeDownArrow" text="▼"/>
+        <ui:VisualElement name="ValidationTypeDropdown"/>
       </ui:VisualElement>
       <ui:VisualElement name="ValidationResultsContainer">
         <ui:Button name="viewResults" text="View Results"/>

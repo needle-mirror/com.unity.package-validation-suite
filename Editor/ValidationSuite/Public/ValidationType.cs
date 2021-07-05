@@ -25,6 +25,8 @@ namespace UnityEditor.PackageManager.ValidationSuite
         /// <summary>Validation for the asset store.</summary>
         AssetStore,
         /// <summary>Running just tests marked for InternalTesting</summary>
-        InternalTesting
+        InternalTesting,
+        /// <summary>Validation for the structure of the package</summary>
+        Structure
     }
 }

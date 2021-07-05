@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
-using System.IO;
-using System.Linq;
+using UnityEditor.PackageManager.ValidationSuite.ValidationTests.Standards;
 
 namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
 {
@@ -40,6 +39,16 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
 
         public bool CanUseCompleteTestExceptions { get; set; }
 
+        //TODO: make this abstract so it is mandatory for child classes to define it
+        //during refactor is easier to have a default impl
+        internal virtual List<IStandardChecker> ImplementedStandardsList
+        {
+            get
+            {
+                return new List<IStandardChecker>();
+            }
+        }
+
         protected BaseValidation()
         {
             TestState = TestState.NotRun;
@@ -66,6 +75,7 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
             try
             {
                 Run();
+                ConvertStandardsIssuesToTestOutput();
             }
             catch (Exception e)
             {
@@ -86,6 +96,31 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
 
         // This needs to be implemented for every test
         protected abstract void Run();
+
+        protected void ConvertStandardsIssuesToTestOutput()
+        {
+            //TODO: figure out a better way to pass the checks output to the pipeline
+            foreach (var standard in ImplementedStandardsList)
+            {
+                foreach (var issue in standard.IssuesFound)
+                {
+                    switch (issue.Type)
+                    {
+                        case StandardIssueType.Error:
+                            AddError(issue.Message);
+                            break;
+                        case StandardIssueType.Warning:
+                            AddWarning(issue.Message);
+                            break;
+                        case StandardIssueType.Info:
+                            AddInformation(issue.Message);
+                            break;
+                        default:
+                            throw new Exception("unknown issue type");
+                    }
+                }
+            }
+        }
 
         public void AddError(string message, params object[] args)
         {
@@ -165,19 +200,6 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
                 AddError(message);
             else
                 AddWarning(message);
-        }
-
-        protected void DirectorySearch(string path, string searchPattern, ref List<string> matches)
-        {
-            if (!Directory.Exists(path))
-                return;
-
-            var files = Directory.GetFiles(path, searchPattern);
-            if (files.Any())
-                matches.AddRange(files);
-
-            foreach (string subDir in Directory.GetDirectories(path))
-                DirectorySearch(subDir, searchPattern, ref matches);
         }
 
         private bool AllTestErrorsExcepted()

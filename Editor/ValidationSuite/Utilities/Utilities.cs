@@ -3,13 +3,18 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
+using System.Reflection;
 using System.Text;
+using System.Threading;
 using Semver;
 using UnityEngine;
 using UnityEngine.Profiling;
+using UnityEngine.Assertions;
 using UnityEditor.Compilation;
 using UnityEditor.PackageManager.ValidationSuite.ValidationTests;
 using UnityEditor.PackageManager.ValidationSuite.Utils;
+using UnityEditor.PackageManager.ValidationSuite.ValidationTests.Standards;
+using Assembly = UnityEditor.Compilation.Assembly;
 
 namespace UnityEditor.PackageManager.ValidationSuite
 {
@@ -60,7 +65,7 @@ namespace UnityEditor.PackageManager.ValidationSuite
             return packageName;
         }
 
-        internal static PackageManager.PackageInfo[] UpmSearch(string packageIdOrName = null, bool throwOnRequestFailure = false)
+        internal static PackageInfo[] UpmSearch(string packageIdOrName = null, bool throwOnRequestFailure = false)
         {
             Profiler.BeginSample("UpmSearch");
             var request = string.IsNullOrEmpty(packageIdOrName) ? Client.SearchAll() : Client.Search(packageIdOrName);
@@ -68,7 +73,7 @@ namespace UnityEditor.PackageManager.ValidationSuite
             {
                 if (Utilities.NetworkNotReachable)
                     throw new Exception("Failed to fetch package infomation: network not reachable");
-                System.Threading.Thread.Sleep(100);
+                Thread.Sleep(100);
             }
             if (throwOnRequestFailure && request.Status == StatusCode.Failure)
                 throw new Exception("Failed to fetch package infomation.  Error details: " + request.Error.errorCode + " " + request.Error.message);
@@ -76,7 +81,7 @@ namespace UnityEditor.PackageManager.ValidationSuite
             return request.Result;
         }
 
-        internal static PackageManager.PackageInfo[] UpmListOffline(string packageIdOrName = null)
+        internal static PackageInfo[] UpmListOffline(string packageIdOrName = null)
         {
             Profiler.BeginSample("UpmListOffline");
 
@@ -87,8 +92,8 @@ namespace UnityEditor.PackageManager.ValidationSuite
 #endif
 
             while (!request.IsCompleted)
-                System.Threading.Thread.Sleep(100);
-            var result = new List<PackageManager.PackageInfo>();
+                Thread.Sleep(100);
+            var result = new List<PackageInfo>();
             foreach (var upmPackage in request.Result)
             {
                 if (!string.IsNullOrEmpty(packageIdOrName) && !(upmPackage.name == packageIdOrName || upmPackage.packageId == packageIdOrName))
@@ -338,7 +343,7 @@ namespace UnityEditor.PackageManager.ValidationSuite
             {
                 return assembly.GetTypes();
             }
-            catch (System.Reflection.ReflectionTypeLoadException e)
+            catch (ReflectionTypeLoadException e)
             {
                 return e.Types.Where(t => t != null);
             }
@@ -353,5 +358,129 @@ namespace UnityEditor.PackageManager.ValidationSuite
             var asmdefPath = Path.GetFullPath(path);
             return new AssemblyInfo(assembly, asmdefPath);
         }
+
+        internal static void RecursiveDirectorySearch(string path, string searchPattern, ref List<string> matches)
+        {
+            if (!Directory.Exists(path))
+                return;
+
+            var files = Directory.GetFiles(path, searchPattern);
+            if (files.Any())
+                matches.AddRange(files);
+
+            foreach (string subDir in Directory.GetDirectories(path)) RecursiveDirectorySearch(subDir, searchPattern, ref matches);
+        }
+
+        // System.IO.FileExists will return false on ArgumentException/IOException/UnauthorizedAccessException exceptions
+        // which can be very misleading since it hides the underlying error and pretends the file doesn't exist.
+        // This alternative method will not catch these exceptions in order to surface the underlying issue.
+        internal static bool FileExists(string path)
+        {
+            try
+            {
+                new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite).Close();
+                return true; // file exists
+            }
+            catch (IOException e) when (e is FileNotFoundException || e is DirectoryNotFoundException || e is DriveNotFoundException) {
+                return false; // it does not exist
+            }
+            // other errors bubble up, e.g. PathTooLongException.
+        }
+
+        internal enum DirectoryItemType
+        {
+            File,
+            Directory
+        }
+        internal struct DirectoryItem
+        {
+            internal string Path;
+            internal DirectoryItemType Type;
+            internal int Depth;
+            internal int ChildCount;
+        }
+
+        internal static IEnumerable<DirectoryItem> GetDirectoryAndFilesIn(string path)
+        {
+            List<DirectoryItem> result = new List<DirectoryItem>();
+            RecursiveDirectoryListing(path, path, 1, result);
+            return result;
+        }
+
+        static void RecursiveDirectoryListing(string rootPath, string path, int currentDepth, List<DirectoryItem> items)
+        {
+            var assets = Directory.GetFiles(path);
+            foreach (var asset in assets)
+            {
+                var relativePath = GetRelativePath(asset, rootPath);
+
+                items.Add(new DirectoryItem()
+                {
+                    Path = relativePath,
+                    Type = DirectoryItemType.File,
+                    Depth = currentDepth,
+                    ChildCount = 0,
+                });
+            }
+
+            //No need to check the root folder itself
+            if (path != rootPath)
+            {
+                var relativePath = GetRelativePath(path, rootPath);
+                items.Add(new DirectoryItem() {
+                    Path = relativePath,
+                    Type = DirectoryItemType.Directory,
+                    Depth = currentDepth,
+                    ChildCount = assets.Length
+                });
+            }
+
+            var directories = Directory.GetDirectories(path);
+            foreach (var directory in directories)
+            {
+                RecursiveDirectoryListing(rootPath, directory, currentDepth + 1, items);
+            }
+        }
+
+        static string GetRelativePath(string path, string directory)
+        {
+            Assert.IsNotNull(path);
+            Assert.IsNotNull(directory);
+
+            if (!directory.EndsWith(Path.DirectorySeparatorChar.ToString()) && !Path.HasExtension(directory))
+            {
+                directory += Path.DirectorySeparatorChar;
+            }
+
+            try
+            {
+                directory = Path.GetFullPath(directory);
+                path = Path.GetFullPath(path);
+
+                var folderUri = new Uri(directory);
+                var pathUri = new Uri(path);
+
+                return Uri.UnescapeDataString
+                    (
+                        folderUri.MakeRelativeUri(pathUri).ToString()
+                            .Replace('/', Path.DirectorySeparatorChar)
+                    );
+            }
+            catch (UriFormatException uriFormatException)
+            {
+                throw new UriFormatException($"Failed to get relative path.\nPath: {path}\nDirectory:{directory}\n{uriFormatException}");
+            }
+        }
+
+        internal static void HandleWarnings(List<string> faultyPaths, string warningText, string informationText, Action<string> warnFunc, Action<string> infoFunc)
+        {
+            if (faultyPaths.Count > 0)
+            {
+                warnFunc($"{warningText} ");
+                PrintInformationFor(faultyPaths, informationText, infoFunc);
+            }
+        }
+
+        static void PrintInformationFor(List<string> faultyPaths, string warningText, Action<string> infoFunc) => faultyPaths.ForEach(s => infoFunc(warningText + s));
     }
 }

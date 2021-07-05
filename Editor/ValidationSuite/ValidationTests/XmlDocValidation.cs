@@ -55,7 +55,14 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
                 responseFileParameter = $@"--response-file=""{responseFilePath}""";
             }
 
-            var startInfo = new ProcessStartInfo(monopath, $@"""{exePath}"" --root-path=""{this.Context.ProjectPackageInfo.path}"" {responseFileParameter}")
+            var filterYamlParameter = "";
+            var filterYamlPath = Path.Combine(Context.ProjectPackageInfo.path, "Documentation~", "filter.yml");
+            if (Utilities.FileExists(filterYamlPath))
+            {
+                filterYamlParameter = $@"--path-to-filter-yaml=""{filterYamlPath}""";
+            }
+
+            var startInfo = new ProcessStartInfo(monopath, $@"""{exePath}"" --root-path=""{this.Context.ProjectPackageInfo.path}"" {filterYamlParameter} {responseFileParameter}")
             {
                 UseShellExecute = false,
                 CreateNoWindow = true,

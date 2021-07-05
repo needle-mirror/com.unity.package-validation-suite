@@ -3,11 +3,19 @@ using System.Collections.Generic;
 using System.Linq;
 using Semver;
 using UnityEditor.PackageManager.ValidationSuite.Utils;
+using UnityEditor.PackageManager.ValidationSuite.ValidationTests.Standards;
 
 namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
 {
     internal class LifecycleValidation : BaseValidation
     {
+        readonly CorrectPackageVersionTagsUS0017 correctPackageVersionTagsUS0017 = new CorrectPackageVersionTagsUS0017();
+
+        internal override List<IStandardChecker> ImplementedStandardsList => new List<IStandardChecker>
+        {
+            correctPackageVersionTagsUS0017
+        };
+
         internal static readonly string k_DocsFilePath = "lifecycle_validation_error.html";
 
         public LifecycleValidation()
@@ -28,7 +36,7 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
             }
             else
             {
-                ValidateVersion(Context.PublishPackageInfo, LifecycleV2VersionValidator);
+                ValidateVersion(Context.PublishPackageInfo, correctPackageVersionTagsUS0017.Check);
 
                 // We don't check this on the verified set since it relies on previous package information and reaching the internet
                 if (Context.PublishPackageInfo.LifecyclePhase == LifecyclePhase.PreRelease &&
@@ -93,47 +101,6 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
             {
                 AddError(
                     "In package.json, \"version\": the only pre-release filter supported is \"-preview.[num < 999999]\". " + ErrorDocumentation.GetLinkMessage(k_DocsFilePath, "version-the-only-pre-release-filter-supported-is--preview-num-999999"));
-            }
-        }
-
-        private void LifecycleV2VersionValidator(SemVersion packageVersionNumber, VersionTag versionTag)
-        {
-            if (versionTag.IsEmpty()) return;
-
-            if (versionTag.Tag == "preview")
-            {
-                AddError("In package.json, \"version\" cannot be tagged \"preview\" in lifecycle v2, please use \"exp\". " + ErrorDocumentation.GetLinkMessage(ErrorTypes.InvalidLifecycleV2));
-                return;
-            }
-
-            if (packageVersionNumber.Major < 1)
-            {
-                AddError("In package.json, \"version\" cannot be tagged \"" + packageVersionNumber.Prerelease + "\" while the major version less than 1. " + ErrorDocumentation.GetLinkMessage(ErrorTypes.InvalidLifecycleV2));
-                return;
-            }
-
-            if (versionTag.Tag != "exp" && versionTag.Tag != "pre")
-            {
-                AddError("In package.json, \"version\" must be a valid tag. \"" + versionTag.Tag + "\" is invalid, try either \"pre\" or \"exp\". " + ErrorDocumentation.GetLinkMessage(ErrorTypes.InvalidLifecycleV2));
-                return;
-            }
-
-            if (versionTag.Tag != "exp" && versionTag.Feature != "")
-            {
-                AddError("In package.json, \"version\" must be a valid tag. Custom tag \"" + versionTag.Feature + "\" only allowed with \"exp\". " + ErrorDocumentation.GetLinkMessage(ErrorTypes.InvalidLifecycleV2));
-                return;
-            }
-
-            if (versionTag.Tag == "exp" && versionTag.Feature.Length > 10)
-            {
-                AddError("In package.json, \"version\" must be a valid tag. Custom tag \"" + versionTag.Feature + "\" is too long, must be 10 characters long or less. " + ErrorDocumentation.GetLinkMessage(ErrorTypes.InvalidLifecycleV2));
-                return;
-            }
-
-            if (versionTag.Iteration < 1)
-            {
-                AddError("In package.json, \"version\" must be a valid tag. Iteration is required to be 1 or greater. " + ErrorDocumentation.GetLinkMessage(ErrorTypes.InvalidLifecycleV2));
-                return;
             }
         }
 
