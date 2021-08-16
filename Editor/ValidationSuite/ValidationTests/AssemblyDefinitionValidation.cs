@@ -92,7 +92,7 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
             var asmDefinitionReferencefFiles = Directory.GetFiles(packagePath, AssemblyFileDefinitionReferenceExtension, SearchOption.AllDirectories).Where(filterTestAssemblies);
 
             // check the existence of valid asmdef file if there are c# scripts in the Editor or Tests folder
-            var foldersToCheck = new string[] {"Editor", "Tests"};
+            var foldersToCheck = new string[] { "Editor", "Tests" };
             foreach (var folder in foldersToCheck)
             {
                 var folderPath = Path.Combine(packagePath, folder);

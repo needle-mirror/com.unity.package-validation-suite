@@ -7,7 +7,7 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
     {
         SamplesUS0116 samplesUs0116 = new SamplesUS0116();
 
-        internal override List<IStandardChecker> ImplementedStandardsList => new List<IStandardChecker> {samplesUs0116};
+        internal override List<IStandardChecker> ImplementedStandardsList => new List<IStandardChecker> { samplesUs0116 };
 
         public SamplesValidation()
         {

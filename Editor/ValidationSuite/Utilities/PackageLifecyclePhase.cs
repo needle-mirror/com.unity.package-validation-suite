@@ -24,7 +24,7 @@ namespace UnityEditor.PackageManager.ValidationSuite.Utils
             // I can get this info only in 2021.1+
             // packageInfo.unityLifecycle.version = version field directly found in the editor manifest
             // use reflection to get the packageInfo.unityLifecycle.version field
-            #if UNITY_2021_1_OR_NEWER
+#if UNITY_2021_1_OR_NEWER
             var packageInfo = context.GetPackageInfo(packageName);
             if (packageInfo != null)
             {
@@ -38,9 +38,9 @@ namespace UnityEditor.PackageManager.ValidationSuite.Utils
             }
 
             return false;
-            #else
+#else
             return false;
-            #endif
+#endif
         }
 
         internal static bool IsPreReleaseVersion(SemVersion version, VersionTag tag)
@@ -60,11 +60,11 @@ namespace UnityEditor.PackageManager.ValidationSuite.Utils
 
         internal static bool IsPreviewVersion(SemVersion version, VersionTag tag)
         {
-            #if UNITY_2021_1_OR_NEWER
+#if UNITY_2021_1_OR_NEWER
             return version.Prerelease.Contains("preview");
-            #else
+#else
             return version.Prerelease.Contains("preview") || version.Major == 0;
-            #endif
+#endif
         }
 
         /**

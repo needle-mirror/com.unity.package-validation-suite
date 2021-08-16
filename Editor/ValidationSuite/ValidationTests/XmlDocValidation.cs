@@ -86,7 +86,7 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
             }
             if (stderrLines.Length > 0)
             {
-                AddWarning($"Internal Error running FindMissingDocs. Output:\n{string.Join("\n",stderrLines)}");
+                AddWarning($"Internal Error running FindMissingDocs. Output:\n{string.Join("\n", stderrLines)}");
                 return;
             }
 

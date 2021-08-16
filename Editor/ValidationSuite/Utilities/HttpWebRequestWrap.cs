@@ -9,7 +9,7 @@ namespace UnityEditor.PackageManager.ValidationSuite
         public string Method
         {
             get { return _request.Method; }
-            set { _request.Method = value;  }
+            set { _request.Method = value; }
         }
 
         public int Timeout

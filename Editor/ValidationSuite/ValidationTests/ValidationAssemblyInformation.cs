@@ -15,7 +15,7 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
         public string projectAssemblyNameOverride { get; private set; }
 
         public ValidationAssemblyInformation()
-        {}
+        { }
 
         public ValidationAssemblyInformation(bool? isPreviousPackageTestOverride, bool? isProjectPackageTestOverride, string previousAssemblyNameOverride, string projectAssemblyNameOverride)
         {

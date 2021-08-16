@@ -16,7 +16,7 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests.Standards
             // Check package version, make sure it's a valid SemVer string.
             if (!SemVersion.TryParse(v, out version))
             {
-                AddError($"In package.json, \"version\" needs to be a valid \"Semver\". {ErrorDocumentation.GetLinkMessage(ManifestValidation.k_DocsFilePath,  "version-needs-to-be-a-valid-semver")}");
+                AddError($"In package.json, \"version\" needs to be a valid \"Semver\". {ErrorDocumentation.GetLinkMessage(ManifestValidation.k_DocsFilePath, "version-needs-to-be-a-valid-semver")}");
             }
         }
     }

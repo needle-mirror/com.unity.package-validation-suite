@@ -256,7 +256,7 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
 
             if (diff.breakingChanges > 0 || diff.additions > 0)
             {
-                TestOutput.AddRange(diff.assemblyChanges.Select(c => new ValidationTestOutput() { Type = TestOutputType.Information, Output = JsonUtility.ToJson(c, true)}));
+                TestOutput.AddRange(diff.assemblyChanges.Select(c => new ValidationTestOutput() { Type = TestOutputType.Information, Output = JsonUtility.ToJson(c, true) }));
             }
 
             string json = JsonUtility.ToJson(diff, true);

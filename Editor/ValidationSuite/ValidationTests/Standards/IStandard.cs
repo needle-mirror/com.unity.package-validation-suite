@@ -58,17 +58,17 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests.Standards
 
         protected void AddError(string message)
         {
-            issues.Add(new StandardIssue {Message = message, Type = StandardIssueType.Error});
+            issues.Add(new StandardIssue { Message = message, Type = StandardIssueType.Error });
         }
 
         protected void AddWarning(string message)
         {
-            issues.Add(new StandardIssue {Message = message, Type = StandardIssueType.Warning});
+            issues.Add(new StandardIssue { Message = message, Type = StandardIssueType.Warning });
         }
 
         protected void AddInformation(string message)
         {
-            issues.Add(new StandardIssue {Message = message, Type = StandardIssueType.Info});
+            issues.Add(new StandardIssue { Message = message, Type = StandardIssueType.Info });
         }
 
         public List<StandardIssue> IssuesFound => issues;

@@ -55,7 +55,7 @@ namespace UnityEditor.PackageManager.ValidationSuite
         internal static string CreatePackage(string path, string workingDirectory)
         {
             //No Need to delete the file, npm pack always overwrite: https://docs.npmjs.com/cli/pack
-            var packagePath =  Path.Combine(Path.Combine(Application.dataPath, ".."), path);
+            var packagePath = Path.Combine(Path.Combine(Application.dataPath, ".."), path);
 
             var launcher = new NodeLauncher();
             launcher.WorkingDirectory = workingDirectory;
@@ -381,7 +381,8 @@ namespace UnityEditor.PackageManager.ValidationSuite
                 new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite).Close();
                 return true; // file exists
             }
-            catch (IOException e) when (e is FileNotFoundException || e is DirectoryNotFoundException || e is DriveNotFoundException) {
+            catch (IOException e) when (e is FileNotFoundException || e is DirectoryNotFoundException || e is DriveNotFoundException)
+            {
                 return false; // it does not exist
             }
             // other errors bubble up, e.g. PathTooLongException.
@@ -427,7 +428,8 @@ namespace UnityEditor.PackageManager.ValidationSuite
             if (path != rootPath)
             {
                 var relativePath = GetRelativePath(path, rootPath);
-                items.Add(new DirectoryItem() {
+                items.Add(new DirectoryItem()
+                {
                     Path = relativePath,
                     Type = DirectoryItemType.Directory,
                     Depth = currentDepth,

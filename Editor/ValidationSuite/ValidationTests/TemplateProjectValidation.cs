@@ -27,7 +27,7 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
 
         internal static readonly string k_DocsFilePath = "template_project_validation_errors.html";
 
-        readonly TemplateUsesOnlyReleasedPackagesUS0188 templateUsesOnlyReleasedPackagesUs0188 =  new TemplateUsesOnlyReleasedPackagesUS0188();
+        readonly TemplateUsesOnlyReleasedPackagesUS0188 templateUsesOnlyReleasedPackagesUs0188 = new TemplateUsesOnlyReleasedPackagesUS0188();
         readonly AssetFolderNamingUS0061 assetFolderNamingUS0061 = new AssetFolderNamingUS0061();
         readonly FolderStructureConventionsUS0063 folderStructureConventionsUs0063 = new FolderStructureConventionsUS0063();
         readonly AssetNamingUS0057 assetNamingUS0057 = new AssetNamingUS0057();

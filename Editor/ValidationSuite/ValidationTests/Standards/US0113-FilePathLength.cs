@@ -28,7 +28,7 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests.Standards
         {
             if (path.Length > 0
                 && (path[path.Length - 1] == Path.DirectorySeparatorChar
-                    ||  path[path.Length - 1] == Path.AltDirectorySeparatorChar))
+                    || path[path.Length - 1] == Path.AltDirectorySeparatorChar))
                 path = path.Substring(0, path.Length - 1);
 
             string dir = Path.GetFileName(path);

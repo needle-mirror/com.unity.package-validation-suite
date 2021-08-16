@@ -8,7 +8,7 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests.Standards
 
         public override StandardVersion Version => new StandardVersion(1, 0, 0);
 
-        static readonly string  k_DocsFilePath = "primed_library_validation_error.html";
+        static readonly string k_DocsFilePath = "primed_library_validation_error.html";
         static readonly string k_LibraryPath = Path.Combine("ProjectData~", "Library");
         static readonly string[] k_PrimedLibraryPaths =
         {

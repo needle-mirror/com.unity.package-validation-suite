@@ -9,9 +9,9 @@ namespace UnityEditor.PackageManager.ValidationSuite
         // The test associated to this result
         IValidationTest ValidationTest { get; }
 
-        TestState TestState { get;}
+        TestState TestState { get; }
 
-        List<ValidationTestOutput> TestOutput { get;}
+        List<ValidationTestOutput> TestOutput { get; }
 
         DateTime StartTime { get; }
 

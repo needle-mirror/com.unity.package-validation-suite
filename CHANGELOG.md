@@ -4,6 +4,10 @@ All notable changes to this package will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## [0.21.1-preview] - 2021-08-16
+- Fixed License Validation license header check being more strict than US-0032 standard. Year just needs to be a string of digits and entity name just needs to be a non-empty string without trailing spaces.
+- Fixed the anchor id in the Manifest Validation documentation page
+
 ## [0.21.0] - 2021-07-05
 - Added a validation type dropdown button to the ui so that users can choose between one of four validation types: Structure, Asset Store standards, Unity candidates standards, and Unity production standards.
 - Added support for DocFX filter.yml in Xmldoc Validation. Exclusion declared in the file Documentation~/filter.yml relative to the package root will be ignored.

@@ -340,13 +340,13 @@ namespace UnityEditor.PackageManager.ValidationSuite
             // which caused API obsolete errors to be shown for PVS
             // https://jira.unity3d.com/browse/PAI-1215
             var requestError = false;
-            #if UNITY_2020_1_OR_NEWER
+#if UNITY_2020_1_OR_NEWER
             requestError = request.result == UnityWebRequest.Result.ProtocolError
                 || request.result == UnityWebRequest.Result.ConnectionError
                 || request.result == UnityWebRequest.Result.DataProcessingError;
-            #else
+#else
             requestError = request.isHttpError || request.isNetworkError;
-            #endif
+#endif
             if (requestError || !PackageBinaryZipping.Unzip(zipPath, PreviousVersionBinaryPath))
             {
                 ActivityLogger.Log(String.Format("Could not download binary assemblies for previous package version from {0}. {1}", uri, request.responseCode));

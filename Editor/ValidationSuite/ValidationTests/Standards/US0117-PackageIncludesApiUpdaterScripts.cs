@@ -7,7 +7,7 @@ using UnityEditor.Compilation;
 
 namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests.Standards
 {
-//  This check uses APIs that is only available in 2019 and later like `CompilationPipeline.GetPrecompiledAssemblyPaths`
+    //  This check uses APIs that is only available in 2019 and later like `CompilationPipeline.GetPrecompiledAssemblyPaths`
 #if UNITY_2019_1_OR_NEWER
     internal class PackageIncludesApiUpdaterScriptsUS0117 : BaseStandardChecker
     {

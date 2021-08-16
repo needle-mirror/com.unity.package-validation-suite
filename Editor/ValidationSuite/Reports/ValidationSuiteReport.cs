@@ -18,7 +18,7 @@ namespace UnityEditor.PackageManager.ValidationSuite
         public ValidationSuiteReportData ReportData { get; set; }
 
         public ValidationSuiteReport()
-        {}
+        { }
 
         public ValidationSuiteReport(string packageId, string packageName, string packageVersion, string packagePath)
         {

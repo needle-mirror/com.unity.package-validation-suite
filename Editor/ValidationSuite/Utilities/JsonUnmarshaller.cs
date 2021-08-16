@@ -74,14 +74,14 @@ namespace UnityEditor.PackageManager.ValidationSuite
             if (typeof(IList).IsAssignableFrom(type))
             {
                 var getValFunc = GetListMethod.MakeGenericMethod(type.GetGenericArguments());
-                var res = getValFunc.Invoke(null, new object[] {val, unmarshallingErrors});
+                var res = getValFunc.Invoke(null, new object[] { val, unmarshallingErrors });
                 return (T)res;
             }
 
             if (typeof(IDictionary).IsAssignableFrom(type))
             {
                 var getValFunc = GetDictionaryMethod.MakeGenericMethod(type.GetGenericArguments()[1]);
-                var res = getValFunc.Invoke(null, new object[] {val, unmarshallingErrors});
+                var res = getValFunc.Invoke(null, new object[] { val, unmarshallingErrors });
                 return (T)res;
             }
 
@@ -151,7 +151,7 @@ namespace UnityEditor.PackageManager.ValidationSuite
 
             if (dict.TryGetValue(fieldName, out var dictVal))
             {
-                var res = getValFunc.Invoke(null, new object[] {dictVal, fieldName, unmarshallingErrors});
+                var res = getValFunc.Invoke(null, new object[] { dictVal, fieldName, unmarshallingErrors });
                 field.SetValue(instance, res);
             }
 

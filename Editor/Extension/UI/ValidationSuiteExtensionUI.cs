@@ -72,10 +72,10 @@ namespace UnityEditor.PackageManager.ValidationSuite.UI
         public static bool SourceSupported(PackageInfo info)
         {
             PackageSource source = info.source;
-            #if UNITY_2019_3_OR_NEWER
+#if UNITY_2019_3_OR_NEWER
             // Tarball is available here only, so check if its a tarball and return true
             if (source == PackageSource.LocalTarball) return true;
-            #endif
+#endif
 
             return source == PackageSource.Embedded
                 || source == PackageSource.Local

@@ -35,7 +35,7 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
             SupportedValidations = new[] { ValidationType.CI, ValidationType.LocalDevelopment, ValidationType.LocalDevelopmentInternal, ValidationType.Promotion, ValidationType.VerifiedSet };
             //TODO: this validation contains many standards check, not sure if all of them should be run against FeatureSet
             //We might need to somehow split the checks into their own classes so we can filter on that.
-            SupportedPackageTypes = new[] {PackageType.Template, PackageType.Tooling, PackageType.FeatureSet};
+            SupportedPackageTypes = new[] { PackageType.Template, PackageType.Tooling, PackageType.FeatureSet };
         }
 
         protected override void Run()
@@ -87,7 +87,7 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
                 SemVersion depVersion;
                 if (!isFeature && !SemVersion.TryParse(dependency.Value, out depVersion))
                 {
-                    AddError(@"In package.json, dependency ""{0}"" : ""{1}"" needs to be a valid ""Semver"". {2}", dependency.Key, dependency.Value, ErrorDocumentation.GetLinkMessage(ManifestValidation.k_DocsFilePath, "dependency_needs_to_be_a_valid_Semver"));
+                    AddError(@"In package.json, dependency ""{0}"" : ""{1}"" needs to be a valid ""Semver"". {2}", dependency.Key, dependency.Value, ErrorDocumentation.GetLinkMessage(ManifestValidation.k_DocsFilePath, "dependency-needs-to-be-a-valid-semver"));
                     continue;
                 }
 
@@ -110,7 +110,7 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
                 {
                     // ignore if  package is part of the context already
                     if (Context.ValidationType == ValidationType.Promotion || Context.ValidationType == ValidationType.AssetStore)
-                        AddError("Package dependency {0} is not promoted in production. {1}", packageId, ErrorDocumentation.GetLinkMessage(ManifestValidation.k_DocsFilePath,  "package-dependency-[packageID]-is-not-published-in-production"));
+                        AddError("Package dependency {0} is not promoted in production. {1}", packageId, ErrorDocumentation.GetLinkMessage(ManifestValidation.k_DocsFilePath, "package-dependency-[packageID]-is-not-published-in-production"));
                     else
                         AddWarning("Package dependency {0} must be promoted to production before this package is promoted to production. (Except for core packages)", packageId);
                 }
@@ -135,13 +135,13 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
             // Check Description, make sure it's there, and not too short.
             if (manifestData.description.Length < MinDescriptionSize)
             {
-                AddError("In package.json, \"description\" is too short. Minimum Length = {0}. Current Length = {1}. {2}", MinDescriptionSize, manifestData.description.Length, ErrorDocumentation.GetLinkMessage(ManifestValidation.k_DocsFilePath,  "description-is-too-short"));
+                AddError("In package.json, \"description\" is too short. Minimum Length = {0}. Current Length = {1}. {2}", MinDescriptionSize, manifestData.description.Length, ErrorDocumentation.GetLinkMessage(ManifestValidation.k_DocsFilePath, "description-is-too-short"));
             }
 
             // check unity field, if it's there
             if (!string.IsNullOrEmpty(manifestData.unity) && (manifestData.unity.Length > 6 || !Regex.Match(manifestData.unity, UnityRegex).Success))
             {
-                AddError($"In package.json, \"unity\" is invalid. It should only be <MAJOR>.<MINOR> (e.g. 2018.4). Current unity = {manifestData.unity}. {ErrorDocumentation.GetLinkMessage(ManifestValidation.k_DocsFilePath,  "unity-is-invalid")}");
+                AddError($"In package.json, \"unity\" is invalid. It should only be <MAJOR>.<MINOR> (e.g. 2018.4). Current unity = {manifestData.unity}. {ErrorDocumentation.GetLinkMessage(ManifestValidation.k_DocsFilePath, "unity-is-invalid")}");
             }
 
             // check unityRelease field, if it's there
@@ -173,9 +173,9 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
                 // Check if `repository.url` and `repository.revision` exist and the content is valid
                 string value;
                 if (!manifestData.repository.TryGetValue("url", out value) || string.IsNullOrEmpty(value))
-                    AddError("In package.json for a published package, there must be a \"repository.url\" field. {0}", ErrorDocumentation.GetLinkMessage(ManifestValidation.k_DocsFilePath,  "for_a_published_package_there_must_be_a_repository.url_field"));
+                    AddError("In package.json for a published package, there must be a \"repository.url\" field. {0}", ErrorDocumentation.GetLinkMessage(ManifestValidation.k_DocsFilePath, "for_a_published_package_there_must_be_a_repository.url_field"));
                 if (!manifestData.repository.TryGetValue("revision", out value) || string.IsNullOrEmpty(value))
-                    AddError("In package.json for a published package, there must be a \"repository.revision\" field. {0}", ErrorDocumentation.GetLinkMessage(ManifestValidation.k_DocsFilePath,  "for_a_published_package_there_must_be_a_repository.revision_field"));
+                    AddError("In package.json for a published package, there must be a \"repository.revision\" field. {0}", ErrorDocumentation.GetLinkMessage(ManifestValidation.k_DocsFilePath, "for_a_published_package_there_must_be_a_repository.revision_field"));
             }
             else
             {

@@ -12,11 +12,11 @@ namespace UnityEditor.PackageManager.ValidationSuite
 {
     // Attribute for methods to be called before any tests are run, prototype is "void MyMethod(VettingContext)"
     [AttributeUsage(AttributeTargets.Method)]
-    public class ValidationSuiteSetup : Attribute {}
+    public class ValidationSuiteSetup : Attribute { }
 
     // Attribute for methods to be called after all tests are run, prototype is "void MyMethod(VettingContext)"
     [AttributeUsage(AttributeTargets.Method)]
-    public class ValidationSuiteTeardown : Attribute {}
+    public class ValidationSuiteTeardown : Attribute { }
 
     // Delegate called after every test to provide immediate feedback on single test results.
     internal delegate void SingleTestCompletedDelegate(IValidationTestResult testResult);
@@ -310,8 +310,8 @@ namespace UnityEditor.PackageManager.ValidationSuite
                 try
                 {
                     testList.AddRange((from t in Utilities.GetTypesSafe(assembly)
-                        where typeof(BaseValidation).IsAssignableFrom(t) && t.GetConstructor(Type.EmptyTypes) != null && !t.IsAbstract
-                        select(BaseValidation) Activator.CreateInstance(t)).ToList());
+                                       where typeof(BaseValidation).IsAssignableFrom(t) && t.GetConstructor(Type.EmptyTypes) != null && !t.IsAbstract
+                                       select (BaseValidation)Activator.CreateInstance(t)).ToList());
                 }
                 catch (System.Reflection.ReflectionTypeLoadException)
                 {

@@ -20,7 +20,7 @@ namespace UnityEditor.PackageManager.ValidationSuite
             m_EnablePreReleasePackages = false
         };
 
-        public ProjectInfo() {}
+        public ProjectInfo() { }
 
         /// <summary>
         /// Contains project information that is relevant for Template testing. During testing, the used manifest path

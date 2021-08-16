@@ -40,11 +40,10 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests.Standards
                 return;
             }
 
-            //TODO: the following check is not part of the standard
             // check that the license is valid.  We expect the first line to look like this:
             var escapedName = Regex.Escape(packageName);
             var escapedDisplayName = Regex.Escape(packageDisplayName);
-            var expectedLicenseHeader = $"^({escapedName}|{escapedDisplayName}) copyright \u00a9 20\\d{{2}} Unity Technologies ApS$";
+            var expectedLicenseHeader = $"^({escapedName}|{escapedDisplayName}) copyright \u00a9 \\d+ \\S(.*\\S)?$";
             if (!Regex.IsMatch(licenseContent[0], expectedLicenseHeader, RegexOptions.IgnoreCase))
             {
                 // TODO: Make this an error at some point soon.
