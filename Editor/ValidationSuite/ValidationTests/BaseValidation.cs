@@ -54,8 +54,8 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
             TestState = TestState.NotRun;
             TestOutput = new List<ValidationTestOutput>();
             ShouldRun = true;
-            CanUseValidationExceptions = false;
-            CanUseCompleteTestExceptions = false;
+            CanUseValidationExceptions = true;
+            CanUseCompleteTestExceptions = true;
             StartTime = DateTime.Now;
             EndTime = DateTime.Now;
             SupportedValidations = new[] { ValidationType.AssetStore, ValidationType.CI, ValidationType.LocalDevelopment, ValidationType.LocalDevelopmentInternal, ValidationType.Promotion, ValidationType.VerifiedSet };

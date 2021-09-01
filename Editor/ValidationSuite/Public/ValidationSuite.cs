@@ -183,7 +183,7 @@ namespace UnityEditor.PackageManager.ValidationSuite
         internal static void ValidateEmbeddedPackages(ValidationType validationType)
         {
             var packageIdList = new List<string>();
-            var directories = Directory.GetDirectories("Packages/", "*", SearchOption.TopDirectoryOnly);
+            var directories = LongPathUtils.Directory.GetDirectories("Packages/", "*", SearchOption.TopDirectoryOnly);
             foreach (var directory in directories)
             {
                 ActivityLogger.Log("Starting package validation for " + directory);
@@ -447,7 +447,7 @@ namespace UnityEditor.PackageManager.ValidationSuite
         {
             var path = string.Format("Packages/{0}/package.json", packageId);
             var absolutePath = Path.GetFullPath(path);
-            return !File.Exists(absolutePath) ? string.Empty : Directory.GetParent(absolutePath).FullName;
+            return !LongPathUtils.File.Exists(absolutePath) ? string.Empty : Directory.GetParent(absolutePath).FullName;
         }
 
         static void SingleTestCompletedDelegate(IValidationTestResult testResult)

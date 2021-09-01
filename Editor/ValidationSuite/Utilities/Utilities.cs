@@ -156,14 +156,14 @@ namespace UnityEditor.PackageManager.ValidationSuite
             if (!fullPackagePath.EndsWith(".tgz"))
                 throw new ArgumentException("Package should be a .tgz file");
 
-            if (!File.Exists(fullPackagePath))
+            if (!LongPathUtils.File.Exists(fullPackagePath))
                 throw new FileNotFoundException(fullPackagePath + " was not found.");
 
             if (deleteOutputDir)
             {
                 try
                 {
-                    if (Directory.Exists(outputDirectory))
+                    if (LongPathUtils.Directory.Exists(outputDirectory))
                         Directory.Delete(outputDirectory, true);
 
                     Directory.CreateDirectory(outputDirectory);
@@ -178,7 +178,7 @@ namespace UnityEditor.PackageManager.ValidationSuite
             }
 
             var tarPath = fullPackagePath.Replace(".tgz", ".tar");
-            if (File.Exists(tarPath))
+            if (LongPathUtils.File.Exists(tarPath))
             {
                 File.Delete(tarPath);
             }
@@ -189,22 +189,22 @@ namespace UnityEditor.PackageManager.ValidationSuite
             //See if the tar exists and unzip that
             var tgzFileName = Path.GetFileName(fullPackagePath);
             var targetTarPath = Path.Combine(workingPath, packageName + "-tar");
-            if (Directory.Exists(targetTarPath))
+            if (LongPathUtils.Directory.Exists(targetTarPath))
             {
                 Directory.Delete(targetTarPath, true);
             }
 
-            if (File.Exists(tarPath))
+            if (LongPathUtils.File.Exists(tarPath))
             {
                 PackageBinaryZipping.Unzip(tarPath, targetTarPath);
             }
 
             //Move the contents of the tar file into outputDirectory
             var packageFolderPath = Path.Combine(targetTarPath, "package");
-            if (Directory.Exists(packageFolderPath))
+            if (LongPathUtils.Directory.Exists(packageFolderPath))
             {
                 //Move directories and meta files
-                foreach (var dir in Directory.GetDirectories(packageFolderPath))
+                foreach (var dir in LongPathUtils.Directory.GetDirectories(packageFolderPath))
                 {
                     var dirName = Path.GetFileName(dir);
                     if (dirName != null)
@@ -213,7 +213,7 @@ namespace UnityEditor.PackageManager.ValidationSuite
                     }
                 }
 
-                foreach (var file in Directory.GetFiles(packageFolderPath))
+                foreach (var file in LongPathUtils.Directory.GetFiles(packageFolderPath))
                 {
                     if (file.Contains("package.json") &&
                         !fullPackagePath.Contains(".tests") &&
@@ -295,7 +295,7 @@ namespace UnityEditor.PackageManager.ValidationSuite
         /// </summary>
         public static IEnumerable<Assembly> AssembliesForPackage(string packageRootPath)
         {
-            var filesInPackage = Directory.GetFiles(packageRootPath, "*", SearchOption.AllDirectories);
+            var filesInPackage = LongPathUtils.Directory.GetFiles(packageRootPath, "*", SearchOption.AllDirectories);
             filesInPackage = filesInPackage.Select(p => p.Replace('\\', '/')).ToArray();
 
             var projectAssemblies = CompilationPipeline.GetAssemblies();
@@ -361,14 +361,14 @@ namespace UnityEditor.PackageManager.ValidationSuite
 
         internal static void RecursiveDirectorySearch(string path, string searchPattern, ref List<string> matches)
         {
-            if (!Directory.Exists(path))
+            if (!LongPathUtils.Directory.Exists(path))
                 return;
 
-            var files = Directory.GetFiles(path, searchPattern);
+            var files = LongPathUtils.Directory.GetFiles(path, searchPattern);
             if (files.Any())
                 matches.AddRange(files);
 
-            foreach (string subDir in Directory.GetDirectories(path)) RecursiveDirectorySearch(subDir, searchPattern, ref matches);
+            foreach (string subDir in LongPathUtils.Directory.GetDirectories(path)) RecursiveDirectorySearch(subDir, searchPattern, ref matches);
         }
 
         // System.IO.FileExists will return false on ArgumentException/IOException/UnauthorizedAccessException exceptions
@@ -410,7 +410,7 @@ namespace UnityEditor.PackageManager.ValidationSuite
 
         static void RecursiveDirectoryListing(string rootPath, string path, int currentDepth, List<DirectoryItem> items)
         {
-            var assets = Directory.GetFiles(path);
+            var assets = LongPathUtils.Directory.GetFiles(path);
             foreach (var asset in assets)
             {
                 var relativePath = GetRelativePath(asset, rootPath);
@@ -437,7 +437,7 @@ namespace UnityEditor.PackageManager.ValidationSuite
                 });
             }
 
-            var directories = Directory.GetDirectories(path);
+            var directories = LongPathUtils.Directory.GetDirectories(path);
             foreach (var directory in directories)
             {
                 RecursiveDirectoryListing(rootPath, directory, currentDepth + 1, items);

@@ -57,7 +57,7 @@ namespace UnityEditor.PackageManager.ValidationSuite
 
         public void Clear()
         {
-            if (File.Exists(FilePath))
+            if (LongPathUtils.File.Exists(FilePath))
                 File.Delete(FilePath);
         }
 
@@ -152,7 +152,7 @@ namespace UnityEditor.PackageManager.ValidationSuite
 
         public static bool ReportExists(string packageId)
         {
-            return File.Exists(ReportPath(packageId));
+            return LongPathUtils.File.Exists(ReportPath(packageId));
         }
     }
 }

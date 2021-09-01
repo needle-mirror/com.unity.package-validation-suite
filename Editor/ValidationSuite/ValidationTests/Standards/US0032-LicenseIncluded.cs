@@ -15,7 +15,7 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests.Standards
             var licenseFilePath = Path.Combine(path, Utilities.LicenseFile);
 
             // Check that the package has a license.md file.  All packages should have one.
-            if (File.Exists(licenseFilePath))
+            if (LongPathUtils.File.Exists(licenseFilePath))
             {
                 // TODO: If the license file exists, check that the copyright year is setup properly.
                 CheckLicenseContent(licenseFilePath, packageName, packageDisplayName);
@@ -49,7 +49,7 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests.Standards
                 // TODO: Make this an error at some point soon.
                 var message = string.Format("A LICENSE.md file exists in the package, but is in the wrong format.  " +
                     "Ensure the copyright year is set properly, otherwise, please check the package starter kit's license file as reference.  " +
-                    "https://github.cds.internal.unity3d.com/unity/com.unity.package-validation-suite/blob/dev/LICENSE.md  " +
+                    "https://github.cds.internal.unity3d.com/unity/com.unity.package-starter-kit/blob/master/LICENSE.md  " +
                     "It was `{0}` but was expecting it to match regex `{1}`",
                     licenseContent[0], expectedLicenseHeader);
                 AddWarning(message);

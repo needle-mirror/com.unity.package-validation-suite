@@ -25,7 +25,7 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests.Standards
         {
             //Attempt to navigate to the Assets folder location as though the validation is performed on a packed template
             m_AssetsRootFolder = Path.Combine(packagePath, k_AssetsPath);
-            if (!Directory.Exists(m_AssetsRootFolder))
+            if (!LongPathUtils.Directory.Exists(m_AssetsRootFolder))
                 m_AssetsRootFolder = packagePath;
 
             var emptyDirectories = new List<string>();

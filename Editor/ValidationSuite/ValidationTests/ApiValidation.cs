@@ -22,8 +22,6 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
             TestCategory = TestCategory.ApiValidation;
             SupportedValidations = new[] { ValidationType.CI, ValidationType.LocalDevelopmentInternal, ValidationType.Promotion };
             SupportedPackageTypes = new[] { PackageType.Tooling };
-            CanUseValidationExceptions = true;
-            CanUseCompleteTestExceptions = true;
         }
 
         public ApiValidation(ValidationAssemblyInformation validationAssemblyInformation)
@@ -85,7 +83,7 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
 
         private AssemblyDefinition[] GetAssemblyDefinitionDataInFolder(string directory)
         {
-            return Directory.GetFiles(directory, "*.asmdef", SearchOption.AllDirectories)
+            return LongPathUtils.Directory.GetFiles(directory, "*.asmdef", SearchOption.AllDirectories)
                 .Select(Utilities.GetDataFromJson<AssemblyDefinition>).ToArray();
         }
 
@@ -93,7 +91,7 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
         {
             TestState = TestState.Succeeded;
             var packagePath = Context.ProjectPackageInfo.path;
-            var files = new HashSet<string>(Directory.GetFiles(packagePath, "*", SearchOption.AllDirectories).Select(Path.GetFullPath));
+            var files = new HashSet<string>(LongPathUtils.Directory.GetFiles(packagePath, "*", SearchOption.AllDirectories).Select(Path.GetFullPath));
 
             //does it compile?
             if (EditorUtility.scriptCompilationFailed)
@@ -165,7 +163,7 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
                 return;
             }
 
-            var oldAssemblyPaths = Directory.GetFiles(Context.PreviousPackageBinaryDirectory, "*.dll");
+            var oldAssemblyPaths = LongPathUtils.Directory.GetFiles(Context.PreviousPackageBinaryDirectory, "*.dll");
 
             //Build diff
             foreach (var info in assembliesForPackage)
@@ -186,7 +184,7 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
                     };
 
                     const string logsDirectory = "Logs";
-                    if (!Directory.Exists(logsDirectory))
+                    if (!LongPathUtils.Directory.Exists(logsDirectory))
                         Directory.CreateDirectory(logsDirectory);
 
                     File.WriteAllText($"{logsDirectory}/ApiValidationParameters.txt", $"previous: {oldAssemblyPath}\ncurrent: {info.assembly.outputPath}\nsearch path: {string.Join("\n", assemblySearchFolder)}");

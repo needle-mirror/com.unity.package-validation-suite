@@ -55,7 +55,7 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests.Standards
                     }
                 }
 
-                foreach (string dir in Directory.GetDirectories(fullFolder))
+                foreach (string dir in LongPathUtils.Directory.GetDirectories(fullFolder))
                 {
                     CheckPathLengthInFolderRecursively(CombineAllowingEmpty(relativeFolder, Path.GetFileName(dir)), absoluteBasePath);
                 }

@@ -4,6 +4,11 @@ All notable changes to this package will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## [0.22.0-preview] - 2021-09-01
+- Fixed dead link to license file reference in License Validation warning message.
+- Fixed some issues with validations failing due to Windows path length limitation.
+- Changed all existing validations to be exemptible with ValidationExceptions.json file.
+
 ## [0.21.1-preview] - 2021-08-16
 - Fixed License Validation license header check being more strict than US-0032 standard. Year just needs to be a string of digits and entity name just needs to be a non-empty string without trailing spaces.
 - Fixed the anchor id in the Manifest Validation documentation page

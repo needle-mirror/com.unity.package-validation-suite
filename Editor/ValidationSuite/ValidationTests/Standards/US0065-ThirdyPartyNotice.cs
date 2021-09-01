@@ -13,7 +13,7 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests.Standards
         {
             var thirdPartyNoticeFilePath = Path.Combine(packagePath, Utilities.ThirdPartyNoticeFile);
             // Check that the 3rd party notice file is not empty, and does not come from the starter kit.
-            if (File.Exists(thirdPartyNoticeFilePath))
+            if (LongPathUtils.File.Exists(thirdPartyNoticeFilePath))
             {
                 CheckThirdPartyNoticeContent(thirdPartyNoticeFilePath);
 

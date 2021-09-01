@@ -46,12 +46,12 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests.Standards
         {
             try
             {
-                foreach (string file in Directory.GetFiles(folder))
+                foreach (string file in LongPathUtils.Directory.GetFiles(folder))
                 {
                     CheckMeta(file);
                 }
 
-                foreach (string dir in Directory.GetDirectories(folder))
+                foreach (string dir in LongPathUtils.Directory.GetDirectories(folder))
                 {
                     if (ShouldIgnore(dir))
                         continue;

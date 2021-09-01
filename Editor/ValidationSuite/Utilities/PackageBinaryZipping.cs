@@ -25,7 +25,7 @@ namespace UnityEditor.PackageManager.ValidationSuite
 
         public static bool TryZipPackageBinaries(string packageRootPath, string packageName, string packageVersion, string zipDirectory, out string zipFilePath)
         {
-            if (!Directory.Exists(packageRootPath))
+            if (!LongPathUtils.Directory.Exists(packageRootPath))
             {
                 throw new ArgumentException("Could not find package " + packageRootPath);
             }
@@ -71,7 +71,7 @@ namespace UnityEditor.PackageManager.ValidationSuite
             string execFilename = "7z.exe";
 #endif
             string zipper = EditorApplication.applicationContentsPath + "/Tools/" + execFilename;
-            if (!File.Exists(zipper))
+            if (!LongPathUtils.File.Exists(zipper))
                 throw new FileNotFoundException("Could not find " + zipper);
             return zipper;
         }

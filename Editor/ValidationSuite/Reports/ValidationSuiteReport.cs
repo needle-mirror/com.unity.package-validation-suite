@@ -24,7 +24,7 @@ namespace UnityEditor.PackageManager.ValidationSuite
         {
             jsonReportPath = Path.Combine(ResultsPath, packageId + ".json");
 
-            if (!Directory.Exists(ResultsPath))
+            if (!LongPathUtils.Directory.Exists(ResultsPath))
                 Directory.CreateDirectory(ResultsPath);
 
 #if !UNITY_PACKAGE_MANAGER_DEVELOP_EXISTS
@@ -32,7 +32,7 @@ namespace UnityEditor.PackageManager.ValidationSuite
 #endif
             TextReport?.Clear();
 
-            if (File.Exists(jsonReportPath))
+            if (LongPathUtils.File.Exists(jsonReportPath))
                 File.Delete(jsonReportPath);
         }
 
@@ -80,13 +80,13 @@ namespace UnityEditor.PackageManager.ValidationSuite
 
         public static bool JsonReportExists(string packageId)
         {
-            return File.Exists(GetJsonReportPath(packageId));
+            return LongPathUtils.File.Exists(GetJsonReportPath(packageId));
         }
 
         public static bool DiffsReportExists(string packageId)
         {
             var deltaReportPath = Path.Combine(ResultsPath, packageId + ".delta");
-            return File.Exists(deltaReportPath);
+            return LongPathUtils.File.Exists(deltaReportPath);
         }
 
         public static ValidationSuiteReportData GetReport(string packageId)

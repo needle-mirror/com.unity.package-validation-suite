@@ -23,7 +23,7 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests.Standards
             }
 
             var validatorPath = Path.Combine(EditorApplication.applicationContentsPath, "Tools/ScriptUpdater/APIUpdater.ConfigurationValidator.exe");
-            if (!File.Exists(validatorPath))
+            if (!LongPathUtils.File.Exists(validatorPath))
             {
                 AddInformation("APIUpdater.ConfigurationValidator.exe is not present in this version of Unity. Not validating update configurations.");
                 return;
@@ -110,7 +110,7 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests.Standards
                 foreach (var path in probingFolders)
                 {
                     var whitelistPath = Path.Combine(packagePath, $"ApiUpdater~/{path}/ValidationWhiteList.txt");
-                    if (File.Exists(whitelistPath))
+                    if (LongPathUtils.File.Exists(whitelistPath))
                     {
                         whitelistArg = $@" --whitelist ""{whitelistPath}""";
                         break;

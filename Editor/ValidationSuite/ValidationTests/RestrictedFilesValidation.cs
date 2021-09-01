@@ -20,7 +20,6 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
             TestName = "Restricted File Type Validation";
             TestDescription = "Make sure no restricted file types are included with this package.";
             TestCategory = TestCategory.ContentScan;
-            CanUseValidationExceptions = true;
         }
 
         protected override void Run()

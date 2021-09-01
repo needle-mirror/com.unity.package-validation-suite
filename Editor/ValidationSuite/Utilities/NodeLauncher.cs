@@ -185,7 +185,7 @@ namespace UnityEditor.PackageManager.ValidationSuite
 
         protected void NpmLaunch(string command, string packageId)
         {
-            NpmOnlineOperation = !Directory.Exists(packageId) && !File.Exists(packageId);
+            NpmOnlineOperation = !LongPathUtils.Directory.Exists(packageId) && !LongPathUtils.File.Exists(packageId);
             Script = NpmScriptPath;
             Args = command + " \"" + packageId + "\"";
             if (!string.IsNullOrEmpty(NpmRegistry))

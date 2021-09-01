@@ -16,8 +16,6 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
             TestCategory = TestCategory.DataValidation;
             SupportedValidations = new[] { ValidationType.CI, ValidationType.Promotion };
             SupportedPackageTypes = new[] { PackageType.Template };
-            CanUseValidationExceptions = true;
-            CanUseCompleteTestExceptions = true;
         }
 
         protected override void Run()

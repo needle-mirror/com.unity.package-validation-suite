@@ -5,11 +5,6 @@ While the Package Manager Infrastructure team fixes these issues, a mechanism ex
 
 * The Package Manager Infrastructure team has been notified about the failure.
 * The Exception file is shipped with the package, for tracking purposes.
-* For now, only some validations accept error exceptions:
-    - API Validation
-    - Updater Configuration Validation
-    - Restricted File Type Validation
-    - Primed Library Validation
 
 
 ## Steps to include a validation error exception:

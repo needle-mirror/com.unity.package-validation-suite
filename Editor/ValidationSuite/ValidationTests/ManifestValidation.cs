@@ -11,6 +11,8 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
     {
         readonly SemVerCheckUS0005 semVerCheckUS0005 = new SemVerCheckUS0005();
         readonly PackageNamingConventionUS0006 packageNamingConventionUs0006 = new PackageNamingConventionUS0006();
+        readonly ValidPackageManifestUS0007 validPackageManifestUs0007 = new ValidPackageManifestUS0007();
+        readonly DependencyVersionsCorrectlyIndicatedUS0084 dependencyVersionsCorrectlyIndicatedUs0084 = new DependencyVersionsCorrectlyIndicatedUS0084();
 
 
         internal override List<IStandardChecker> ImplementedStandardsList =>
@@ -18,12 +20,11 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
         {
             semVerCheckUS0005,
             packageNamingConventionUs0006,
+            validPackageManifestUs0007,
+            dependencyVersionsCorrectlyIndicatedUs0084,
         };
 
 
-        private const string UnityRegex = @"^[0-9]{4}\.[0-9]+$";
-        private const string UnityReleaseRegex = @"^[0-9]+[a|b|f]{1}[0-9]+$";
-        private static readonly int MinDescriptionSize = 50;
         internal static readonly int MaxDisplayNameLength = 50;
         internal static readonly string k_DocsFilePath = "manifest_validation_error.html";
 
@@ -51,11 +52,12 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
             }
 
             ValidateManifestMarshalling(manifestData);
-            ValidateManifestData(manifestData);
+            validPackageManifestUs0007.Check(manifestData, Context.ValidationType);
             packageNamingConventionUs0006.Check(manifestData.name, manifestData.displayName);
             ValidateAuthor(manifestData);
             semVerCheckUS0005.Check(manifestData.version);
             ValidateDependencies();
+            dependencyVersionsCorrectlyIndicatedUs0084.Check(manifestData);
         }
 
         private void ValidateManifestMarshalling(ManifestData manifestData)
@@ -77,12 +79,6 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
             // Make sure all dependencies are already published in production.
             foreach (var dependency in Context.ProjectPackageInfo.dependencies)
             {
-                if (isFeature && dependency.Value != "default")
-                {
-                    AddError(@"In package.json for a feature, dependency ""{0}"" : ""{1}"" needs to be set to ""default""", dependency.Key, dependency.Value);
-                    continue;
-                }
-
                 // Check if the dependency semver is valid before doing anything else
                 SemVersion depVersion;
                 if (!isFeature && !SemVersion.TryParse(dependency.Value, out depVersion))
@@ -128,59 +124,6 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
             }
 
             // TODO: Validate the Package dependencies meet the minimum editor requirement (eg: 2018.3 minimum for package A is 2, make sure I don't use 1)
-        }
-
-        private void ValidateManifestData(ManifestData manifestData)
-        {
-            // Check Description, make sure it's there, and not too short.
-            if (manifestData.description.Length < MinDescriptionSize)
-            {
-                AddError("In package.json, \"description\" is too short. Minimum Length = {0}. Current Length = {1}. {2}", MinDescriptionSize, manifestData.description.Length, ErrorDocumentation.GetLinkMessage(ManifestValidation.k_DocsFilePath, "description-is-too-short"));
-            }
-
-            // check unity field, if it's there
-            if (!string.IsNullOrEmpty(manifestData.unity) && (manifestData.unity.Length > 6 || !Regex.Match(manifestData.unity, UnityRegex).Success))
-            {
-                AddError($"In package.json, \"unity\" is invalid. It should only be <MAJOR>.<MINOR> (e.g. 2018.4). Current unity = {manifestData.unity}. {ErrorDocumentation.GetLinkMessage(ManifestValidation.k_DocsFilePath, "unity-is-invalid")}");
-            }
-
-            // check unityRelease field, if it's there
-            if (!string.IsNullOrEmpty(manifestData.unityRelease))
-            {
-                // it should be valid
-                if (!Regex.Match(manifestData.unityRelease, UnityReleaseRegex).Success)
-                {
-                    AddError(
-                        $"In package.json, \"unityRelease\" is invalid. Current unityRelease = {manifestData.unityRelease}. {ErrorDocumentation.GetLinkMessage(ManifestValidation.k_DocsFilePath, "unityrelease-is-invalid")}");
-                }
-
-                // it should be accompanied of a unity field
-                if (string.IsNullOrEmpty(manifestData.unity))
-                {
-                    AddError(
-                        $"In package.json, \"unityRelease\" needs a \"unity\" field to be used. {ErrorDocumentation.GetLinkMessage(ManifestValidation.k_DocsFilePath, "unityrelease-without-unity")}");
-                }
-            }
-
-            // check documentation url field
-            if (Context.ValidationType == ValidationType.Promotion || Context.ValidationType == ValidationType.CI)
-            {
-                if (!string.IsNullOrWhiteSpace(manifestData.documentationUrl))
-                {
-                    AddError("In package.json, \"documentationUrl\" can't be used for Unity packages.  It is a features reserved for enterprise customers.  The Unity documentation team will ensure the package's documentation is published in the appropriate fashion");
-                }
-
-                // Check if `repository.url` and `repository.revision` exist and the content is valid
-                string value;
-                if (!manifestData.repository.TryGetValue("url", out value) || string.IsNullOrEmpty(value))
-                    AddError("In package.json for a published package, there must be a \"repository.url\" field. {0}", ErrorDocumentation.GetLinkMessage(ManifestValidation.k_DocsFilePath, "for_a_published_package_there_must_be_a_repository.url_field"));
-                if (!manifestData.repository.TryGetValue("revision", out value) || string.IsNullOrEmpty(value))
-                    AddError("In package.json for a published package, there must be a \"repository.revision\" field. {0}", ErrorDocumentation.GetLinkMessage(ManifestValidation.k_DocsFilePath, "for_a_published_package_there_must_be_a_repository.revision_field"));
-            }
-            else
-            {
-                AddInformation("Skipping Git tags check as this is a package in development.");
-            }
         }
 
         private void ValidateAuthor(ManifestData manifestData)

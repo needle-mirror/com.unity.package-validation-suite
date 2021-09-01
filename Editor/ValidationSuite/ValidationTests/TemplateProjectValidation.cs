@@ -46,7 +46,6 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
             TestDescription = "Validate that the project manifest and assets included in a template package follow standards";
             TestCategory = TestCategory.DataValidation;
             SupportedPackageTypes = new[] { PackageType.Template };
-            CanUseValidationExceptions = true;
         }
 
         protected override void Run()

@@ -181,7 +181,7 @@ namespace UnityEditor.PackageManager.ValidationSuite
             // Start by parsing the package's manifest data.
             var manifestPath = Path.Combine(packagePath, Utilities.PackageJsonFilename);
 
-            if (!File.Exists(manifestPath))
+            if (!LongPathUtils.File.Exists(manifestPath))
             {
                 throw new FileNotFoundException(manifestPath);
             }
@@ -319,7 +319,7 @@ namespace UnityEditor.PackageManager.ValidationSuite
         {
             Profiler.BeginSample("DownloadAssembliesForPreviousVersion");
 
-            if (Directory.Exists(PreviousVersionBinaryPath))
+            if (LongPathUtils.Directory.Exists(PreviousVersionBinaryPath))
                 Directory.Delete(PreviousVersionBinaryPath, true);
 
             Directory.CreateDirectory(PreviousVersionBinaryPath);
