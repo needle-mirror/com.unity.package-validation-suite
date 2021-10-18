@@ -51,7 +51,7 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
         protected AssemblyInfo[] GetRelevantAssemblyInfo()
         {
             var packagePath = Path.GetFullPath(Context.ProjectPackageInfo.path);
-            var files = new HashSet<string>(LongPathUtils.Directory.GetFiles(packagePath, "*", SearchOption.AllDirectories));
+            var files = new HashSet<string>(Directory.GetFiles(packagePath, "*", SearchOption.AllDirectories));
 
             var allAssemblyInfo = CompilationPipeline.GetAssemblies().Select(Utilities.AssemblyInfoFromAssembly).Where(a => a != null)
                 .ToArray();

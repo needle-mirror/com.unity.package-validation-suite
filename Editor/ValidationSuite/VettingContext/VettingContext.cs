@@ -181,7 +181,7 @@ namespace UnityEditor.PackageManager.ValidationSuite
             // Start by parsing the package's manifest data.
             var manifestPath = Path.Combine(packagePath, Utilities.PackageJsonFilename);
 
-            if (!LongPathUtils.File.Exists(manifestPath))
+            if (!File.Exists(manifestPath))
             {
                 throw new FileNotFoundException(manifestPath);
             }
@@ -319,7 +319,7 @@ namespace UnityEditor.PackageManager.ValidationSuite
         {
             Profiler.BeginSample("DownloadAssembliesForPreviousVersion");
 
-            if (LongPathUtils.Directory.Exists(PreviousVersionBinaryPath))
+            if (Directory.Exists(PreviousVersionBinaryPath))
                 Directory.Delete(PreviousVersionBinaryPath, true);
 
             Directory.CreateDirectory(PreviousVersionBinaryPath);
@@ -327,7 +327,7 @@ namespace UnityEditor.PackageManager.ValidationSuite
             ActivityLogger.Log("Retrieving assemblies for previous package version {0}", PreviousPackageInfo.version);
             var packageDataZipFilename = PackageBinaryZipping.PackageDataZipFilename(PreviousPackageInfo.name, PreviousPackageInfo.version);
             var zipPath = Path.Combine(PreviousVersionBinaryPath, packageDataZipFilename);
-            var uri = Path.Combine("https://artifactory.prd.it.unity3d.com/artifactory/pkg-api-validation/", packageDataZipFilename);
+            var uri = Path.Combine("https://artifactory.prd.it.unity3d.com/artifactory/pkg-api-validation/v2/", packageDataZipFilename);
 
             UnityWebRequest request = new UnityWebRequest(uri);
             request.timeout = 60; // 60 seconds time out

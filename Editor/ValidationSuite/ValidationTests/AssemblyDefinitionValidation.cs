@@ -30,7 +30,7 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
             var packagePath = Context.PublishPackageInfo.path;
             var manifestFilePath = Path.Combine(packagePath, Utilities.PackageJsonFilename);
 
-            if (!LongPathUtils.File.Exists(manifestFilePath))
+            if (!File.Exists(manifestFilePath))
             {
                 AddError("Can't find manifest: " + manifestFilePath);
                 return;

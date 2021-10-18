@@ -58,7 +58,7 @@ namespace UnityEditor.PackageManager.ValidationSuite
             warningExceptionDictionary = new Dictionary<string, ValidationException>();
             var filePath = Path.Combine(packagePath, ValidationExceptionsFileName);
 
-            if (LongPathUtils.File.Exists(filePath))
+            if (File.Exists(filePath))
             {
                 var exceptions = Utilities.GetDataFromJson<ValidationExceptions>(filePath);
 

@@ -35,11 +35,11 @@ namespace UnityEditor.PackageManager.ValidationSuite
             string packmanSettingsPath = Path.Combine(context.PublishPackageInfo.path, "ProjectData~",
                 "ProjectSettings", "PackageManagerSettings.asset");
 
-            ManifestPath = LongPathUtils.File.Exists(packedManifestPath)
+            ManifestPath = File.Exists(packedManifestPath)
                 ? packedManifestPath
                 : Path.GetFullPath("Packages/manifest.json");
 
-            PackageManagerSettingsPath = LongPathUtils.File.Exists(packmanSettingsPath)
+            PackageManagerSettingsPath = File.Exists(packmanSettingsPath)
                 ? packmanSettingsPath
                 : Path.GetFullPath("ProjectSettings/PackageManagerSettings.asset");
 
@@ -51,7 +51,7 @@ namespace UnityEditor.PackageManager.ValidationSuite
         {
             Profiler.BeginSample("GetProjectManifestKeys");
 
-            if (!LongPathUtils.File.Exists(ManifestPath))
+            if (!File.Exists(ManifestPath))
                 throw new FileNotFoundException($"A project manifest file could not be found in {ManifestPath}");
 
             var contents = File.ReadAllText(ManifestPath);
@@ -63,7 +63,7 @@ namespace UnityEditor.PackageManager.ValidationSuite
 
         internal void SetPackageManagerSettings()
         {
-            if (!LongPathUtils.File.Exists(PackageManagerSettingsPath))
+            if (!File.Exists(PackageManagerSettingsPath))
                 return; // If no settings are saved then we just do nothing
 
             // This might fail in the future if the PackageManagerSettings.asset file is saved in a binary format

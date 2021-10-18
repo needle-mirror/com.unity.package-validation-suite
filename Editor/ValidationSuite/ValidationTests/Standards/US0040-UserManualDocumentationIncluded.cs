@@ -12,7 +12,7 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests.Standards
         public void Check(string packagePath)
         {
             // Check for a documentation directory.
-            string[] rootDirs = LongPathUtils.Directory.GetDirectories(packagePath);
+            string[] rootDirs = Directory.GetDirectories(packagePath);
             var wrongNameDocsDir = rootDirs.FirstOrDefault(d =>
             {
                 var path = Path.GetFileName(d).ToLower();
@@ -24,7 +24,7 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests.Standards
                 return path == ".documentation~" || path == "documentation~";
             });
 
-            string[] allDocsDir = LongPathUtils.Directory.GetDirectories(packagePath, "*Documentation*");
+            string[] allDocsDir = Directory.GetDirectories(packagePath, "*Documentation*");
             if (allDocsDir.Length > 1)
             {
                 AddError("You have multiple documentation folders. Please keep only the one named \"Documentation~\".");
@@ -41,14 +41,14 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests.Standards
                 return;
             }
 
-            var defaultFiles = LongPathUtils.Directory.GetFiles(docsDir, "your-package-name.md");
+            var defaultFiles = Directory.GetFiles(docsDir, "your-package-name.md");
             // Check the default file is not there anymore
             if (defaultFiles.Length > 0)
             {
                 AddError("File \"your-package-name.md\" found in \"Documentation~\" directory, which comes from the package template.  Please take the time to work on your documentation.");
             }
 
-            var docFiles = LongPathUtils.Directory.GetFiles(docsDir, "*.md");
+            var docFiles = Directory.GetFiles(docsDir, "*.md");
             // Check for at least 1 md file in that directory.
             if (docFiles.Length == 0)
             {

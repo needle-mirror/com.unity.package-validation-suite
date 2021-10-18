@@ -25,7 +25,7 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests.Standards
                 var packageRelativePath = Path.Combine(k_LibraryPath, primedLibraryPath);
                 var fullPath = Path.Combine(path, packageRelativePath);
 
-                if (!(LongPathUtils.File.Exists(fullPath) || LongPathUtils.Directory.Exists(fullPath)))
+                if (!(File.Exists(fullPath) || Directory.Exists(fullPath)))
                 {
                     var documentationLink = ErrorDocumentation.GetLinkMessage(
                         k_DocsFilePath, "template-is-missing-primed-library-path");

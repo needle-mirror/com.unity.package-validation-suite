@@ -48,11 +48,11 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests.Standards
                         AddError("Sample display name will be shown in the UI, and it must be set and non-empty in `package.json`.");
                     var samplePath = Path.Combine(path, sample.path);
                     var sampleJsonPath = Path.Combine(samplePath, ".sample.json");
-                    if (!LongPathUtils.Directory.Exists(samplePath))
+                    if (!Directory.Exists(samplePath))
                     {
                         AddError("Sample path set in `package.json` does not exist: " + sample.path + ".");
                     }
-                    else if (!LongPathUtils.File.Exists(sampleJsonPath))
+                    else if (!File.Exists(sampleJsonPath))
                     {
                         AddError("Cannot find `.sample.json` file in the sample path: " + sample.path + ".");
                     }

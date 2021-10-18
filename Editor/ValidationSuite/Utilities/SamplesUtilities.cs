@@ -15,8 +15,8 @@ namespace UnityEditor.PackageManager.ValidationSuite
 
         public static SampleDirInfo GetSampleDirectoriesInfo(string packagePath)
         {
-            var samplesDirExists = LongPathUtils.Directory.Exists(Path.Combine(packagePath, SamplesDirName));
-            var samplesTildeDirExists = LongPathUtils.Directory.Exists(Path.Combine(packagePath, SamplesTildeDirName));
+            var samplesDirExists = Directory.Exists(Path.Combine(packagePath, SamplesDirName));
+            var samplesTildeDirExists = Directory.Exists(Path.Combine(packagePath, SamplesTildeDirName));
             return new SampleDirInfo()
             {
                 SamplesDirExists = samplesDirExists,

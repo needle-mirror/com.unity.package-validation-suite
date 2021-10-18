@@ -15,7 +15,7 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests.Standards
             var licenseFilePath = Path.Combine(path, Utilities.LicenseFile);
 
             // Check that the package has a license.md file.  All packages should have one.
-            if (LongPathUtils.File.Exists(licenseFilePath))
+            if (File.Exists(licenseFilePath))
             {
                 // TODO: If the license file exists, check that the copyright year is setup properly.
                 CheckLicenseContent(licenseFilePath, packageName, packageDisplayName);

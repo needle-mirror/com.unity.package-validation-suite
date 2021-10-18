@@ -43,6 +43,9 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
                 return;
             }
 
+            // Ensure results directory exists before trying to write to it
+            Directory.CreateDirectory(ValidationSuiteReport.ResultsPath);
+
             // Flag certain file types are requiring special attention.
             // Asmdef - can cause breaks on client's updates to packages.
             // package.json - Will change information in UI
@@ -129,8 +132,8 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
                 linePrefix += " ";
 
             // Take a snapshot of the file system.
-            List<String> files1 = string.IsNullOrEmpty(path1) ? new List<string>() : LongPathUtils.Directory.GetFiles(path1).Select(d => d.Substring(path1.Length + 1)).ToList();
-            List<String> files2 = string.IsNullOrEmpty(path2) ? new List<string>() : LongPathUtils.Directory.GetFiles(path2).Select(d => d.Substring(path2.Length + 1)).ToList();
+            List<String> files1 = string.IsNullOrEmpty(path1) ? new List<string>() : Directory.GetFiles(path1).Select(d => d.Substring(path1.Length + 1)).ToList();
+            List<String> files2 = string.IsNullOrEmpty(path2) ? new List<string>() : Directory.GetFiles(path2).Select(d => d.Substring(path2.Length + 1)).ToList();
 
             foreach (var file in files1)
             {
@@ -165,8 +168,8 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
             }
 
             // Start by comparing directories
-            List<String> dirs1 = string.IsNullOrEmpty(path1) ? new List<string>() : LongPathUtils.Directory.GetDirectories(path1).Select(d => d.Substring(path1.Length + 1)).ToList();
-            List<String> dirs2 = string.IsNullOrEmpty(path2) ? new List<string>() : LongPathUtils.Directory.GetDirectories(path2).Select(d => d.Substring(path2.Length + 1)).ToList();
+            List<String> dirs1 = string.IsNullOrEmpty(path1) ? new List<string>() : Directory.GetDirectories(path1).Select(d => d.Substring(path1.Length + 1)).ToList();
+            List<String> dirs2 = string.IsNullOrEmpty(path2) ? new List<string>() : Directory.GetDirectories(path2).Select(d => d.Substring(path2.Length + 1)).ToList();
             depth++;
 
             foreach (var directory in dirs1)

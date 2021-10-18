@@ -17,9 +17,9 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests.Standards
             var exePath = Path.GetFullPath("packages/com.unity.package-validation-suite/Bin~/FindMissingDocs/FindMissingDocs.exe");
 
             List<string> excludePaths = new List<string>();
-            excludePaths.AddRange(LongPathUtils.Directory.GetDirectories(packagePath, "*~", SearchOption.AllDirectories));
-            excludePaths.AddRange(LongPathUtils.Directory.GetDirectories(packagePath, ".*", SearchOption.AllDirectories));
-            excludePaths.AddRange(LongPathUtils.Directory.GetDirectories(packagePath, "Tests", SearchOption.AllDirectories));
+            excludePaths.AddRange(Directory.GetDirectories(packagePath, "*~", SearchOption.AllDirectories));
+            excludePaths.AddRange(Directory.GetDirectories(packagePath, ".*", SearchOption.AllDirectories));
+            excludePaths.AddRange(Directory.GetDirectories(packagePath, "Tests", SearchOption.AllDirectories));
             foreach (var assembly in assemblyInfo)
             {
                 //exclude sources from test assemblies explicitly. Do not exclude entire directories, as there may be nested public asmdefs

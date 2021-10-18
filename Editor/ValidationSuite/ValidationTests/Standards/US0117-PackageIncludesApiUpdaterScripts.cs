@@ -23,7 +23,7 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests.Standards
             }
 
             var validatorPath = Path.Combine(EditorApplication.applicationContentsPath, "Tools/ScriptUpdater/APIUpdater.ConfigurationValidator.exe");
-            if (!LongPathUtils.File.Exists(validatorPath))
+            if (!File.Exists(validatorPath))
             {
                 AddInformation("APIUpdater.ConfigurationValidator.exe is not present in this version of Unity. Not validating update configurations.");
                 return;
@@ -49,15 +49,26 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests.Standards
 
         private void RunValidator(IEnumerable<string> references, string validatorPath, IEnumerable<string> assemblyPaths, string packageName, string packagePath)
         {
-            var responseFilePath = Path.GetTempFileName();
-            File.WriteAllLines(responseFilePath, references);
+            var referencesResponseFilePath = Path.GetTempFileName();
+            File.WriteAllLines(referencesResponseFilePath, references);
 
             var monoPath = Utilities.GetMonoPath();
 
             var argumentsForValidator = ArgumentsForValidator();
-            File.WriteAllText($"{Path.Combine(Path.GetTempPath(), packageName)}.updater.validation.arguments", argumentsForValidator);
+            var responseFilePath = Path.Combine(ValidationSuiteReport.ResultsPath, $"{packageName}.updater.validation.arguments");
 
+            // Ensure results directory exists before trying to write to it
+            Directory.CreateDirectory(ValidationSuiteReport.ResultsPath);
+
+            File.WriteAllText(responseFilePath, argumentsForValidator);
+            ActivityLogger.Log($"APIUpdater.ConfigurationValidator.exe response file written to {Path.GetFullPath(responseFilePath)}");
+
+            // The bundled mono executable only supports the --response parameter starting with Unity 2021.2
+#if UNITY_2021_2_OR_NEWER
+            var processStartInfo = new ProcessStartInfo(monoPath, $@"--response=""{responseFilePath}"" ""{validatorPath}""")
+#else
             var processStartInfo = new ProcessStartInfo(monoPath, $@"""{validatorPath}"" {argumentsForValidator}")
+#endif
             {
                 UseShellExecute = false,
                 RedirectStandardError = true,
@@ -110,14 +121,14 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests.Standards
                 foreach (var path in probingFolders)
                 {
                     var whitelistPath = Path.Combine(packagePath, $"ApiUpdater~/{path}/ValidationWhiteList.txt");
-                    if (LongPathUtils.File.Exists(whitelistPath))
+                    if (File.Exists(whitelistPath))
                     {
                         whitelistArg = $@" --whitelist ""{whitelistPath}""";
                         break;
                     }
                 }
 
-                return $"\"{responseFilePath}\" -a {string.Join(",", assemblyPaths.Select(p => $"\"{Path.GetFullPath(p)}\""))} {whitelistArg}";
+                return $"\"{referencesResponseFilePath}\" -a {string.Join(",", assemblyPaths.Select(p => $"\"{Path.GetFullPath(p)}\""))} {whitelistArg}";
             }
         }
     }

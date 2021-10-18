@@ -17,6 +17,9 @@ namespace UnityEditor.PackageManager.ValidationSuite
         public TextReport(string packageId)
         {
             FilePath = ReportPath(packageId);
+
+            // Ensure results directory exists before trying to write to it
+            Directory.CreateDirectory(ValidationSuiteReport.ResultsPath);
         }
 
         internal TextReport(string packageId, string packageVersion)
@@ -57,7 +60,7 @@ namespace UnityEditor.PackageManager.ValidationSuite
 
         public void Clear()
         {
-            if (LongPathUtils.File.Exists(FilePath))
+            if (File.Exists(FilePath))
                 File.Delete(FilePath);
         }
 
@@ -152,7 +155,7 @@ namespace UnityEditor.PackageManager.ValidationSuite
 
         public static bool ReportExists(string packageId)
         {
-            return LongPathUtils.File.Exists(ReportPath(packageId));
+            return File.Exists(ReportPath(packageId));
         }
     }
 }

@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Text.RegularExpressions;
 using Semver;
 using Unity.APIComparison.Framework.Changes;
 using Unity.APIComparison.Framework.Collectors;
@@ -83,15 +84,54 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
 
         private AssemblyDefinition[] GetAssemblyDefinitionDataInFolder(string directory)
         {
-            return LongPathUtils.Directory.GetFiles(directory, "*.asmdef", SearchOption.AllDirectories)
+            return Directory.GetFiles(directory, "*.asmdef", SearchOption.AllDirectories)
                 .Select(Utilities.GetDataFromJson<AssemblyDefinition>).ToArray();
         }
 
         protected override void Run(AssemblyInfo[] info)
         {
             TestState = TestState.Succeeded;
-            var packagePath = Context.ProjectPackageInfo.path;
-            var files = new HashSet<string>(LongPathUtils.Directory.GetFiles(packagePath, "*", SearchOption.AllDirectories).Select(Path.GetFullPath));
+
+            const string howToRunMessage =
+                "In order for API Validation to run the platform must be Windows and " +
+                "the package manifest must have a unity property that matches the major and minor version of " +
+                "the editor that Package Validation Suite is run with.";
+
+            // Skip unless platform is Windows
+            if (Application.platform != RuntimePlatform.WindowsEditor)
+            {
+                AddInformation(
+                    "Skipping API Validation because platform is not Windows. " +
+                    "API Validation is unreliable when comparing against assemblies built on a different platform.");
+                AddInformation(howToRunMessage);
+                TestState = TestState.NotRun;
+                return;
+            }
+
+            // Skip unless package manifest has unity property
+            if (string.IsNullOrEmpty(Context.ProjectPackageInfo.unity))
+            {
+                AddInformation("Skipping API Validation because package manifest has no unity property.");
+                AddInformation(howToRunMessage);
+                TestState = TestState.NotRun;
+                return;
+            }
+
+            // Skip unless package manifest unity property matches major and minor version of editor
+            var unityVersionMajorMinorMatch = Regex.Match(Application.unityVersion, @"^(\d+\.\d+)");
+            if (!unityVersionMajorMinorMatch.Success)
+            {
+                AddError($"Failed to extract major and minor version editor version string: {Application.unityVersion}");
+                return;
+            }
+            var unityVersionMajorMinor = unityVersionMajorMinorMatch.Groups[0].Value;
+            if (Context.ProjectPackageInfo.unity != unityVersionMajorMinor)
+            {
+                AddInformation("Skipping API Validation because package manifest unity property doesn't match current editor version.");
+                AddInformation(howToRunMessage);
+                TestState = TestState.NotRun;
+                return;
+            }
 
             //does it compile?
             if (EditorUtility.scriptCompilationFailed)
@@ -163,7 +203,7 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
                 return;
             }
 
-            var oldAssemblyPaths = LongPathUtils.Directory.GetFiles(Context.PreviousPackageBinaryDirectory, "*.dll");
+            var oldAssemblyPaths = Directory.GetFiles(Context.PreviousPackageBinaryDirectory, "*.dll");
 
             //Build diff
             foreach (var info in assembliesForPackage)
@@ -184,7 +224,7 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
                     };
 
                     const string logsDirectory = "Logs";
-                    if (!LongPathUtils.Directory.Exists(logsDirectory))
+                    if (!Directory.Exists(logsDirectory))
                         Directory.CreateDirectory(logsDirectory);
 
                     File.WriteAllText($"{logsDirectory}/ApiValidationParameters.txt", $"previous: {oldAssemblyPath}\ncurrent: {info.assembly.outputPath}\nsearch path: {string.Join("\n", assemblySearchFolder)}");
@@ -258,7 +298,10 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
             }
 
             string json = JsonUtility.ToJson(diff, true);
+
+            // Ensure results directory exists before trying to write to it
             Directory.CreateDirectory(ValidationSuiteReport.ResultsPath);
+
             File.WriteAllText(Path.Combine(ValidationSuiteReport.ResultsPath, "ApiValidationReport.json"), json);
 
             //Figure out type of version change (patch, minor, major)

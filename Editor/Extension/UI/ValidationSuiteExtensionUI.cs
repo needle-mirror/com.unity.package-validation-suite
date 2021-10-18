@@ -166,7 +166,7 @@ namespace UnityEditor.PackageManager.ValidationSuite.UI
                 try
                 {
                     var targetFile = Directory.GetCurrentDirectory() + "/" + filePath;
-                    if (!LongPathUtils.File.Exists(targetFile))
+                    if (!File.Exists(targetFile))
                         throw new Exception("Validation Result not found!");
 
                     Process.Start(targetFile);

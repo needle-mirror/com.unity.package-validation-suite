@@ -16,10 +16,10 @@ namespace UnityEditor.PackageManager.ValidationSuite
             var upmTemplateUtilsPath = Path.Combine(persistentDataPath, UpmCIUtilsId);
             var buildScript = Path.Combine(upmTemplateUtilsPath, "node_modules/upm-ci-utils/index.js");
 
-            if (LongPathUtils.File.Exists(buildScript))
+            if (File.Exists(buildScript))
                 return buildScript;
 
-            if (!LongPathUtils.Directory.Exists(upmTemplateUtilsPath))
+            if (!Directory.Exists(upmTemplateUtilsPath))
                 Directory.CreateDirectory(upmTemplateUtilsPath);
 
             var launcher = new NodeLauncher();
@@ -38,7 +38,7 @@ namespace UnityEditor.PackageManager.ValidationSuite
                 throw exception;
             }
 
-            return LongPathUtils.File.Exists(buildScript) ? buildScript : string.Empty;
+            return File.Exists(buildScript) ? buildScript : string.Empty;
         }
 
         internal static List<string> _Pack(string command, string path, string destinationPath)
@@ -53,7 +53,7 @@ namespace UnityEditor.PackageManager.ValidationSuite
 
             List<string> packagePaths = new List<string>();
 
-            var paths = LongPathUtils.Directory.GetFiles(Path.Combine(path, "upm-ci~", "packages"), "*tgz");
+            var paths = Directory.GetFiles(Path.Combine(path, "upm-ci~", "packages"), "*tgz");
 
             foreach (var packagePath in paths)
             {
@@ -61,7 +61,7 @@ namespace UnityEditor.PackageManager.ValidationSuite
                 string packageName = Path.GetFileName(packagePath);
                 string finalPackagePath = Path.Combine(destinationPath, packageName);
 
-                if (LongPathUtils.File.Exists(finalPackagePath))
+                if (File.Exists(finalPackagePath))
                 {
                     File.Delete(finalPackagePath);
                 }
@@ -72,13 +72,13 @@ namespace UnityEditor.PackageManager.ValidationSuite
 
             // TODO: Remove this part when we switch to Packman API pack function
             var packagesJsonPath = Path.Combine(path, "packages.json");
-            if (LongPathUtils.File.Exists(packagesJsonPath))
+            if (File.Exists(packagesJsonPath))
             {
                 File.Delete(packagesJsonPath);
             }
 
             //See if upm-ci~ exists and remove
-            if (LongPathUtils.Directory.Exists(Path.Combine(path, "upm-ci~")))
+            if (Directory.Exists(Path.Combine(path, "upm-ci~")))
             {
                 Directory.Delete(Path.Combine(path, "upm-ci~"), true);
             }
