@@ -37,6 +37,9 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests.Standards
                 RunValidator(references, validatorPath, asmdefAssemblyPaths, packageName, packagePath);
             }
 
+            // TODO: precompiledAssemblyInfo should not include assemblies that are not going to be part of the final package.
+            // TODO: Directories that ends in ~ are not included in the packed package so that would give incorrect results.
+            // TODO: Make sure to only check for special characters inside the package path not the entire absolute path since will cause issues if there's ~ in a parent folder.
             var precompiledAssemblyInfo = info.Where(i => i.assemblyKind == AssemblyInfo.AssemblyKind.PrecompiledAssembly).ToArray();
             if (precompiledAssemblyInfo.Length > 0)
             {
@@ -52,8 +55,6 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests.Standards
             var referencesResponseFilePath = Path.GetTempFileName();
             File.WriteAllLines(referencesResponseFilePath, references);
 
-            var monoPath = Utilities.GetMonoPath();
-
             var argumentsForValidator = ArgumentsForValidator();
             var responseFilePath = Path.Combine(ValidationSuiteReport.ResultsPath, $"{packageName}.updater.validation.arguments");
 
@@ -63,6 +64,21 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests.Standards
             File.WriteAllText(responseFilePath, argumentsForValidator);
             ActivityLogger.Log($"APIUpdater.ConfigurationValidator.exe response file written to {Path.GetFullPath(responseFilePath)}");
 
+            int exitCode = 0;
+            string output = string.Empty;
+
+#if UNITY_2022_1_OR_NEWER
+            // Starting in 2022.1 ConfigurationValidator is compiled to NET 5.0
+            using(var validator = new NetCoreProgram(validatorPath, argumentsForValidator, a => {}))
+            {
+                validator.Start();
+                const int FiveMinutes = 1000 * 60 * 5;
+                validator.WaitForExit(FiveMinutes);
+                output = validator.GetAllOutput();
+                exitCode = validator.ExitCode;
+            }
+#else
+            var monoPath = Utilities.GetMonoPath();
             // The bundled mono executable only supports the --response parameter starting with Unity 2021.2
 #if UNITY_2021_2_OR_NEWER
             var processStartInfo = new ProcessStartInfo(monoPath, $@"--response=""{responseFilePath}"" ""{validatorPath}""")
@@ -79,13 +95,17 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests.Standards
             var stderr = new ProcessOutputStreamReader(process, process.StandardError);
             var stdout = new ProcessOutputStreamReader(process, process.StandardOutput);
             process.WaitForExit();
-            if (process.ExitCode != 0)
+
+            exitCode = process.ExitCode;
+            output = string.Join("\n", stderr.GetOutput().Concat(stdout.GetOutput()));
+#endif
+
+            if (exitCode != 0)
             {
-                var stdContent = string.Join("\n", stderr.GetOutput().Concat(stdout.GetOutput()));
-                if (ApiUpdaterConfigurationExemptions(stdContent))
-                    AddWarning(stdContent);
+                if (ApiUpdaterConfigurationExemptions(output))
+                    AddWarning(output);
                 else
-                    AddError(stdContent);
+                    AddError(output);
             }
 
             bool ApiUpdaterConfigurationExemptions(string stdContent)
@@ -128,8 +148,35 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests.Standards
                     }
                 }
 
-                return $"\"{referencesResponseFilePath}\" -a {string.Join(",", assemblyPaths.Select(p => $"\"{Path.GetFullPath(p)}\""))} {whitelistArg}";
+#if UNITY_2022_1_OR_NEWER
+                // Starting with 2022.1 we started building UnityEngine/Editor against *netstandard2.1*
+                // This changes requires all tools to be run under DotNet Core which changes the way assemblies
+                // are resolved so we now pass a list of search paths where the Unity.APIValidation should look
+                // for during assembly resolution.
+                var searchPathResponseFilePath = Path.GetTempFileName();
+                File.WriteAllText(searchPathResponseFilePath, string.Join(System.Environment.NewLine, AssemblySearchPaths()));
+                var assemblySearchPathArg = $" -s \"{searchPathResponseFilePath}\"";
+#else
+                var assemblySearchPathArg = string.Empty;
+#endif
+                return $"\"{referencesResponseFilePath}\"{assemblySearchPathArg} -a {string.Join(",", assemblyPaths.Select(p => $"\"{Path.GetFullPath(p)}\""))} {whitelistArg}";
             }
+
+#if UNITY_2022_1_OR_NEWER
+            IEnumerable<string> AssemblySearchPaths()
+            {
+                return NetStandardSearchPaths().Concat(new [] { $"{EditorApplication.applicationContentsPath}/Managed" });
+            }
+
+            IEnumerable<string> NetStandardSearchPaths()
+            {
+                yield return Path.Combine(GetNetStandardDir(), "ref", "2.1.0");
+                yield return Path.Combine(GetNetStandardDir(), "compat", "2.1.0", "shims", "netfx");
+                yield return Path.Combine(GetNetStandardDir(), "compat", "2.1.0", "shims", "netstandard");
+            }
+
+            string GetNetStandardDir() => Path.Combine(EditorApplication.applicationContentsPath, "NetStandard");
+#endif
         }
     }
 #endif

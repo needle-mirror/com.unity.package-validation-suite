@@ -4,6 +4,9 @@ All notable changes to this package will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## [0.23.1-preview] - 2021-10-29
+- Changed API Updater Configuration Validation to pass a list of folders which ConfigurationValidator tool uses when resolving assemblies.
+
 ## [0.23.0-preview] - 2021-10-18
 - Fixed API Updater Configuration Validation failing due to passing a too long arguments string to the ConfigurationValidator process.
 - Changed API Validation to only run when on Windows and the editor version matches the `unity` property of the package manifest. Previous assemblies are now fetched under a new v2 prefix were all assemblies were built on Windows with an editor version matching the aforementioned `unity` property.
