@@ -4,6 +4,10 @@ All notable changes to this package will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## [0.23.3-preview] - 2021-11-10
+- Fixed `Mono.Cecil.AssemblyResolutionException` while running API Updater Configuration Validation failing to resolve assemblies under `Library/ScriptAssemblies` folder.
+
+
 ## [0.23.2-preview] - 2021-11-02
 - Fixed `Mono.Cecil.AssemblyResolutionException` while running API Updater Configuration Validation failing to resolve `UnityEngine.CoreModule` because its location was not included in the search path.
 

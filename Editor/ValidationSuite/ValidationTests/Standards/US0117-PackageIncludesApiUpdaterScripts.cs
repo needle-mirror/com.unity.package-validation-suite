@@ -165,7 +165,12 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests.Standards
 #if UNITY_2022_1_OR_NEWER
             IEnumerable<string> AssemblySearchPaths()
             {
-                return NetStandardSearchPaths().Concat(new [] { $"{EditorApplication.applicationContentsPath}/Managed", $"{EditorApplication.applicationContentsPath}/Managed/UnityEngine" });
+                return NetStandardSearchPaths().Concat(new []
+                {
+                    $"{EditorApplication.applicationContentsPath}/Managed",
+                    $"{EditorApplication.applicationContentsPath}/Managed/UnityEngine",
+                    "Library/ScriptAssemblies"
+                });
             }
 
             IEnumerable<string> NetStandardSearchPaths()
