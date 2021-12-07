@@ -11,6 +11,8 @@ using UnityEngine;
 using UnityEngine.Networking;
 using UnityEngine.Profiling;
 using UnityEditor.PackageManager.ValidationSuite.ValidationTests;
+using System.Security.Cryptography;
+using System.Text;
 
 namespace UnityEditor.PackageManager.ValidationSuite
 {
@@ -25,6 +27,9 @@ namespace UnityEditor.PackageManager.ValidationSuite
         public ManifestData PublishPackageInfo { get; set; }
         public ManifestData PreviousPackageInfo { get; set; }
         public string[] AllVersions { get; set; }
+
+        // Used to skip some validations that are not relevant to release management
+        public bool IsRunByReleaseManagement { get; set; }
 
         public ManifestData VSuiteInfo { get; set; }
 
@@ -158,6 +163,20 @@ namespace UnityEditor.PackageManager.ValidationSuite
 
             // Get exception Data, if any was added to the package.
             context.ValidationExceptionManager = new ValidationExceptionManager(context.PublishPackageInfo.path);
+
+            // Check if run by release management by inspecting environment variable.
+            const string releaseManagementSecretEnvVarName = "PVS_RM_SECRET";
+            var releaseManagementSecret = Environment.GetEnvironmentVariable(releaseManagementSecretEnvVarName);
+            if (!string.IsNullOrEmpty(releaseManagementSecret))
+            {
+                if (CheckReleaseManagementSecret(releaseManagementSecret))
+                    context.IsRunByReleaseManagement = true;
+                else
+                {
+                    ActivityLogger.Log("Incorrect release management secret. " +
+                                       $"Fix or unset environment variable {releaseManagementSecretEnvVarName}.");
+                }
+            }
 
             Profiler.EndSample();
 
@@ -374,6 +393,21 @@ namespace UnityEditor.PackageManager.ValidationSuite
                 name = vSuitePackageInfo.name,
                 displayName = vSuitePackageInfo.displayName
             };
+        }
+
+        static bool CheckReleaseManagementSecret(string secret)
+        {
+            const string expectedHashedSecret = "e7b9469389ff421a18b8cdde6e9e1a1cf12f941687f5183e8b99e937530a612d";
+
+            // Check secret against hard-coded hashed secret
+            using (var sha256 = new SHA256Managed())
+            {
+                var secretBytes = Encoding.UTF8.GetBytes(secret);
+                var hashBytes = sha256.ComputeHash(secretBytes);
+                var hashedSecret = BitConverter.ToString(hashBytes).Replace("-", "").ToLowerInvariant();
+
+                return hashedSecret == expectedHashedSecret;
+            }
         }
     }
 }

@@ -37,10 +37,9 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests.Standards
                 RunValidator(references, validatorPath, asmdefAssemblyPaths, packageName, packagePath);
             }
 
-            // TODO: precompiledAssemblyInfo should not include assemblies that are not going to be part of the final package.
-            // TODO: Directories that ends in ~ are not included in the packed package so that would give incorrect results.
-            // TODO: Make sure to only check for special characters inside the package path not the entire absolute path since will cause issues if there's ~ in a parent folder.
-            var precompiledAssemblyInfo = info.Where(i => i.assemblyKind == AssemblyInfo.AssemblyKind.PrecompiledAssembly).ToArray();
+            // precompiledAssemblyInfo should not include assemblies that are not going to be part of the final package.
+            // so, to avoid false positives/negatives, ignore any files with a relative path containing `~/`.
+            var precompiledAssemblyInfo = info.Where(i => i.assemblyKind == AssemblyInfo.AssemblyKind.PrecompiledAssembly && !i.precompiledDllPath.Substring(packagePath.Length).Contains("~/")).ToArray();
             if (precompiledAssemblyInfo.Length > 0)
             {
                 var precompiledDllPaths = precompiledAssemblyInfo.Select(i => Path.GetFullPath(i.precompiledDllPath));

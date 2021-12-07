@@ -55,12 +55,18 @@ namespace UnityEditor.PackageManager.ValidationSuite
         public string GetAllOutput()
         {
             var sb = new System.Text.StringBuilder();
-            sb.AppendLine("stdout:");
+            sb.Append("stdout:\n");
             foreach (var s in GetStandardOutput())
-                sb.AppendLine(s);
-            sb.AppendLine("stderr:");
+            {
+                sb.Append(s);
+                sb.Append("\n");
+            }
+            sb.Append("stderr:\n");
             foreach (var s in GetErrorOutput())
-                sb.AppendLine(s);
+            {
+                sb.Append(s);
+                sb.Append("\n");
+            }
             return sb.ToString();
         }
 
@@ -138,7 +144,10 @@ namespace UnityEditor.PackageManager.ValidationSuite
         {
             var sb = new System.Text.StringBuilder();
             foreach (var t in output)
-                sb.AppendLine(t);
+            {
+                sb.Append(t);
+                sb.Append("\n");
+            }
             return sb.ToString();
         }
 

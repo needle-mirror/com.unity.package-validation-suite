@@ -92,6 +92,10 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
         {
             TestState = TestState.Succeeded;
 
+            // SKIP_APIVALIDATION_PLATFORM_AND_VERSION_SANITY_CHECKS
+            // can be set to override the sanity checks and so ensure devs
+            // can run PVS tests on non Windows boxes.
+#if !SKIP_APIVALIDATION_PLATFORM_AND_VERSION_SANITY_CHECKS
             const string howToRunMessage =
                 "In order for API Validation to run the platform must be Windows and " +
                 "the package manifest must have a unity property that matches the major and minor version of " +
@@ -132,6 +136,7 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
                 TestState = TestState.NotRun;
                 return;
             }
+#endif
 
             //does it compile?
             if (EditorUtility.scriptCompilationFailed)
@@ -239,8 +244,7 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
                     List<IAPIChange> entityChanges;
                     try
                     {
-                        entityChanges = APIChangesCollector.Collect(apiChangesAssemblyInfo)
-                            .SelectMany(c => c.Changes).ToList();
+                        entityChanges = APIChangesCollector.Collect(apiChangesAssemblyInfo).SelectMany(c => c.Changes).Where(c => !IsOverride(c)).ToList();
                     }
                     catch (AssemblyResolutionException exception)
                     {
@@ -317,6 +321,8 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
                 ReleasePackageValidateApiDiffs(diff, changeType);
 #endif
         }
+
+        private static bool IsOverride(IAPIChange change) => change is MemberAdded ma && ma.Overrides != null;
 
 #if UNITY_2019_1_OR_NEWER
 

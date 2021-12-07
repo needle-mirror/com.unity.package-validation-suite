@@ -157,7 +157,17 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
             }
 
             if (message != String.Empty)
-                AddPromotionConditionalError(message);
+            {
+                // Always add message as a warning when run by release management
+                if (Context.IsRunByReleaseManagement)
+                {
+                    AddWarning(message);
+                }
+                else
+                {
+                    AddPromotionConditionalError(message);
+                }
+            }
         }
 
         private void PreReleaseChecks(ManifestData currentManifest)
