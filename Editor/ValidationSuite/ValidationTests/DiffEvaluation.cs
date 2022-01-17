@@ -52,12 +52,12 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
             //      - Diff actual file, report what changed...
             // Meta files - if all meta files have changed, that's a red flag
             // if there are no common files, all files have changed,
-            GenerateReport(ValidationSuiteReport.ResultsPath, Context.PublishPackageInfo, Context.PreviousPackageInfo);
+            GenerateReport(ValidationSuiteReport.ResultsPath, Context.PreviousPackageInfo, Context.PublishPackageInfo);
 
             TestState = TestState.Succeeded;
         }
 
-        public void GenerateReport(string outputPath, ManifestData newPackageManifestData, ManifestData previousPackageManifestData)
+        public void GenerateReport(string outputPath, ManifestData previousPackageManifestData, ManifestData newPackageManifestData)
         {
             // no previous package was found.
             if (Context.PreviousPackageInfo == null)
@@ -68,61 +68,66 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
 
             var compareData = new PackageCompareData();
 
-            compareData.TreeOutput.AppendLine("<" + newPackageManifestData.name + ">");
-            Compare(compareData, newPackageManifestData.path, previousPackageManifestData.path, 1);
+            compareData.TreeOutput.Append("<" + newPackageManifestData.name + ">\n");
+            Compare(compareData, previousPackageManifestData.path, newPackageManifestData.path);
 
             string fileName = Path.Combine(outputPath, newPackageManifestData.name + "@" + newPackageManifestData.version) + ".delta";
             StringBuilder Outout = new StringBuilder();
-            Outout.AppendLine("Package Update Delta Evaluation");
-            Outout.AppendLine("-------------------------------");
-            Outout.AppendLine("");
-            Outout.AppendLine("Package Name: " + newPackageManifestData.name);
-            Outout.AppendLine("Package Version: " + newPackageManifestData.version);
-            Outout.AppendLine("Compared to Version: " + previousPackageManifestData.version);
-            Outout.AppendLine("");
+            Outout.Append("Package Update Delta Evaluation\n");
+            Outout.Append("-------------------------------\n");
+            Outout.Append("\n");
+            Outout.Append("Package Name: " + newPackageManifestData.name + "\n");
+            Outout.Append("Package Version: " + newPackageManifestData.version + "\n");
+            Outout.Append("Compared to Version: " + previousPackageManifestData.version + "\n");
+            Outout.Append("\n");
             if (compareData.Added.Any())
             {
-                Outout.AppendLine("New in package:");
+                Outout.Append("New in package:\n");
                 foreach (var addedFile in compareData.Added)
                 {
-                    Outout.AppendLine("    " + addedFile.Substring(previousPackageManifestData.path.Length));
+                    Outout.Append("    " + addedFile + "\n");
                 }
 
-                Outout.AppendLine("");
+                Outout.Append("\n");
             }
 
             if (compareData.Removed.Any())
             {
-                Outout.AppendLine("Removed from package:");
+                Outout.Append("Removed from package:\n");
                 foreach (var removedFile in compareData.Removed)
                 {
-                    Outout.AppendLine("    " + removedFile.Substring(newPackageManifestData.path.Length));
+                    Outout.Append("    " + removedFile + "\n");
                 }
 
-                Outout.AppendLine("");
+                Outout.Append("\n");
             }
 
             if (compareData.Modified.Any())
             {
-                Outout.AppendLine("Modified:");
+                Outout.Append("Modified:\n");
                 foreach (var modifiedFile in compareData.Modified)
                 {
-                    Outout.AppendLine("    " + modifiedFile.Substring(newPackageManifestData.path.Length));
+                    Outout.Append("    " + modifiedFile + "\n");
                 }
 
-                Outout.AppendLine("");
+                Outout.Append("\n");
             }
 
-            Outout.AppendLine("");
-            Outout.AppendLine("Package Tree");
-            Outout.AppendLine("------------");
-            Outout.AppendLine("");
+            Outout.Append("\n");
+            Outout.Append("Package Tree\n");
+            Outout.Append("------------\n");
+            Outout.Append("\n");
             Outout.Append(compareData.TreeOutput);
 
             File.WriteAllText(fileName, Outout.ToString());
         }
 
-        private void Compare(PackageCompareData compareData, string path1, string path2, int depth = 0)
+        void Compare(PackageCompareData compareData, string path1, string path2)
+        {
+            Compare(compareData, path1, path1.Length + 1, path2, path2.Length + 1, 1);
+        }
+
+        void Compare(PackageCompareData compareData, string path1, int path1PrefixLength, string path2, int path2PrefixLength, int depth)
         {
             var AddedTag = "  ++ADDED++";
             var RemovedTag = "  --REMOVED--";
@@ -143,18 +148,19 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
                     var file2 = new FileInfo(Path.Combine(path2, file));
                     if (file1.Length == file2.Length)
                     {
-                        compareData.TreeOutput.AppendLine(linePrefix + file);
+                        compareData.TreeOutput.Append(linePrefix + file + "\n");
                     }
                     else
                     {
-                        compareData.TreeOutput.AppendLine(linePrefix + file + ModifiedTag);
-                        compareData.Modified.Add(Path.Combine(path1, file));
+                        compareData.TreeOutput.Append(linePrefix + file + ModifiedTag + "\n");
+                        compareData.Modified.Add(Path.Combine(path1, file).Replace("\\", "/").Substring(path1PrefixLength));
+
                     }
                 }
                 else
                 {
-                    compareData.TreeOutput.AppendLine(linePrefix + file + RemovedTag);
-                    compareData.Removed.Add(Path.Combine(path1, file));
+                    compareData.TreeOutput.Append(linePrefix + file + RemovedTag + "\n");
+                    compareData.Removed.Add(Path.Combine(path1, file).Replace("\\", "/").Substring(path1PrefixLength));
                 }
             }
 
@@ -162,8 +168,8 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
             {
                 if (!files1.Contains(file))
                 {
-                    compareData.TreeOutput.AppendLine(linePrefix + file + AddedTag);
-                    compareData.Added.Add(Path.Combine(path2, file));
+                    compareData.TreeOutput.Append(linePrefix + file + AddedTag + "\n");
+                    compareData.Added.Add(Path.Combine(path2, file).Replace("\\", "/").Substring(path2PrefixLength));
                 }
             }
 
@@ -176,22 +182,22 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
             {
                 if (dirs2.Contains(directory))
                 {
-                    compareData.TreeOutput.AppendLine(linePrefix + "<" + directory + ">");
-                    Compare(compareData, Path.Combine(path1, directory), Path.Combine(path2, directory), depth);
+                    compareData.TreeOutput.Append(linePrefix + "<" + directory + ">\n");
+                    Compare(compareData, Path.Combine(path1, directory), path1PrefixLength, Path.Combine(path2, directory), path2PrefixLength, depth);
                 }
                 else
                 {
-                    compareData.TreeOutput.AppendLine(linePrefix + "<" + directory + ">" + RemovedTag);
-                    Compare(compareData, Path.Combine(path1, directory), null, depth);
+                    compareData.TreeOutput.Append(linePrefix + "<" + directory + ">" + RemovedTag + "\n");
+                    Compare(compareData, Path.Combine(path1, directory), path1PrefixLength, null, 0, depth);
                 }
             }
 
             foreach (var directory in dirs2)
             {
-                if (!dirs2.Contains(directory))
+                if (!dirs1.Contains(directory))
                 {
-                    compareData.TreeOutput.AppendLine(linePrefix + "<" + directory + ">" + AddedTag);
-                    Compare(compareData, null, Path.Combine(path2, directory), depth);
+                    compareData.TreeOutput.Append(linePrefix + "<" + directory + ">" + AddedTag + "\n");
+                    Compare(compareData, null, 0, Path.Combine(path2, directory), path2PrefixLength, depth);
                 }
             }
         }
