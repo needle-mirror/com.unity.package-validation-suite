@@ -4,6 +4,10 @@ All notable changes to this package will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## [0.23.7-preview] - 2022-03-17
+- Added [Unity.APIValidation](https://github.cds.internal.unity3d.com/unity/Unity.APIValidation) as a submodule to remove dependency on specific version of Mono.Cecil
+- Template project manifest validation: Fixed false errors when running PVS manually from within the editor (PVS-82).
+
 ## [0.23.6-preview] - 2022-02-23
 - Skip a number of tests on Apple silicon (case 1387086)
 

@@ -1,24 +1,24 @@
 {
   "name": "com.unity.package-validation-suite",
   "displayName": "Package Validation Suite",
-  "version": "0.23.6-preview",
+  "version": "0.23.7-preview",
   "unity": "2018.4",
   "description": "Unity Package Manager validation suite, used to evaluate a package's integrity before it's considered for publishing.  This is a Unity internal tool at the moment, no support will be provided for this package.",
   "dependencies": {
     "com.unity.nuget.mono-cecil": "0.1.6-preview.2"
   },
   "upm": {
-    "changelog": "- Skip a number of tests on Apple silicon (case 1387086)"
+    "changelog": "- Added [Unity.APIValidation](https://github.cds.internal.unity3d.com/unity/Unity.APIValidation) as a submodule to remove dependency on specific version of Mono.Cecil\r\n- Template project manifest validation: Fixed false errors when running PVS manually from within the editor (PVS-82)."
   },
   "relatedPackages": {
-    "com.unity.package-validation-suite.tests": "0.23.6-preview"
+    "com.unity.package-validation-suite.tests": "0.23.7-preview"
   },
   "upmCi": {
-    "footprint": "db00a655a93881ffbe385ca3cc62b1885e6f5ab6"
+    "footprint": "cd70f3cab38edf415cf0ba22f7e7f863c015e6a0"
   },
   "repository": {
     "url": "https://github.cds.internal.unity3d.com/unity/com.unity.package-validation-suite.git",
     "type": "git",
-    "revision": "35f5c636885beceff540f4c9f6ed9cc9c606163b"
+    "revision": "141e3ae2a3df3f959f8d3ddac28952f4563fc5d7"
   }
 }

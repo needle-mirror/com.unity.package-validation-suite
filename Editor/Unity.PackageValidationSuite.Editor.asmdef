@@ -1,7 +1,9 @@
 {
     "name": "Unity.PackageValidationSuite.Editor",
     "rootNamespace": "",
-    "references": [],
+    "references": [
+        "Unity.APIComparison.Framework"
+    ],
     "includePlatforms": [
         "Editor"
     ],

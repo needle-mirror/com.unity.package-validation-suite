@@ -20,10 +20,8 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
 
     internal class TemplateProjectValidation : BaseValidation
     {
-        private readonly string[] _allowedFields =
-        {
-            "dependencies"
-        };
+        readonly string[] _synthesizedManifestFields = { "dependencies", "registry" };
+        readonly string[] _allowedFields = { "dependencies" };
 
         internal static readonly string k_DocsFilePath = "template_project_validation_errors.html";
 
@@ -72,6 +70,15 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
         {
             foreach (string fieldName in Context.ProjectInfo.ProjectManifestKeys)
             {
+                if (!Context.ProjectInfo.IsValidatingPackedManifest && !_synthesizedManifestFields.Contains(fieldName))
+                {
+                    // We're looking at the project manifest, instead of the synthesized
+                    // manifest that "upm-ci template pack" would create. That synthesis
+                    // only copies over the two fields in _synthesizedManifestFields, so
+                    // don't check other fields (which won't be in the final tarball).
+                    continue;
+                }
+
                 if (_allowedFields.Contains(fieldName))
                     continue;
 

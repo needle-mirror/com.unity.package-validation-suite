@@ -10,6 +10,7 @@ namespace UnityEditor.PackageManager.ValidationSuite
 {
     internal class ProjectInfo
     {
+        public bool IsValidatingPackedManifest = true;
         public string ManifestPath = "";
         public string PackageManagerSettingsPath = "";
         // Used for template package validation
@@ -35,7 +36,8 @@ namespace UnityEditor.PackageManager.ValidationSuite
             string packmanSettingsPath = Path.Combine(context.PublishPackageInfo.path, "ProjectData~",
                 "ProjectSettings", "PackageManagerSettings.asset");
 
-            ManifestPath = File.Exists(packedManifestPath)
+            IsValidatingPackedManifest = File.Exists(packedManifestPath);
+            ManifestPath = IsValidatingPackedManifest
                 ? packedManifestPath
                 : Path.GetFullPath("Packages/manifest.json");
 
