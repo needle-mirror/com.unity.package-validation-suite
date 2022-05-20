@@ -35,7 +35,7 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
         {
             assemblyKind = AssemblyKind.Asmdef;
             this.assembly = assembly;
-            this.asmdefPath = asmdefPath;
+            this.asmdefPath = Path.GetFullPath(asmdefPath);
         }
 
         public AssemblyInfo(string precompiledDllPath)

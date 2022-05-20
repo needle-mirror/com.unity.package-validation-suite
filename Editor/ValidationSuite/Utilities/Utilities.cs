@@ -52,6 +52,17 @@ namespace UnityEditor.PackageManager.ValidationSuite
             return JsonUtility.FromJson<T>(File.ReadAllText(jsonFile));
         }
 
+        internal static void EnsureDirectoryExists(string path)
+        {
+            try
+            {
+                Directory.CreateDirectory(path);
+            }
+            catch (IOException) when (Directory.Exists(path))
+            {
+            }
+        }
+
         internal static string CreatePackage(string path, string workingDirectory)
         {
             //No Need to delete the file, npm pack always overwrite: https://docs.npmjs.com/cli/pack
@@ -355,8 +366,7 @@ namespace UnityEditor.PackageManager.ValidationSuite
             if (string.IsNullOrEmpty(path))
                 return null;
 
-            var asmdefPath = Path.GetFullPath(path);
-            return new AssemblyInfo(assembly, asmdefPath);
+            return new AssemblyInfo(assembly, path);
         }
 
         internal static void RecursiveDirectorySearch(string path, string searchPattern, ref List<string> matches)

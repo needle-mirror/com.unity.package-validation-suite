@@ -19,8 +19,7 @@ namespace UnityEditor.PackageManager.ValidationSuite
             if (File.Exists(buildScript))
                 return buildScript;
 
-            if (!Directory.Exists(upmTemplateUtilsPath))
-                Directory.CreateDirectory(upmTemplateUtilsPath);
+            Utilities.EnsureDirectoryExists(upmTemplateUtilsPath);
 
             var launcher = new NodeLauncher();
             launcher.NpmLogLevel = "error";

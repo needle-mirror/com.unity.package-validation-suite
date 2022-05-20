@@ -4,6 +4,11 @@ All notable changes to this package will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## [0.23.8-preview] - 2022-05-20
+- Renamed log4net assembly to avoid name clash with other packages.
+- Package Validation Profiles: added `Pvp.RunTests` entrypoint and support for running API docs validation in PVP mode.
+- Adjust validation of `documentationUrl` package manifest property to prepare for UPMCI-174. (This does not affect package authors.)
+
 ## [0.23.7-preview] - 2022-03-17
 - Added [Unity.APIValidation](https://github.cds.internal.unity3d.com/unity/Unity.APIValidation) as a submodule to remove dependency on specific version of Mono.Cecil
 - Template project manifest validation: Fixed false errors when running PVS manually from within the editor (PVS-82).

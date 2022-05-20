@@ -61,6 +61,8 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
             foreach (var badFilePath in assemblyInfoOutsidePackage.SelectMany(a => a.assembly.sourceFiles).Where(files.Contains))
                 AddError("Script \"{0}\" is not included by any asmdefs in the package.", badFilePath);
 
+            // BUG: packagePath doesn't end on a '/', so a path "foo2" is considered
+            // relevant for a package path "foo". Kept for compatibility.
             var relevantAssemblyInfo =
                 allAssemblyInfo.Where(a => a.asmdefPath.StartsWith(packagePath));
 

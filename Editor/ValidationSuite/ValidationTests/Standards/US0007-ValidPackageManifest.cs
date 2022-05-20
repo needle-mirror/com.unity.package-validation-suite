@@ -1,4 +1,5 @@
 using System.Text.RegularExpressions;
+using Semver;
 
 namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests.Standards
 {
@@ -46,8 +47,16 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests.Standards
             // check documentation url field
             if (validationType == ValidationType.Promotion || validationType == ValidationType.CI)
             {
+                if (!SemVersion.TryParse(manifestData.version, out var parsedVersion))
+                {
+                    AddError("Failed to extract major and minor version from \"version\" property in package.json.");
+                    return;
+                }
+                var allowedDocumentationUrl = $"https://docs.unity3d.com/Packages/{manifestData.name}@{parsedVersion.Major}.{parsedVersion.Minor}/manual/index.html";
+
                 // TODO: The standard says "The field documentationUrl is empty" but not "when running tests on CI, or during promotion"
-                if (!string.IsNullOrWhiteSpace(manifestData.documentationUrl))
+                // Allow documentation URL to be set explicitly (PVS-101). Note that this is not currently allowed by the standard.
+                if (!string.IsNullOrWhiteSpace(manifestData.documentationUrl) && manifestData.documentationUrl != allowedDocumentationUrl)
                 {
                     AddError("In package.json, \"documentationUrl\" can't be used for Unity packages.  It is a features reserved for enterprise customers.  The Unity documentation team will ensure the package's documentation is published in the appropriate fashion");
                 }
