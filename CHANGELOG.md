@@ -4,6 +4,9 @@ All notable changes to this package will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## [0.24.0-preview] - 2022-06-28
+-  Remove repository metadata checks in Manifest Validation.
+
 ## [0.23.8-preview] - 2022-05-20
 - Renamed log4net assembly to avoid name clash with other packages.
 - Package Validation Profiles: added `Pvp.RunTests` entrypoint and support for running API docs validation in PVP mode.

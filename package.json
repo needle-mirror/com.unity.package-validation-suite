@@ -1,24 +1,24 @@
 {
   "name": "com.unity.package-validation-suite",
   "displayName": "Package Validation Suite",
-  "version": "0.23.8-preview",
+  "version": "0.24.0-preview",
   "unity": "2018.4",
   "description": "Unity Package Manager validation suite, used to evaluate a package's integrity before it's considered for publishing.  This is a Unity internal tool at the moment, no support will be provided for this package.",
   "dependencies": {
     "com.unity.nuget.mono-cecil": "0.1.6-preview.2"
   },
   "_upm": {
-    "changelog": "- Renamed log4net assembly to avoid name clash with other packages.\r\n- Package Validation Profiles: added `Pvp.RunTests` entrypoint and support for running API docs validation in PVP mode.\r\n- Adjust validation of `documentationUrl` package manifest property to prepare for UPMCI-174. (This does not affect package authors.)"
+    "changelog": "-  Remove repository metadata checks in Manifest Validation."
   },
   "relatedPackages": {
-    "com.unity.package-validation-suite.tests": "0.23.8-preview"
+    "com.unity.package-validation-suite.tests": "0.24.0-preview"
   },
   "upmCi": {
-    "footprint": "608f75e3d34c4c89fd4eabcd322707dc2ce971e7"
+    "footprint": "7f7a6ac82258bd24578a8a6fbefcbde61fde3646"
   },
   "repository": {
     "url": "https://github.cds.internal.unity3d.com/unity/com.unity.package-validation-suite.git",
     "type": "git",
-    "revision": "0eb3d9056d6cf80c26bbf4a8b07afd9c479f6d29"
+    "revision": "432e9ff3dc3769f1fc0e0f14ef47320748996d4e"
   }
 }

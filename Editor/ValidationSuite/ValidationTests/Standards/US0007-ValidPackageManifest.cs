@@ -60,13 +60,6 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests.Standards
                 {
                     AddError("In package.json, \"documentationUrl\" can't be used for Unity packages.  It is a features reserved for enterprise customers.  The Unity documentation team will ensure the package's documentation is published in the appropriate fashion");
                 }
-
-                // Check if `repository.url` and `repository.revision` exist and the content is valid
-                string value;
-                if (!manifestData.repository.TryGetValue("url", out value) || string.IsNullOrEmpty(value))
-                    AddError($"In package.json for a published package, there must be a \"repository.url\" field. {ErrorDocumentation.GetLinkMessage(ManifestValidation.k_DocsFilePath, "for_a_published_package_there_must_be_a_repository.url_field")}");
-                if (!manifestData.repository.TryGetValue("revision", out value) || string.IsNullOrEmpty(value))
-                    AddError($"In package.json for a published package, there must be a \"repository.revision\" field. {ErrorDocumentation.GetLinkMessage(ManifestValidation.k_DocsFilePath, "for_a_published_package_there_must_be_a_repository.revision_field")}");
             }
             else
             {
