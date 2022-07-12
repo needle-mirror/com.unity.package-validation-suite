@@ -60,23 +60,25 @@ namespace UnityEditor.PackageManager.ValidationSuite
             PackageInfoList.Add(packageName, packageInfo);
             return packageInfo;
         }
-
 #endif
+
         public static VettingContext CreatePackmanContext(string packageId, ValidationType validationType)
+            => CreatePackmanContext(new PackageId(packageId), validationType);
+
+        internal static VettingContext CreatePackmanContext(PackageId package, ValidationType validationType)
         {
             Profiler.BeginSample("CreatePackmanContext");
             ActivityLogger.Log("Starting Packman Context Creation");
 
             VettingContext context = new VettingContext();
-            var packageParts = packageId.Split('@');
             var packageList = Utilities.UpmListOffline();
 
-            ActivityLogger.Log("Looking for package {0} in project", packageParts[0]);
-            var packageInfo = packageList.SingleOrDefault(p => p.name == packageParts[0] && p.version == packageParts[1]);
+            ActivityLogger.Log("Looking for package {0} in project", package.Name);
+            var packageInfo = packageList.SingleOrDefault(p => new PackageId(p) == package);
 
             if (packageInfo == null)
             {
-                throw new ArgumentException("Package Id " + packageId + " is not part of this project.");
+                throw new ArgumentException("Package Id " + package + " is not part of this project.");
             }
 
 #if UNITY_2019_1_OR_NEWER
@@ -91,13 +93,14 @@ namespace UnityEditor.PackageManager.ValidationSuite
 
             if (context.ValidationType != ValidationType.VerifiedSet)
             {
-                ActivityLogger.Log($"Checking if package {packageInfo.name} has been promoted to production");
-                context.PackageExistsOnProduction = Utilities.PackageExistsOnProduction(packageInfo.name);
+                ActivityLogger.Log($"Checking if package {packageInfo.packageId} has been promoted to production");
+                var versions = Utilities.GetPackageVersionsOnProduction(packageInfo.name);
+
+                context.PackageExistsOnProduction = versions != null;
                 ActivityLogger.Log($"Package {packageInfo.name} {(context.PackageExistsOnProduction ? "is" : "is not")} in production");
 
-                ActivityLogger.Log($"Checking if package {packageInfo.packageId} has been promoted to production");
-                context.PackageVersionExistsOnProduction = Utilities.PackageExistsOnProduction(packageInfo.packageId);
-                ActivityLogger.Log($"Package {packageInfo.packageId} {(context.PackageExistsOnProduction ? "is" : "is not")} in production");
+                context.PackageVersionExistsOnProduction = versions?.Contains(packageInfo.version) ?? false;
+                ActivityLogger.Log($"Package {packageInfo.packageId} {(context.PackageVersionExistsOnProduction ? "is" : "is not")} in production");
             }
 
             if (context.ValidationType == ValidationType.LocalDevelopment || context.ValidationType == ValidationType.LocalDevelopmentInternal)
@@ -270,17 +273,15 @@ namespace UnityEditor.PackageManager.ValidationSuite
 
             Profiler.BeginSample("PublishPackage");
 
-            var tempPath = System.IO.Path.GetTempPath();
-            string packageName = context.ProjectPackageInfo.Id.Replace("@", "-") + ".tgz";
 
             //Use upm-template-tools package-ci
-            var packagesGenerated = PackageCIUtils.Pack(packagePath, tempPath);
+            var packagesGenerated = PackageCIUtils.Pack(packagePath, Utilities.UnityTempPath);
 
-            var publishPackagePath = Path.Combine(tempPath, "publish-" + context.ProjectPackageInfo.Id);
+            var publishPackagePath = Path.Combine(Utilities.UnityTempPath, "publish-" + context.ProjectPackageInfo.Id);
             var deleteOutput = true;
             foreach (var packageTgzName in packagesGenerated)
             {
-                Utilities.ExtractPackage(packageTgzName, tempPath, publishPackagePath, context.ProjectPackageInfo.name, deleteOutput);
+                Utilities.ExtractPackage(packageTgzName, Utilities.UnityTempPath, publishPackagePath, context.ProjectPackageInfo.name, deleteOutput);
                 deleteOutput = false;
             }
 
@@ -304,7 +305,7 @@ namespace UnityEditor.PackageManager.ValidationSuite
             previousVersions = previousVersions.Reverse();
             foreach (var prevVersion in previousVersions)
             {
-                if (Utilities.PackageExistsOnProduction(packageInfo.name + "@" + prevVersion))
+                if (Utilities.PackageExistsOnProduction(new PackageId(packageInfo.name, prevVersion)))
                 {
                     previousVersion = prevVersion;
                     break;
@@ -316,11 +317,10 @@ namespace UnityEditor.PackageManager.ValidationSuite
                 try
                 {
                     ActivityLogger.Log("Retrieving previous package version {0}", previousVersion);
-                    var previousPackageId = ManifestData.GetPackageId(projectPackageInfo.name, previousVersion);
-                    var tempPath = Path.GetTempPath();
-                    var previousPackagePath = Path.Combine(tempPath, "previous-" + previousPackageId);
-                    var packageFileName = Utilities.DownloadPackage(previousPackageId, tempPath);
-                    Utilities.ExtractPackage(Path.Combine(tempPath, packageFileName), tempPath, previousPackagePath, projectPackageInfo.name);
+                    var previousPackageId = new PackageId(projectPackageInfo.name, previousVersion);
+                    var previousPackagePath = Path.Combine(Utilities.UnityTempPath, "previous-" + previousPackageId);
+                    var packageFileName = Utilities.DownloadPackage(previousPackageId, Utilities.UnityTempPath);
+                    Utilities.ExtractPackage(Path.Combine(Utilities.UnityTempPath, packageFileName), Utilities.UnityTempPath, previousPackagePath, projectPackageInfo.name);
                     return previousPackagePath;
                 }
                 catch (Exception exception)

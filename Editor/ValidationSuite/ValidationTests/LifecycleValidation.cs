@@ -123,7 +123,7 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
                 if (!SemVersion.TryParse(dependency.Value, out depVersion)) continue;
 
                 LifecyclePhase dependencyTrack = PackageLifecyclePhase.GetLifecyclePhaseOrRelation(dependency.Value.ToLower(), dependency.Key.ToLower(), Context);
-                var depId = Utilities.CreatePackageId(dependency.Key, dependency.Value);
+                var depId = new PackageId(dependency.Key, dependency.Value);
                 if (!supportedVersions.HasFlag(dependencyTrack))
                     AddError($"Package {Context.ProjectPackageInfo.Id} depends on package {depId} which is in an invalid track for release purposes. {currentTrack} versions can only depend on {supportedVersions.ToString()} versions. {ErrorDocumentation.GetLinkMessage(k_DocsFilePath, "package-depends-on-a-package-which-is-in-an-invalid-track-for-release-purposes")}");
             }

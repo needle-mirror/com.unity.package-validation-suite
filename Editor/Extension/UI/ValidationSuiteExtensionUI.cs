@@ -35,7 +35,7 @@ namespace UnityEditor.PackageManager.ValidationSuite.UI
 
         private PackageNamingConventionUS0006 _namingConventionUs0006 = new PackageNamingConventionUS0006();
         private PackageInfo CurrentPackageinfo { get; set; }
-        private string PackageId { get; set; }
+        PackageId PackageId { get; set; }
 
         public static ValidationSuiteExtensionUI CreateUI()
         {
@@ -95,15 +95,15 @@ namespace UnityEditor.PackageManager.ValidationSuite.UI
                 return;
 
             CurrentPackageinfo = packageInfo;
-            PackageId = CurrentPackageinfo.name + "@" + CurrentPackageinfo.version;
+            PackageId = new PackageId(CurrentPackageinfo);
             ValidationResults.text = string.Empty;
 
             AddRemoveUnitySpecificValidations(NamePrefixEligibleForUnityStandardsOptions(CurrentPackageinfo.name));
 
             validationPopupField.value = NamePrefixEligibleForUnityStandardsOptions(CurrentPackageinfo.name) ? ValidationTypeDropdown.UnityProductionStandardsLabelText : ValidationTypeDropdown.StructureLabelText;
 
-            UIUtils.SetElementDisplay(ViewResultsButton, ValidationSuiteReport.ReportExists(PackageId));
-            UIUtils.SetElementDisplay(ViewDiffButton, ValidationSuiteReport.DiffsReportExists(PackageId));
+            UIUtils.SetElementDisplay(ViewResultsButton, ValidationSuiteReport.ReportExists(PackageId.Id));
+            UIUtils.SetElementDisplay(ViewDiffButton, ValidationSuiteReport.DiffsReportExists(PackageId.Id));
 
             root.style.backgroundColor = Color.gray;
         }
@@ -136,10 +136,10 @@ namespace UnityEditor.PackageManager.ValidationSuite.UI
             var validationType = ValidationTypeDropdown.ValidationTypeFromDropdown(validationPopupField.value, CurrentPackageinfo.source);
 
             var results = ValidationSuite.ValidatePackage(PackageId, validationType);
-            var report = ValidationSuiteReport.GetReport(PackageId);
+            var report = ValidationSuiteReport.GetReport(PackageId.Id);
 
-            UIUtils.SetElementDisplay(ViewResultsButton, ValidationSuiteReport.ReportExists(PackageId));
-            UIUtils.SetElementDisplay(ViewDiffButton, ValidationSuiteReport.DiffsReportExists(PackageId));
+            UIUtils.SetElementDisplay(ViewResultsButton, ValidationSuiteReport.ReportExists(PackageId.Id));
+            UIUtils.SetElementDisplay(ViewDiffButton, ValidationSuiteReport.DiffsReportExists(PackageId.Id));
 
             if (!results)
             {
@@ -160,7 +160,7 @@ namespace UnityEditor.PackageManager.ValidationSuite.UI
 
         private void ViewResults()
         {
-            var filePath = TextReport.ReportPath(PackageId);
+            var filePath = TextReport.ReportPath(PackageId.Id);
             try
             {
                 try
@@ -185,9 +185,9 @@ namespace UnityEditor.PackageManager.ValidationSuite.UI
 
         private void ViewDiffs()
         {
-            if (ValidationSuiteReport.DiffsReportExists(PackageId))
+            if (ValidationSuiteReport.DiffsReportExists(PackageId.Id))
             {
-                Application.OpenURL("file://" + Path.GetFullPath(ValidationSuiteReport.DiffsReportPath(PackageId)));
+                Application.OpenURL("file://" + Path.GetFullPath(ValidationSuiteReport.DiffsReportPath(PackageId.Id)));
             }
         }
 

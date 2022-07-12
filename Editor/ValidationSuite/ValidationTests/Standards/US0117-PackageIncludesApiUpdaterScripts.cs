@@ -51,8 +51,7 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests.Standards
 
         private void RunValidator(IEnumerable<string> references, string validatorPath, IEnumerable<string> assemblyPaths, string packageName, string packagePath)
         {
-            var referencesResponseFilePath = Path.GetTempFileName();
-            File.WriteAllLines(referencesResponseFilePath, references);
+            var referencesResponseFilePath = Utilities.CreateTempFile(string.Join("\n", references));
 
             var argumentsForValidator = ArgumentsForValidator();
             var responseFilePath = Path.Combine(ValidationSuiteReport.ResultsPath, $"{packageName}.updater.validation.arguments");
@@ -152,8 +151,7 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests.Standards
                 // This changes requires all tools to be run under DotNet Core which changes the way assemblies
                 // are resolved so we now pass a list of search paths where the Unity.APIValidation should look
                 // for during assembly resolution.
-                var searchPathResponseFilePath = Path.GetTempFileName();
-                File.WriteAllText(searchPathResponseFilePath, string.Join(System.Environment.NewLine, AssemblySearchPaths()));
+                var searchPathResponseFilePath = Utilities.CreateTempFile(string.Join("\n", AssemblySearchPaths()));
                 var assemblySearchPathArg = $" -s \"{searchPathResponseFilePath}\"";
 #else
                 var assemblySearchPathArg = string.Empty;

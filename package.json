@@ -1,24 +1,24 @@
 {
   "name": "com.unity.package-validation-suite",
   "displayName": "Package Validation Suite",
-  "version": "0.24.0-preview",
+  "version": "0.25.0-preview",
   "unity": "2018.4",
   "description": "Unity Package Manager validation suite, used to evaluate a package's integrity before it's considered for publishing.  This is a Unity internal tool at the moment, no support will be provided for this package.",
   "dependencies": {
     "com.unity.nuget.mono-cecil": "0.1.6-preview.2"
   },
-  "_upm": {
-    "changelog": "-  Remove repository metadata checks in Manifest Validation."
-  },
   "relatedPackages": {
-    "com.unity.package-validation-suite.tests": "0.24.0-preview"
+    "com.unity.package-validation-suite.tests": "0.25.0-preview"
+  },
+  "_upm": {
+    "changelog": ""
   },
   "upmCi": {
-    "footprint": "7f7a6ac82258bd24578a8a6fbefcbde61fde3646"
+    "footprint": "78d160b30bd7fe0c8024ae0a5f3cda7939538d5c"
   },
   "repository": {
     "url": "https://github.cds.internal.unity3d.com/unity/com.unity.package-validation-suite.git",
     "type": "git",
-    "revision": "432e9ff3dc3769f1fc0e0f14ef47320748996d4e"
+    "revision": "f7bd8fe94fedf5cea18d1f87836a94269f584525"
   }
 }

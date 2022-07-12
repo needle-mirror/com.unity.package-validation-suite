@@ -28,17 +28,16 @@ static class Pvp
             var packages = pvp.GetProjectDirectPackageDependencies();
             foreach (var packageId in packages)
             {
-                var packageName = packageId.Split('@')[0];
-                var path = $"Library/pvp/{packageName}.json";
+                var path = $"Library/pvp/{packageId.Name}.json";
 
                 // Don't check PVS unless PVS is the only package here.
-                if (packages.Count != 1 && packageName == Utilities.VSuiteName)
+                if (packages.Count != 1 && packageId.Name == Utilities.VSuiteName)
                 {
                     continue;
                 }
 
                 Debug.Log($"Running PVP checks for {packageId}; results will be saved to {path}.");
-                var results = pvp.Run(packageId, null);
+                var results = pvp.Run(packageId.Name, null);
                 File.WriteAllText(path, results.ToJson());
             }
         }
@@ -193,11 +192,11 @@ namespace UnityEditor.PackageManager.ValidationSuite
 
 #if UNITY_2019_2_OR_NEWER
         // 2019.2.0a7: isRootDependency renamed to isDirectDependency and made public
-        internal List<string> GetProjectDirectPackageDependencies()
+        internal List<PackageId> GetProjectDirectPackageDependencies()
         {
             return m_PackageInfos
                 .Where(pkg => pkg.isDirectDependency && pkg.source != PackageSource.BuiltIn)
-                .Select(pkg => pkg.packageId)
+                .Select(pkg => new PackageId(pkg))
                 .ToList();
         }
 #endif
@@ -228,7 +227,8 @@ namespace UnityEditor.PackageManager.ValidationSuite
 
             var packagePathPrefix = Path.GetFullPath(packagePath) + Path.DirectorySeparatorChar;
             var assemblyInfoOutsidePackage = allAssemblyInfo.Where(a => !a.asmdefPath.StartsWith(packagePathPrefix, StringComparison.Ordinal)).ToArray();
-            foreach (var badFilePath in assemblyInfoOutsidePackage.SelectMany(a => a.assembly.sourceFiles).Where(files.Contains))
+            var badFilePath = assemblyInfoOutsidePackage.SelectMany(a => a.assembly.sourceFiles).Where(files.Contains).FirstOrDefault();
+            if (badFilePath != null)
             {
                 throw new InvalidOperationException($"Script \"{badFilePath}\" is not included by any asmdefs in the package.");
             }
@@ -236,14 +236,14 @@ namespace UnityEditor.PackageManager.ValidationSuite
             return allAssemblyInfo.Where(a => a.asmdefPath.StartsWith(packagePathPrefix, StringComparison.Ordinal)).ToArray();
         }
 
-        public Results Run(string packageId, Action<int, int> onProgress = null)
+        public Results Run(string packageName, Action<int, int> onProgress = null)
         {
             var progressNow = 0;
             var progressMax = m_Validations.Count + 1;
             onProgress?.Invoke(progressNow, progressMax);
 
             var checks = new Dictionary<string, List<string>>();
-            var package = VettingContext.GetManifest(GetPackageInfo(packageId.Split('@')[0]).resolvedPath);
+            var package = VettingContext.GetManifest(GetPackageInfo(packageName).resolvedPath);
             var input = new Input
             {
                 AssemblyInfo = GetRelevantAssemblyInfo(package.path),

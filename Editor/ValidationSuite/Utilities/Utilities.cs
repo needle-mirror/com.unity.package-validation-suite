@@ -3,9 +3,12 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
+using System.Net;
+using System.Net.Http;
 using System.Reflection;
 using System.Text;
 using System.Threading;
+using System.Threading.Tasks;
 using Semver;
 using UnityEngine;
 using UnityEngine.Profiling;
@@ -117,7 +120,7 @@ namespace UnityEditor.PackageManager.ValidationSuite
             return result.ToArray();
         }
 
-        internal static string DownloadPackage(string packageId, string workingDirectory)
+        internal static string DownloadPackage(PackageId package, string workingDirectory)
         {
             //No Need to delete the file, npm pack always overwrite: https://docs.npmjs.com/cli/pack
             var launcher = new NodeLauncher();
@@ -126,7 +129,7 @@ namespace UnityEditor.PackageManager.ValidationSuite
 
             try
             {
-                launcher.NpmPack(packageId);
+                launcher.NpmPack(package.Id);
             }
             catch (ApplicationException exception)
             {
@@ -138,25 +141,76 @@ namespace UnityEditor.PackageManager.ValidationSuite
             return packageName;
         }
 
-        internal static bool PackageExistsOnProduction(string packageId)
+        static (int, string) ReadHttpTextFile(string url)
         {
-            var launcher = new NodeLauncher();
-            launcher.NpmRegistry = NodeLauncher.ProductionRepositoryUrl;
-
-            try
+            var nRetry = 0;
+            while (true)
             {
-                launcher.NpmView(packageId);
+                using (var client = new HttpClient())
+                {
+                    client.DefaultRequestHeaders.ExpectContinue = false;
+                    client.Timeout = TimeSpan.FromMinutes(1);
+
+                    using (var request = new HttpRequestMessage(HttpMethod.Get, url))
+                    {
+                        request.Headers.Add("User-Agent", VSuiteName);
+
+                        int status;
+                        string contents;
+                        try
+                        {
+                            (status, contents) = Task.Run(async () =>
+                            {
+                                // ReSharper disable AccessToDisposedClosure -- Task.Run blocks until we're done
+                                var response = await client.SendAsync(request, HttpCompletionOption.ResponseContentRead);
+                                return ((int)response.StatusCode, await response.Content.ReadAsStringAsync());
+                            }).GetAwaiter().GetResult();
+                        }
+                        catch (Exception e)
+                        {
+                            if (++nRetry < 3)
+                            {
+                                Thread.Sleep(10);
+                                continue;
+                            }
+
+                            throw new Exception($"HTTP request for URL {url} failed: {e.Message}");
+                        }
+
+                        return (status, contents);
+                    }
+                }
             }
-            catch (ApplicationException exception)
+        }
+
+        public static List<string> GetPackageVersionsOnProduction(string packageName)
+        {
+            var url = NodeLauncher.ProductionRepositoryUrl + packageName;
+            var (status, response) = ReadHttpTextFile(url);
+
+            if (status == 404)
             {
-                if (exception.Message.Contains("npm ERR! code E404") && exception.Message.Contains("is not in the npm registry."))
-                    return false;
-                exception.Data["code"] = "fetchFailed";
-                throw exception;
+                return null;
             }
 
-            var packageData = launcher.OutputLog.ToString().Trim();
-            return !string.IsNullOrEmpty(packageData);
+            if (status == 200)
+            {
+                var metadata = SimpleJsonReader.ReadObject(response);
+                if (metadata != null &&
+                    metadata.TryGetValue("versions", out var versions) &&
+                    versions is Dictionary<string, object> versionDict)
+                {
+                    return versionDict.Keys.ToList();
+                }
+                throw new Exception($"NPM registry did not provide valid package metadata: {url}");
+            }
+
+            throw new Exception($"Got HTTP status {status} for URL: {url}");
+        }
+
+        internal static bool PackageExistsOnProduction(PackageId package)
+        {
+            return GetPackageVersionsOnProduction(package.Name)?.Contains(package.Version) ?? false;
         }
 
         public static string ExtractPackage(string fullPackagePath, string workingPath, string outputDirectory, string packageName, bool deleteOutputDir = true)
@@ -494,5 +548,52 @@ namespace UnityEditor.PackageManager.ValidationSuite
         }
 
         static void PrintInformationFor(List<string> faultyPaths, string warningText, Action<string> infoFunc) => faultyPaths.ForEach(s => infoFunc(warningText + s));
+
+        /// <summary>
+        /// Determine if this IOException is the type thrown when opening a
+        /// file in <see cref="FileMode.CreateNew"/> mode, and the file already
+        /// exists.
+        /// </summary>
+        /// <remark>
+        /// Checks for "Win32 warning" ERROR_FILE_EXISTS (0x80070050), not to
+        /// be confused with ERROR_ALREADY_EXISTS (0x800700B7) which is thrown
+        /// when renaming a file and the target is an existing file, nor the
+        /// related 0x80131620 (thrown if the target is an existing directory).
+        /// </remark>
+        static bool IsCannotCreateNewBecauseFileExistsError(IOException e)
+        {
+            // ReSharper disable once InconsistentNaming
+            const int WARN_WIN32_FILE_EXISTS = unchecked((int)0x80070050); // also works on Mac/Linux
+            return e.HResult == WARN_WIN32_FILE_EXISTS;
+        }
+
+        // Use this instead of Path.GetTempPath (the latter can be insecure
+        // on multiuser systems if used carelessly – and it is).
+        public const string UnityTempPath = "Temp";
+
+        // Secure replacement for .NET's broken Path.GetTempFileName (insecure
+        // on multiuser systems). Additionally, this version creates the temp
+        // file in Unity's Temp directory instead of the system Temp directory.
+        public static string CreateTempFile(string contents)
+        {
+            while (true)
+            {
+                var path = $"{UnityTempPath}/PVS-{Path.GetRandomFileName()}.tmp";
+                try
+                {
+                    using (var file = new FileStream(path, FileMode.CreateNew))
+                    {
+                        var bytes = Encoding.UTF8.GetBytes(contents);
+                        file.Write(bytes, 0, bytes.Length);
+                    }
+
+                    return path;
+                }
+                catch (IOException e) when (IsCannotCreateNewBecauseFileExistsError(e))
+                {
+                    // OK, try another filename
+                }
+            }
+        }
     }
 }

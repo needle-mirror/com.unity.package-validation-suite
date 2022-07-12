@@ -56,9 +56,7 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests.Standards
             string responseFilePath = null;
             if (excludePaths.Count > 0)
             {
-                responseFilePath = Path.GetTempFileName();
-                var excludedPathsParameter = $@"--excluded-paths=""{string.Join(",", excludePaths.Select(s => Path.GetFullPath(s)))}""";
-                File.WriteAllText(responseFilePath, excludedPathsParameter);
+                responseFilePath = Utilities.CreateTempFile($"--excluded-paths=\"{string.Join(",", excludePaths.Select(Path.GetFullPath))}\"");
                 responseFileParameter = $@"--response-file=""{responseFilePath}""";
             }
 

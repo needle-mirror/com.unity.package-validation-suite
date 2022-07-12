@@ -100,9 +100,9 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
                 // If the packageId is included in Context.packageIdsForPromotion then we can skip this check, as the package
                 // is expected to be promoted by another process
                 var version = dependencyInfo != null ? dependencyInfo.version : dependency.Value;
-                var packageId = Utilities.CreatePackageId(dependency.Key, version);
+                var packageId = new PackageId(dependency.Key, version);
 
-                if (Context.ValidationType != ValidationType.VerifiedSet && (Context.packageIdsForPromotion == null || Context.packageIdsForPromotion.Length < 1 || !Context.packageIdsForPromotion.Contains(packageId)) && !Utilities.PackageExistsOnProduction(packageId))
+                if (Context.ValidationType != ValidationType.VerifiedSet && (Context.packageIdsForPromotion == null || Context.packageIdsForPromotion.Length < 1 || !Context.packageIdsForPromotion.Contains(packageId.Id)) && !Utilities.PackageExistsOnProduction(packageId))
                 {
                     // ignore if  package is part of the context already
                     if (Context.ValidationType == ValidationType.Promotion || Context.ValidationType == ValidationType.AssetStore)

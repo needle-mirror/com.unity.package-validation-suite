@@ -12,20 +12,17 @@ namespace UnityEditor.PackageManager.ValidationSuite
 
         private const string exceptionSectionPlaceholder = "\nExceptions section\n";
 
-        readonly string m_PackageVersion;
+        readonly PackageId m_PackageId;
 
-        public TextReport(string packageId)
+        public TextReport(string packageId) : this(new PackageId(packageId)) { }
+
+        internal TextReport(PackageId packageId)
         {
-            FilePath = ReportPath(packageId);
+            m_PackageId = packageId;
+            FilePath = ReportPath(packageId.Id);
 
             // Ensure results directory exists before trying to write to it
             Directory.CreateDirectory(ValidationSuiteReport.ResultsPath);
-        }
-
-        internal TextReport(string packageId, string packageVersion)
-            : this(packageId)
-        {
-            m_PackageVersion = packageVersion;
         }
 
         internal void Initialize(VettingContext context)
@@ -124,7 +121,7 @@ namespace UnityEditor.PackageManager.ValidationSuite
                     Append("\n\n    ");
 
                     // If test caused a failure show how to except it
-                    if (m_PackageVersion != null && testState == TestState.Failed &&
+                    if (testState == TestState.Failed &&
                         testResult.CanUseValidationExceptions && testOutput.Type == TestOutputType.Error)
                     {
                         var validationExceptions = new ValidationExceptions
@@ -135,7 +132,7 @@ namespace UnityEditor.PackageManager.ValidationSuite
                                 {
                                     ValidationTest = testResult.ValidationTest.TestName,
                                     ExceptionMessage = testOutput.Output,
-                                    PackageVersion = m_PackageVersion,
+                                    PackageVersion = m_PackageId.Version,
                                 },
                             },
                         };

@@ -17,18 +17,25 @@ namespace UnityEditor.PackageManager.ValidationSuite
 
         public ValidationSuiteReportData ReportData { get; set; }
 
-        public ValidationSuiteReport()
-        { }
+        public ValidationSuiteReport() { }
 
         public ValidationSuiteReport(string packageId, string packageName, string packageVersion, string packagePath)
+            : this(new PackageId(packageId), packagePath)
         {
-            jsonReportPath = Path.Combine(ResultsPath, packageId + ".json");
+            var id = new PackageId(packageId);
+            if (packageName != id.Name || packageVersion != id.Version)
+                throw new ArgumentException($"bad arguments to legacy ValidationSuiteReport constructor: {id}, {packageName}, {packageVersion}");
+        }
+
+        internal ValidationSuiteReport(PackageId package, string packagePath)
+        {
+            jsonReportPath = Path.Combine(ResultsPath, package + ".json");
 
             // Ensure results directory exists before trying to write to it
             Directory.CreateDirectory(ResultsPath);
 
 #if !UNITY_PACKAGE_MANAGER_DEVELOP_EXISTS
-            TextReport = new TextReport(packageId, packageVersion);
+            TextReport = new TextReport(package);
 #endif
             TextReport?.Clear();
 

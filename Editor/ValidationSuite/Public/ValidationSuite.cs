@@ -3,9 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
-using System.Text.RegularExpressions;
 using UnityEditor.PackageManager.ValidationSuite.ValidationTests;
-using UnityEngine;
 using UnityEngine.Profiling;
 
 namespace UnityEditor.PackageManager.ValidationSuite
@@ -105,20 +103,16 @@ namespace UnityEditor.PackageManager.ValidationSuite
         /// <param name="validationType">The type of validation to assess.</param>
         /// <returns>True if the validation successfully completed.</returns>
         public static bool ValidatePackage(string packageName, string packageVersion, ValidationType validationType)
+            => ValidatePackage(new PackageId(packageName, packageVersion), validationType);
+
+        internal static bool ValidatePackage(PackageId packageId, ValidationType validationType)
         {
-            if (string.IsNullOrEmpty(packageName))
-                throw new ArgumentNullException(packageName);
-
-            if (string.IsNullOrEmpty(packageVersion))
-                throw new ArgumentNullException(packageVersion);
-
-            var packageId = Utilities.CreatePackageId(packageName, packageVersion);
-            var packagePath = FindPackagePath(packageName);
-            var report = new ValidationSuiteReport(packageId, packageName, packageVersion, packagePath);
+            var packagePath = FindPackagePath(packageId.Name);
+            var report = new ValidationSuiteReport(packageId, packagePath);
 
             if (string.IsNullOrEmpty(packagePath))
             {
-                report.OutputErrorReport(string.Format("Unable to find package \"{0}\" on disk.", packageName));
+                report.OutputErrorReport(string.Format("Unable to find package \"{0}\" on disk.", packageId.Name));
                 return false;
             }
 
@@ -128,20 +122,16 @@ namespace UnityEditor.PackageManager.ValidationSuite
         }
 
         public static bool ValidatePackage(string packageName, string packageVersion, string[] packageIdsForPromotion)
+            => ValidatePackage(new PackageId(packageName, packageVersion), packageIdsForPromotion);
+
+        static bool ValidatePackage(PackageId packageId, string[] packageIdsForPromotion)
         {
-            if (string.IsNullOrEmpty(packageName))
-                throw new ArgumentNullException(packageName);
-
-            if (string.IsNullOrEmpty(packageVersion))
-                throw new ArgumentNullException(packageVersion);
-
-            var packageId = Utilities.CreatePackageId(packageName, packageVersion);
-            var packagePath = FindPackagePath(packageName);
-            var report = new ValidationSuiteReport(packageId, packageName, packageVersion, packagePath);
+            var packagePath = FindPackagePath(packageId.Name);
+            var report = new ValidationSuiteReport(packageId, packagePath);
 
             if (string.IsNullOrEmpty(packagePath))
             {
-                report.OutputErrorReport(string.Format("Unable to find package \"{0}\" on disk.", packageName));
+                report.OutputErrorReport($"Unable to find package \"{packageId.Name}\" on disk.");
                 return false;
             }
 
@@ -155,7 +145,7 @@ namespace UnityEditor.PackageManager.ValidationSuite
         {
             Profiler.BeginSample("ValidatePackage");
 
-            report = new ValidationSuiteReport(context.ProjectPackageInfo.Id, context.ProjectPackageInfo.name, context.ProjectPackageInfo.version, context.ProjectPackageInfo.path);
+            report = new ValidationSuiteReport(new PackageId(context.ProjectPackageInfo.Id), context.ProjectPackageInfo.path);
 
             try
             {
@@ -182,12 +172,12 @@ namespace UnityEditor.PackageManager.ValidationSuite
 
         internal static void ValidateEmbeddedPackages(ValidationType validationType)
         {
-            var packageIdList = new List<string>();
+            var packageIdList = new List<PackageId>();
             var directories = Directory.GetDirectories("Packages/", "*", SearchOption.TopDirectoryOnly);
             foreach (var directory in directories)
             {
                 ActivityLogger.Log("Starting package validation for " + directory);
-                packageIdList.Add(VettingContext.GetManifest(directory).Id);
+                packageIdList.Add(new PackageId(VettingContext.GetManifest(directory).Id));
             }
 
             if (packageIdList.Any())
@@ -204,16 +194,12 @@ namespace UnityEditor.PackageManager.ValidationSuite
 
         internal static bool RunAssetStoreValidationSuite(string packageName, string packageVersion, string packagePath, string previousPackagePath = null)
         {
-            if (string.IsNullOrEmpty(packageName))
-                throw new ArgumentNullException(packageName);
-
-            if (string.IsNullOrEmpty(packageVersion))
-                throw new ArgumentNullException(packageVersion);
+            var packageId = new PackageId(packageName, packageVersion);
 
             if (string.IsNullOrEmpty(packagePath))
-                throw new ArgumentNullException(packageName);
+                throw new ArgumentNullException();
 
-            var report = new ValidationSuiteReport(packageName + "@" + packageVersion, packageName, packageVersion, packagePath);
+            var report = new ValidationSuiteReport(packageId, packagePath);
 
             try
             {
@@ -278,7 +264,7 @@ namespace UnityEditor.PackageManager.ValidationSuite
             Profiler.EndSample();
         }
 
-        static bool ValidatePackages(IEnumerable<string> packageIds, ValidationType validationType)
+        static bool ValidatePackages(IEnumerable<PackageId> packageIds, ValidationType validationType)
         {
             var success = true;
             foreach (var packageId in packageIds)
