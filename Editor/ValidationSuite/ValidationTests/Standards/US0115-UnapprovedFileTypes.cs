@@ -77,7 +77,9 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests.Standards
             "coding-cli.exe",                        // required for com.unity.coding
             "ApiScraper.exe",                        // required for com.unity.coding
             "arcoreimg.exe",                         // required for com.unity.xr.arcore
-            "bee.exe",                               // required for com.unity.tiny
+            "bee.exe",                               // required for com.unity.dots.runtime
+            "bee.bat",                               // required for com.unity.dots.runtime
+            "bee.ps1",                               // required for com.unity.dots.runtime
             "HavokVisualDebugger.exe",               // required for com.havok.physics
             "Unity.CollabProxy.Server.exe",          // required for com.unity.collab-proxy
             "COMIntegration.exe",                    // required for com.unity.ide.visualstudio

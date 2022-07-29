@@ -60,7 +60,8 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests.Standards
                 responseFileParameter = $@"--response-file=""{responseFilePath}""";
             }
 
-            var startInfo = new ProcessStartInfo(monopath, $@"""{exePath}"" --root-path=""{packagePath}"" {filterYamlParameter} {responseFileParameter}")
+            var command = $@"""{exePath}"" --root-path=""{packagePath}"" {filterYamlParameter} {responseFileParameter}";
+            var startInfo = new ProcessStartInfo(monopath, command)
             {
                 UseShellExecute = false,
                 CreateNoWindow = true,
@@ -78,19 +79,14 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests.Standards
             if (responseFilePath != null)
                 File.Delete(responseFilePath);
 
-            if (process.ExitCode != 0)
+            if (process.ExitCode != 0 || stderrLines.Length != 0)
             {
                 // If FindMissingDocs fails and returns a non-zero exit code (like an unhandled exception) it means that
                 // we couldn't validate the XmdDocValidation because the result is inconclusive. For that reason, we
                 // should add it as an error to be addressed by the developer. If there's any bug with the tool itself
                 // then that will need to be addressed in the XmlDoc repo and rebuild the binaries from PVS.
-                throw new InternalTestErrorException($"FindMissingDocs.exe returned {process.ExitCode}, a non-zero exit code and XmlDocValidation test is inconclusive.");
+                throw new InternalTestErrorException($"XmlDocValidation test is inconclusive: FindMissingDocs.exe exited with status {process.ExitCode}.\n{monopath} {command}\n{string.Join("\n", stderrLines)}");
             }
-            if (stderrLines.Length > 0)
-            {
-                throw new InternalTestErrorException($"Internal Error running FindMissingDocs. Output:\n{string.Join("\n", stderrLines)}");
-            }
-
             return stdoutLines;
         }
 
