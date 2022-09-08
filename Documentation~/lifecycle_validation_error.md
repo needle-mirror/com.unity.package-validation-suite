@@ -106,4 +106,4 @@ Validation suite has found that a published version of this package exists with 
 * 1.0.0-pre.3 > 1.0.0-pre.2
 * 2.5.4-pre.10 > 2.5.4-pre.1
 * 1.2.3-exp.5 > 1.2.3-exp.3
-* 1.2.3-exp.somefeature.x > 1.2.3-exp-somefeature.y
+* 1.2.3-exp-somefeature.x > 1.2.3-exp-somefeature.y

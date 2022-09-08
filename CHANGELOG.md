@@ -4,6 +4,9 @@ All notable changes to this package will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## [0.28.0-preview] - 2022-09-08
+- Relax Samples test to allow users to have a `Samples~` folder without a `.sample.json` file for VerifiedSet test run in APV
+
 ## [0.27.0-preview] - 2022-08-18
 - [Unity.APIValidation](https://github.cds.internal.unity3d.com/unity/Unity.APIValidation/commit/a84299c8e32ae068b765a298f0f2483541e270c9): [do not crash upon failure to resolve attributes](https://github.cds.internal.unity3d.com/unity/Unity.APIValidation/commit/3bc5e3c704c54f06ed4307426884e6b5b7db7e66)
 

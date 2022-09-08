@@ -26,20 +26,26 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests.Standards
             var matchingFiles = new List<string>();
             Utilities.RecursiveDirectorySearch(Path.Combine(path, samplesDir), ".sample.json", ref matchingFiles);
 
-            if (matchingFiles.Count == 0)
+            if (validationType != ValidationType.VerifiedSet)
             {
-                AddError(samplesDir + " folder exists but no `.sample.json` files found in it." +
-                    "A `.sample.json` file is required for a sample to be recognized." +
-                    "Please refer to https://github.cds.internal.unity3d.com/unity/com.unity.package-starter-kit/blob/master/Samples/Example/.sample.json for more info.");
+                if (matchingFiles.Count == 0)
+                {
+                    AddError(samplesDir + " folder exists but no `.sample.json` files found in it." +
+                             "A `.sample.json` file is required for a sample to be recognized." +
+                             "Please refer to https://github.cds.internal.unity3d.com/unity/com.unity.package-starter-kit/blob/master/Samples/Example/.sample.json for more info.");
+                }
             }
 
-            if (validationType == ValidationType.Promotion || validationType == ValidationType.VerifiedSet)
+            if (validationType == ValidationType.Promotion)
             {
                 if (samples.Count != matchingFiles.Count)
                 {
                     AddError("The number of samples in `package.json` does not match the number of `.sample.json` files found in `" + samplesDir + "`.");
                 }
+            }
 
+            if (validationType == ValidationType.Promotion || validationType == ValidationType.VerifiedSet)
+            {
                 foreach (var sample in samples)
                 {
                     if (string.IsNullOrEmpty(sample.path))
@@ -52,7 +58,7 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests.Standards
                     {
                         AddError("Sample path set in `package.json` does not exist: " + sample.path + ".");
                     }
-                    else if (!File.Exists(sampleJsonPath))
+                    else if (validationType == ValidationType.Promotion && !File.Exists(sampleJsonPath))
                     {
                         AddError("Cannot find `.sample.json` file in the sample path: " + sample.path + ".");
                     }
