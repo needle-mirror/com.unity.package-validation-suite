@@ -4,6 +4,12 @@ All notable changes to this package will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## [0.29.0-preview] - 2022-09-09
+- [Unity.APIValidation](https://github.cds.internal.unity3d.com/unity/Unity.APIValidation/commit/9ff008f8c458bbc680c94e32544ff3eeca595f6f)
+    - Fixed comparison of members containing types with modifiers
+    - Fixed crash when validating property setter overriding
+    - Fixed potential failure to resolve overriden method when its return type is a type parameter.
+
 ## [0.28.0-preview] - 2022-09-08
 - Relax Samples test to allow users to have a `Samples~` folder without a `.sample.json` file for VerifiedSet test run in APV
 

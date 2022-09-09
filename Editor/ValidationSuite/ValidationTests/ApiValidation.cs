@@ -231,7 +231,7 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
                     const string logsDirectory = "Logs";
                     Utilities.EnsureDirectoryExists(logsDirectory);
 
-                    File.WriteAllText($"{logsDirectory}/ApiValidationParameters.txt", $"previous: {oldAssemblyPath}\ncurrent: {info.assembly.outputPath}\nsearch path: {string.Join("\n", assemblySearchFolder)}");
+                    File.WriteAllText($"{logsDirectory}/ApiValidationParameters.{DateTime.Now.Ticks}.txt", $"previous: {oldAssemblyPath}\ncurrent: {info.assembly.outputPath}\nsearch path: {string.Join("\n", assemblySearchFolder)}");
                     var apiChangesAssemblyInfo = new APIChangesCollector.AssemblyInfo()
                     {
                         BaseAssemblyPath = oldAssemblyPath,

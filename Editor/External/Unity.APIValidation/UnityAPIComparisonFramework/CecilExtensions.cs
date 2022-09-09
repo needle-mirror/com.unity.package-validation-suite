@@ -26,7 +26,7 @@ namespace Unity.APIComparison.Framework
                     return found;
 
                 if (typeToCheck.BaseType == null)
-                    throw new InvalidOperationException($"Reached System.Object and were not able to find overloading method for '{tbc.FullName}'");
+                    throw new InvalidOperationException($"Could not find suitable overriding method for '{tbc.FullName}'");
                 
                 typeToCheck = typeToCheck.BaseType.Resolve();
             }
@@ -280,7 +280,7 @@ namespace Unity.APIComparison.Framework
         
         public static bool IsVirtual(this MethodDefinition method)
         {
-            return method.IsVirtual && !method.IsFinal & !method.IsAbstract;
+            return method.IsVirtual && !method.IsFinal && !method.IsAbstract;
         }
         
         public static ModifierChangeKind VirtualnessChanged(this MethodDefinition self, MethodDefinition other)
