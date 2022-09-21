@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Text.RegularExpressions;
 
 namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests.Standards
 {
@@ -24,10 +25,12 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests.Standards
                 {
                     foreach (var file in matchingFiles)
                     {
+                        var allowedFileAsItMatches = internalExceptionFileList.Any(ex => ex.Equals(Path.GetFileName(file), StringComparison.OrdinalIgnoreCase));
+                        var allowedFileAsItRegexMatches = internalExceptionRegexFileList.Any(ex => Regex.IsMatch(Path.GetFileName(file), ex));
+
                         // For asset store packages, no exceptions.
                         // Internally, let's allow a specific set of exceptions.
-                        if (validationType == ValidationType.AssetStore ||
-                            !internalExceptionFileList.Any(ex => ex.Equals(Path.GetFileName(file), StringComparison.OrdinalIgnoreCase)))
+                        if ((validationType == ValidationType.AssetStore) || !(allowedFileAsItMatches || allowedFileAsItRegexMatches))
                         {
                             // Workaround for weird behavior in Directory.GetFiles call, which will return File.Commute when searching for *.com
                             if (!isExtensionRestriction || (Path.GetExtension(fileType.ToLower()) == Path.GetExtension(file.ToLower())))
@@ -90,6 +93,11 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests.Standards
             "tundra2.exe",                           // required by com.unity.platforms
             "csc.exe",                               // required by com.unity.roslyn
             "VBCSCompiler.exe"                       // required by com.unity.roslyn
+        };
+
+        private readonly string[] internalExceptionRegexFileList =
+        {
+            @"^burst-lld-\d+-hostwin\.exe$" // required for com.unity.burst, valid examples are "burst-lld-14-hostwin.exe" or "burst-lld-15-hostwin.exe"
         };
 
         private readonly string[] restrictedFileList =

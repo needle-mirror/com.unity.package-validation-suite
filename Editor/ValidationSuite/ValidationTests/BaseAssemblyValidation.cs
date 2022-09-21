@@ -56,15 +56,14 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
             var allAssemblyInfo = CompilationPipeline.GetAssemblies().Select(Utilities.AssemblyInfoFromAssembly).Where(a => a != null)
                 .ToArray();
 
+            var packagePathPrefix = Path.GetFullPath(packagePath) + Path.DirectorySeparatorChar;
             var assemblyInfoOutsidePackage =
-                allAssemblyInfo.Where(a => !a.asmdefPath.StartsWith(packagePath)).ToArray();
+                allAssemblyInfo.Where(a => !a.asmdefPath.StartsWith(packagePathPrefix, StringComparison.Ordinal)).ToArray();
             foreach (var badFilePath in assemblyInfoOutsidePackage.SelectMany(a => a.assembly.sourceFiles).Where(files.Contains))
                 AddError("Script \"{0}\" is not included by any asmdefs in the package.", badFilePath);
 
-            // BUG: packagePath doesn't end on a '/', so a path "foo2" is considered
-            // relevant for a package path "foo". Kept for compatibility.
             var relevantAssemblyInfo =
-                allAssemblyInfo.Where(a => a.asmdefPath.StartsWith(packagePath));
+                allAssemblyInfo.Where(a => a.asmdefPath.StartsWith(packagePathPrefix, StringComparison.Ordinal));
 
             if (IncludePrecompiledAssemblies)
             {

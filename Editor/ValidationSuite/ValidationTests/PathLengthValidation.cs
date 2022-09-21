@@ -10,12 +10,6 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
 
         internal override List<IStandardChecker> ImplementedStandardsList => new List<IStandardChecker> { filePathLengthUs0113 };
 
-        public int MaxPathLength
-        {
-            get => filePathLengthUs0113.MaxPathLength;
-            set => filePathLengthUs0113.MaxPathLength = value;
-        }
-
         public PathLengthValidation()
         {
             TestName = "Path Length Validation";

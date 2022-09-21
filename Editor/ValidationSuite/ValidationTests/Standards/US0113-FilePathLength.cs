@@ -8,7 +8,7 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests.Standards
         public override string StandardCode => "US-0113";
         public override StandardVersion Version => new StandardVersion(1, 0, 0);
 
-        public int MaxPathLength { get; set; } = 140;
+        public static int MaxPathLength => 140;
 
         public void Check(string rootPath)
         {

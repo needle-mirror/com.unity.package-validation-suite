@@ -22,6 +22,11 @@ As shown below, once the validation package is installed in your project, the Pa
 
  ![results](images/ValidateResults.png)
 
+ To view the report, click __View Results__.
+
+ ![report](images/Result.png)
+
+
 ## Known Limitations
 
 * This is a temporary UI for internal development only.

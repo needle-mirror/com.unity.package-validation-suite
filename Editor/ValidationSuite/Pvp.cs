@@ -9,8 +9,8 @@ using UnityEditor;
 using UnityEditor.Compilation;
 using UnityEditor.PackageManager.ValidationSuite;
 using UnityEditor.PackageManager.ValidationSuite.ValidationTests;
-using UnityEditorInternal;
 using UnityEngine;
+using PureFileValidationPvp;
 
 static class Pvp
 {
@@ -73,6 +73,20 @@ namespace UnityEditor.PackageManager.ValidationSuite
         void Run(in PvpRunner.Input input, PvpRunner.Output output);
     }
 
+    [UsedImplicitly]
+    class PureFileValidationChecker : IPvpChecker
+    {
+        public string[] Checks { get; } = Validator.Checks.ToArray();
+
+        readonly Validator m_Validator = new Validator();
+
+        public void Run(in PvpRunner.Input input, PvpRunner.Output output)
+        {
+            var package = new FileSystemPackage(input.Package.path);
+            m_Validator.Validate(package, output.Error);
+        }
+    }
+
     class PvpRunner
     {
         public struct Input
@@ -106,7 +120,7 @@ namespace UnityEditor.PackageManager.ValidationSuite
             readonly Dictionary<string, List<string>> m_Checks;
             readonly string m_Implementation;
 
-            readonly string[] k_ContextEnvVars = new[] {
+            static readonly string[] k_ContextEnvVars = new[] {
                 "GIT_BRANCH",
                 "GIT_REPOSITORY_URL",
                 "GIT_REVISION",
@@ -207,8 +221,7 @@ namespace UnityEditor.PackageManager.ValidationSuite
                 ?? throw new InvalidOperationException($"could not find {packageName} in package list");
         }
 
-        // Extracted from BaseAssemblyValidation.GetRelevantAssemblyInfo,
-        // corrected to use proper path prefix matching and ordinal string comparisons.
+        // Extracted from BaseAssemblyValidation.GetRelevantAssemblyInfo.
         static AssemblyInfo[] GetRelevantAssemblyInfo(string packagePath)
         {
             if (EditorUtility.scriptCompilationFailed)
@@ -264,7 +277,7 @@ namespace UnityEditor.PackageManager.ValidationSuite
                             : Application.platform == RuntimePlatform.LinuxEditor ? "linux"
                             : throw new ArgumentOutOfRangeException(),
 #if UNITY_2020_1_OR_NEWER
-                        ["revision"] = InternalEditorUtility.GetUnityBuildHash(),
+                        ["revision"] = UnityEditorInternal.InternalEditorUtility.GetUnityBuildHash(),
 #endif
                         ["version"] = Application.unityVersion,
                     },

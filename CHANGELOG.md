@@ -4,6 +4,12 @@ All notable changes to this package will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## [0.30.0-preview] - 2022-09-21
+- Add new check to catch `index.md` documentation files with wrong filename casing. (PVS-121)
+- PVP: Add PureFileValidation framework and a number of new PVP checks: `PVP-{21,22,23,24,25,62,100,101,102}-1`. (PVS-128)
+- Allow the new Burst LLD wrapper executable to pass package validation.
+- Fixed ApiValidation and UpdateConfigurationValidation potentially validating against assemblies of unrelated package if package name is a prefix of another package name. (PETS-1043)
+
 ## [0.29.0-preview] - 2022-09-09
 - [Unity.APIValidation](https://github.cds.internal.unity3d.com/unity/Unity.APIValidation/commit/9ff008f8c458bbc680c94e32544ff3eeca595f6f)
     - Fixed comparison of members containing types with modifiers
