@@ -4,6 +4,10 @@ All notable changes to this package will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## [0.31.0-preview] - 2022-09-22
+- Updated [Unity.APIValidation](https://github.cds.internal.unity3d.com/unity/Unity.APIValidation/commit/569110df518f678d09e8b16fcc81e0a45862e197)
+    - Fixed generic instance types with partial matching type argument list reporting to be equal.
+
 ## [0.30.0-preview] - 2022-09-21
 - Add new check to catch `index.md` documentation files with wrong filename casing. (PVS-121)
 - PVP: Add PureFileValidation framework and a number of new PVP checks: `PVP-{21,22,23,24,25,62,100,101,102}-1`. (PVS-128)
