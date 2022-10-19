@@ -28,7 +28,7 @@ static class Pvp
             var packages = pvp.GetProjectDirectPackageDependencies();
             foreach (var packageId in packages)
             {
-                var path = $"Library/pvp/{packageId.Name}.json";
+                var path = $"Library/pvp/{packageId.Name}.result.json";
 
                 // Don't check PVS unless PVS is the only package here.
                 if (packages.Count != 1 && packageId.Name == Utilities.VSuiteName)

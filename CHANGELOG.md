@@ -4,6 +4,9 @@ All notable changes to this package will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## [0.32.0-preview] - 2022-10-19
+- Change PVP result file extension from `.json` to `.result.json`. (PETS-1067)
+
 ## [0.31.0-preview] - 2022-09-22
 - Updated [Unity.APIValidation](https://github.cds.internal.unity3d.com/unity/Unity.APIValidation/commit/569110df518f678d09e8b16fcc81e0a45862e197)
     - Fixed generic instance types with partial matching type argument list reporting to be equal.
