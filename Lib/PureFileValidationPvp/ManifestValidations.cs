@@ -1,8 +1,6 @@
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
-using System.Text;
 using System.Text.RegularExpressions;
 
 namespace PureFileValidationPvp
@@ -48,47 +46,13 @@ namespace PureFileValidationPvp
             ("PVP-102-1", m => m["dependencies"].MembersIfPresent, k_SemVer),
         };
 
-        // PVP-100-1 passes as long as the manifest is simply valid JSON.
-        public static readonly string[] Checks = k_LocationChecks.Select(v => v.Item1).Distinct().Prepend("PVP-100-1").ToArray();
+        public static readonly string[] Checks = k_LocationChecks.Select(v => v.Item1).Distinct().ToArray();
 
-        public static void Run(IPackage package, Action<string, string> addError)
+        public static void Run(Validator.Context context)
         {
-            Json manifest;
-            try
-            {
-                // Read without .NET's magic BOM handling
-                using (var buf = new MemoryStream())
-                using (var stream = package.Open("package.json"))
-                {
-                    stream.CopyTo(buf);
-                    var text = Encoding.UTF8.GetString(buf.ToArray());
-
-                    // UTF-8 BOM is unwelcome, but we can proceed with validation.
-                    if (text.StartsWithOrdinal("\ufeff"))
-                    {
-                        addError("PVP-100-1", "manifest file contains UTF-8 BOM");
-                        text = text.Substring(1);
-                    }
-
-                    manifest = new Json(text);
-                }
-            }
-            catch (Exception e)
-            {
-                var message = e is JsonException ? "package.json manifest is not valid JSON" : "package.json manifest could not be read";
-
-                // NOTE: If the manifest cannot be read, we must fail EVERY manifest check ID.
-                foreach (var checkId in Checks)
-                {
-                    addError(checkId, message);
-                }
-
-                return;
-            }
+            var manifest = context.Manifest;
 
             var arrayOfOne = new Json[1];
-            // Multiple failed requirements may yield the same error message. Deduplicate those.
-            var previousErrors = new HashSet<string>();
             foreach (var (checkId, locationFunc, requirement) in k_LocationChecks)
             {
                 try
@@ -108,20 +72,13 @@ namespace PureFileValidationPvp
                         if (location == null) continue;
                         if (!requirement.Func(location))
                         {
-                            var error = $"{location.Path}: {requirement.Message}";
-                            if (previousErrors.Add($"{checkId}: {error}"))
-                            {
-                                addError(checkId, error);
-                            }
+                            context.AddError(checkId, $"{location.Path}: {requirement.Message}");
                         }
                     }
                 }
                 catch (JsonException e)
                 {
-                    if (previousErrors.Add($"{checkId}: {e.Message}"))
-                    {
-                        addError(checkId, e.Message);
-                    }
+                    context.AddError(checkId, e.Message);
                 }
             }
         }

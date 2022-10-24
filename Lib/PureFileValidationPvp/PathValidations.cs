@@ -5,7 +5,7 @@ namespace PureFileValidationPvp
 {
     static class PathValidations
     {
-        class Entry
+        public class Entry
         {
             readonly string m_Extension;
 
@@ -14,6 +14,9 @@ namespace PureFileValidationPvp
             public bool IsHidden { get; }
             public string Path { get; }
             public string PathWithCase { get; }
+
+            public string DirectoryWithCase => Components.Length == 1 ? "" : PathWithCase.Substring(0, PathWithCase.Length - Filename.Length - 1);
+            public string FilenameWithCase => PathWithCase.Substring(PathWithCase.Length - Filename.Length);
 
             public Entry(string path)
             {
@@ -65,16 +68,16 @@ namespace PureFileValidationPvp
 
         public static readonly string[] Checks = k_PathValidations.Select(v => v.Item1).ToArray();
 
-        public static void Run(IPackage package, Action<string, string> addError)
+        public static void Run(Validator.Context context)
         {
-            foreach (var path in package.Files)
+            foreach (var path in context.Files)
             {
                 var entry = new Entry(path);
                 foreach (var (check, isValid) in k_PathValidations)
                 {
                     if (!isValid(entry))
                     {
-                        addError(check, path);
+                        context.AddError(check, path);
                     }
                 }
             }

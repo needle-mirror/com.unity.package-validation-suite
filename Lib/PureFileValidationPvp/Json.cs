@@ -97,6 +97,7 @@ namespace PureFileValidationPvp
             => IfPresent?.Members ?? Enumerable.Empty<Json>();
 
         public Json IfPresent => IsPresent ? this : null;
+        public bool IsArray => Kind == typeof(List<object>);
         public bool IsPresent => !(m_Value is Undefined);
 
         /// Returns the "location" of this element in the document as a jq-style path.

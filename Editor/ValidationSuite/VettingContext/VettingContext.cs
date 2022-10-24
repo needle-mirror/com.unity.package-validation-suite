@@ -338,8 +338,9 @@ namespace UnityEditor.PackageManager.ValidationSuite
         {
             Profiler.BeginSample("DownloadAssembliesForPreviousVersion");
 
-            if (Directory.Exists(PreviousVersionBinaryPath))
-                Directory.Delete(PreviousVersionBinaryPath, true);
+            Utilities.IORetry("deleting old assembly download directory " + PreviousVersionBinaryPath,
+                () => Directory.Delete(PreviousVersionBinaryPath, true),
+                allowNotFound: true);
 
             Directory.CreateDirectory(PreviousVersionBinaryPath);
 

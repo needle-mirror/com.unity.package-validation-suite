@@ -213,6 +213,34 @@ namespace UnityEditor.PackageManager.ValidationSuite
             return GetPackageVersionsOnProduction(package.Name)?.Contains(package.Version) ?? false;
         }
 
+        /// <summary>
+        /// Determine if this IOException indicates that a path doesn't exist.
+        /// </summary>
+        internal static bool IsNotFoundError(this IOException e)
+            => e is FileNotFoundException || e is DirectoryNotFoundException || e is DriveNotFoundException;
+
+        internal static void IORetry(string operation, Action func, bool allowNotFound = false)
+        {
+            var attempts = 0;
+            while (true)
+            {
+                try
+                {
+                    func();
+                    return;
+                }
+                catch (IOException e) when (allowNotFound && IsNotFoundError(e))
+                {
+                    return;
+                }
+                catch (IOException e) when (++attempts < 4)
+                {
+                    Debug.LogError($"IO error when {operation} (attempt #{attempts}, will retry): {e}");
+                    Thread.Sleep(1000 * attempts);
+                }
+            }
+        }
+
         public static string ExtractPackage(string fullPackagePath, string workingPath, string outputDirectory, string packageName, bool deleteOutputDir = true)
         {
             Profiler.BeginSample("ExtractPackage");
@@ -228,8 +256,9 @@ namespace UnityEditor.PackageManager.ValidationSuite
             {
                 try
                 {
-                    if (Directory.Exists(outputDirectory))
-                        Directory.Delete(outputDirectory, true);
+                    IORetry($"deleting ExtractPackage output dir {outputDirectory}",
+                        () => Directory.Delete(outputDirectory, true),
+                        allowNotFound: true);
 
                     Directory.CreateDirectory(outputDirectory);
                 }
@@ -272,9 +301,11 @@ namespace UnityEditor.PackageManager.ValidationSuite
                 foreach (var dir in Directory.GetDirectories(packageFolderPath))
                 {
                     var dirName = Path.GetFileName(dir);
-                    if (dirName != null)
+                    if (dirName != null) // ??? GetFileName should only ever return null if its input is null.
                     {
-                        Directory.Move(dir, Path.Combine(outputDirectory, dirName));
+                        var dest = Path.Combine(outputDirectory, dirName);
+                        IORetry($"moving package dir from {dir} to {dest}",
+                            () => Directory.Move(dir, dest));
                     }
                 }
 
@@ -285,7 +316,9 @@ namespace UnityEditor.PackageManager.ValidationSuite
                         !fullPackagePath.Contains(".samples") ||
                         !file.Contains("package.json"))
                     {
-                        File.Move(file, Path.Combine(outputDirectory, Path.GetFileName(file)));
+                        var dest = Path.Combine(outputDirectory, Path.GetFileName(file));
+                        IORetry($"moving package file from {file} to {dest}",
+                            () => File.Move(file, dest));
                     }
                 }
             }
