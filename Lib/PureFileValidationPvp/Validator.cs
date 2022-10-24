@@ -13,6 +13,7 @@ namespace PureFileValidationPvp
             PathValidations.Checks
             .Concat(Context.Checks)
             .Concat(ManifestValidations.Checks)
+            .Concat(SampleValidations.Checks)
             .OrderBy(s => s, StringComparer.Ordinal)
             .ToArray();
 
