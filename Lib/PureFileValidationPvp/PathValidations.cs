@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 
 namespace PureFileValidationPvp
@@ -46,7 +47,7 @@ namespace PureFileValidationPvp
         // REMEMBER: Checks must not be changed once added. Any modifications must be implemented as a NEW check.
         // Note: These path validations are all run on LOWERCASE paths (unless explicitly using "XxxWithCase").
         // Use only Ordinal string comparisons (and Invariant transforms); see StringExtensions.cs.
-        static readonly (string, Func<Entry, bool>)[] k_PathValidations = {
+        static readonly (string, Func<Entry, bool>)[] k_SinglePathValidations = {
             // PVP-21-1: No JPEG image assets (US-0110)
             ("PVP-21-1", e => e.HasComponent("documentation~", "tests") || !e.HasExtension(".jpg", ".jpeg")),
 
@@ -66,19 +67,39 @@ namespace PureFileValidationPvp
             ("PVP-62-1", e => e.Filename != "index.md" || e.Components[0] != "documentation~" || e.PathWithCase.EndsWithOrdinal("index.md")),
         };
 
-        public static readonly string[] Checks = k_PathValidations.Select(v => v.Item1).ToArray();
+        // REMEMBER: Checks must not be changed once added. Any modifications must be implemented as a NEW check.
+        // Note: These path validations are run against all file paths in the package at once,
+        // e.g. to check for the existence of a certain file.
+        static readonly (string, Predicate<IEnumerable<string>>, string)[] k_AllPathsValidations =
+        {
+            // PVP-28-1: Must have .signature file (US-0134)
+            ("PVP-28-1", paths => paths.Contains(".signature"), "Missing .signature file"),
+        };
+
+        public static readonly string[] Checks =
+            k_SinglePathValidations.Select(v => v.Item1)
+            .Concat(k_AllPathsValidations.Select(v => v.Item1))
+            .ToArray();
 
         public static void Run(Validator.Context context)
         {
             foreach (var path in context.Files)
             {
                 var entry = new Entry(path);
-                foreach (var (check, isValid) in k_PathValidations)
+                foreach (var (check, isValid) in k_SinglePathValidations)
                 {
                     if (!isValid(entry))
                     {
                         context.AddError(check, path);
                     }
+                }
+            }
+
+            foreach (var (check, isValid, error) in k_AllPathsValidations)
+            {
+                if (!isValid(context.Files))
+                {
+                    context.AddError(check, error);
                 }
             }
         }

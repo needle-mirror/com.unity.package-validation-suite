@@ -9,7 +9,7 @@ namespace PureFileValidationPvp
     {
         const RegexOptions k_IgnoreCase = RegexOptions.IgnoreCase | RegexOptions.CultureInvariant; // IgnoreCase MUST be used with CultureInvariant.
 
-        struct Requirement
+        public struct Requirement
         {
             public string Message;
             public Func<Json, bool> Func;
@@ -24,7 +24,8 @@ namespace PureFileValidationPvp
         }
 
         static readonly Regex k_ValidPackageName = new Regex("^[a-z0-9][-._a-z0-9]{0,213}$");
-        static readonly Regex k_SemVer = new Regex(@"^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)(?:-((?:0|[1-9][0-9]*|[0-9]*[a-zA-Z-][0-9a-zA-Z-]*)(?:\.(?:0|[1-9][0-9]*|[0-9]*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\+([0-9a-zA-Z-]+(?:\.[0-9a-zA-Z-]+)*))?$");
+        public static readonly Regex SemVer = new Regex(@"^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)(?:-((?:0|[1-9][0-9]*|[0-9]*[a-zA-Z-][0-9a-zA-Z-]*)(?:\.(?:0|[1-9][0-9]*|[0-9]*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\+([0-9a-zA-Z-]+(?:\.[0-9a-zA-Z-]+)*))?$");
+
 
         static Requirement Fail(string message) => new Requirement { Message = message, Func = _ => false };
 
@@ -36,14 +37,14 @@ namespace PureFileValidationPvp
         static readonly (string, Func<Json, object>, Requirement)[] k_LocationChecks = {
             ("PVP-101-1", m => m["name"], k_ValidPackageName),
             ("PVP-101-1", m => m["name"], new Regex(@"$(?<!\.plugin|\.framework|\.bundle)", k_IgnoreCase)), // Unity technical restriction
-            ("PVP-101-1", m => m["version"], k_SemVer),
+            ("PVP-101-1", m => m["version"], SemVer),
 
             ("PVP-102-1", m => m["displayName"], new Regex("^[ a-zA-Z0-9]{1,50}$")),
             ("PVP-102-1", m => m["unity"].IfPresent, new Regex(@"^[0-9]{4}\.[1-9][0-9]*$")),
             ("PVP-102-1", m => m["unityRelease"].IfPresent, new Regex(@"^[0-9]+[abf][1-9][0-9]*$")),
             ("PVP-102-1", m => m["unityRelease"].IfPresent.Unless(m["unity"].IsPresent), Fail("requires that the 'unity' key is present")),
             ("PVP-102-1", m => m["dependencies"].MembersIfPresent.Where(e => !k_ValidPackageName.IsMatch(e.Key)), Fail($"key must match {k_ValidPackageName}")),
-            ("PVP-102-1", m => m["dependencies"].MembersIfPresent, k_SemVer),
+            ("PVP-102-1", m => m["dependencies"].MembersIfPresent, SemVer),
         };
 
         public static readonly string[] Checks = k_LocationChecks.Select(v => v.Item1).Distinct().ToArray();

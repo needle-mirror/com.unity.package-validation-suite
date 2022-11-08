@@ -10,10 +10,15 @@ namespace PureFileValidationPvp
     {
         /// All PVP checks implemented by Validator.
         public static readonly IReadOnlyList<string> Checks =
-            PathValidations.Checks
-            .Concat(Context.Checks)
+            Context.Checks
+            .Concat(ChangelogValidations.Checks)
+            .Concat(LicenseValidations.Checks)
+            .Concat(ManifestTypeValidations.Checks)
             .Concat(ManifestValidations.Checks)
+            .Concat(MetaFileValidations.Checks)
+            .Concat(PathValidations.Checks)
             .Concat(SampleValidations.Checks)
+            .Concat(ThirdPartyNoticesValidations.Checks)
             .OrderBy(s => s, StringComparer.Ordinal)
             .ToArray();
 
@@ -156,9 +161,14 @@ namespace PureFileValidationPvp
         public void Validate(IPackage package, Action<string, string> addError)
         {
             var context = new Context(package, addError);
+            context.RunBatch(ChangelogValidations.Checks, ChangelogValidations.Run);
+            context.RunBatch(LicenseValidations.Checks, LicenseValidations.Run);
+            context.RunBatch(ManifestTypeValidations.Checks, ManifestTypeValidations.Run);
             context.RunBatch(ManifestValidations.Checks, ManifestValidations.Run);
+            context.RunBatch(MetaFileValidations.Checks, MetaFileValidations.Run);
             context.RunBatch(PathValidations.Checks, PathValidations.Run);
             context.RunBatch(SampleValidations.Checks, SampleValidations.Run);
+            context.RunBatch(ThirdPartyNoticesValidations.Checks, ThirdPartyNoticesValidations.Run);
         }
     }
 }

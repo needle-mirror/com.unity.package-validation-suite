@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Text.RegularExpressions;
 using JsonObject = System.Collections.Generic.Dictionary<string, object>;
 
 namespace PureFileValidationPvp
@@ -10,6 +11,9 @@ namespace PureFileValidationPvp
 
     public class Json
     {
+        /// Object property name simple enough to use in Path unquoted.
+        static readonly Regex k_SimpleKey = new Regex("^[_a-zA-Z][_a-zA-Z0-9]*$");
+
         readonly object m_Value;
         readonly Json m_Parent;
 
@@ -22,17 +26,26 @@ namespace PureFileValidationPvp
             if (m_Parent != null)
             {
                 m_Parent.BuildPath(sb);
-                var isArrayElement = m_Parent.Kind == typeof(List<object>);
-                if (!isArrayElement || sb.Length == 0)
+                var isIndexOperation = m_Parent.IsArray || !k_SimpleKey.IsMatch(Key);
+                if (!isIndexOperation || sb.Length == 0)
                 {
                     sb.Append('.');
                 }
-                if (isArrayElement)
+                if (isIndexOperation)
                 {
                     sb.Append('[');
                 }
-                sb.Append(Key);
-                if (isArrayElement)
+
+                if (isIndexOperation && !m_Parent.IsArray) // complex object key
+                {
+                    EncodeJsonString(Key, sb);
+                }
+                else
+                {
+                    sb.Append(Key);
+                }
+
+                if (isIndexOperation)
                 {
                     sb.Append(']');
                 }
@@ -98,7 +111,11 @@ namespace PureFileValidationPvp
 
         public Json IfPresent => IsPresent ? this : null;
         public bool IsArray => Kind == typeof(List<object>);
+        public bool IsBoolean => Kind == typeof(bool);
+        public bool IsNumber => Kind == typeof(double);
+        public bool IsObject => Kind == typeof(JsonObject);
         public bool IsPresent => !(m_Value is Undefined);
+        public bool IsString => Kind == typeof(string);
 
         /// Returns the "location" of this element in the document as a jq-style path.
         public string Path
@@ -117,5 +134,27 @@ namespace PureFileValidationPvp
         public string String => CheckKind<string>();
 
         public Json this[string key] => new Json(RawObject.TryGetValue(key, out var result) ? result : Undefined.Undefined, this, key);
+
+        static void EncodeJsonString(string str, StringBuilder sb)
+        {
+            // Taken from SimpleJsonWriter.
+            sb.Append('"');
+            for (var i = 0; i < str.Length; ++i)
+            {
+                var c = str[i];
+                if (c < ' ' || c == '"' || c == '\\')
+                {
+                    sb.Append('\\');
+                    var j = "\"\\\n\r\t\b\f".IndexOf(c);
+                    if (j >= 0)
+                        sb.Append("\"\\nrtbf"[j]);
+                    else
+                        sb.AppendFormat("u{0:X4}", (uint)c);
+                }
+                else
+                    sb.Append(c);
+            }
+            sb.Append('"');
+        }
     }
 }
