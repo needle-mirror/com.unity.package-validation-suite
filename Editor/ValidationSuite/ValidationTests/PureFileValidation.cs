@@ -11,7 +11,6 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
     {
         static readonly Dictionary<string, string> k_ChecksAppliedInLegacyPVS = new Dictionary<string, string>
         {
-            ["PVP-26-1"] = "Asset files and .meta files must correspond",
             ["PVP-62-1"] = "index.md filename must be spelled in lowercase",
             ["PVP-107-1"] = "Manifest contains only permitted properties",
         };
