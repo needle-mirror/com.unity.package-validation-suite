@@ -16,7 +16,7 @@ namespace PureFileValidationPvp
 
         const string k_MetaExtension = ".meta";
 
-        public static readonly string[] Checks = { "PVP-26-1" };
+        public static readonly string[] Checks = { "PVP-26-1", "PVP-26-2" };
 
         // Derive directories from file paths. This assumes that there are no empty directories.
         static List<Entry> GetFileAndDirectoryEntries(IEnumerable<string> files)
@@ -61,15 +61,18 @@ namespace PureFileValidationPvp
             return entries;
         }
 
-        static void ValidateMetaFiles(List<Entry> entries, Action<string> addError)
+        static void ValidateMetaFiles(List<Entry> entries, Action<string, bool> addError)
         {
             foreach (var entry in entries)
             {
+                var directoryWithCase = entry.FileEntry.DirectoryWithCase;
+                var insideHiddenDirectory = directoryWithCase != "" && new PathValidations.Entry(directoryWithCase).IsHidden;
+
                 if (entry.FileEntry.HasExtension(k_MetaExtension))
                 {
                     if (entry.IsDirectory)
                     {
-                        addError($"{entry.FileEntry.PathWithCase}: Directory with meta file extension");
+                        addError($"{entry.FileEntry.PathWithCase}: Directory with meta file extension", insideHiddenDirectory);
                     }
                     else
                     {
@@ -77,15 +80,15 @@ namespace PureFileValidationPvp
                         var assetEntry = entries.FirstOrDefault(e => e.FileEntry.Path == assetPath);
                         if (assetEntry == null)
                         {
-                            addError($"{entry.FileEntry.PathWithCase}: Meta file without corresponding asset");
+                            addError($"{entry.FileEntry.PathWithCase}: Meta file without corresponding asset", insideHiddenDirectory);
                         }
                         else if (assetEntry.FileEntry.IsHidden)
                         {
-                            addError($"{entry.FileEntry.PathWithCase}: Meta file for hidden asset");
+                            addError($"{entry.FileEntry.PathWithCase}: Meta file for hidden asset", insideHiddenDirectory);
                         }
                         else if (assetEntry.FileEntry.HasExtension(k_MetaExtension))
                         {
-                            addError($"{entry.FileEntry.PathWithCase}: Meta file for asset with meta file extension");
+                            addError($"{entry.FileEntry.PathWithCase}: Meta file for asset with meta file extension", insideHiddenDirectory);
                         }
                     }
                 }
@@ -95,7 +98,7 @@ namespace PureFileValidationPvp
                     var metaEntry = entries.FirstOrDefault(e => e.FileEntry.Path == metaPath);
                     if (metaEntry == null)
                     {
-                        addError($"{entry.FileEntry.PathWithCase}: Asset without corresponding meta file");
+                        addError($"{entry.FileEntry.PathWithCase}: Asset without corresponding meta file", insideHiddenDirectory);
                     }
                 }
             }
@@ -105,7 +108,17 @@ namespace PureFileValidationPvp
         {
             // We need to know about directories since folder assets also have corresponding meta files.
             var entries = GetFileAndDirectoryEntries(context.Files);
-            void AddError(string error) => context.AddError("PVP-26-1", error);
+
+            // PVP-26-1 reports issues with meta files inside hidden directories whereas PVP-26-2 does not.
+            void AddError(string error, bool insideHiddenDirectory)
+            {
+                context.AddError("PVP-26-1", error);
+                if (!insideHiddenDirectory)
+                {
+                    context.AddError("PVP-26-2", error);
+                }
+            }
+
             ValidateMetaFiles(entries, AddError);
         }
     }
