@@ -11,16 +11,17 @@ namespace PureFileValidationPvp
         /// All PVP checks implemented by Validator.
         public static readonly IReadOnlyList<string> Checks =
             Context.Checks
-            .Concat(ChangelogValidations.Checks)
-            .Concat(LicenseValidations.Checks)
-            .Concat(ManifestTypeValidations.Checks)
-            .Concat(ManifestValidations.Checks)
-            .Concat(MetaFileValidations.Checks)
-            .Concat(PathValidations.Checks)
-            .Concat(SampleValidations.Checks)
-            .Concat(ThirdPartyNoticesValidations.Checks)
-            .OrderBy(s => s, StringComparer.Ordinal)
-            .ToArray();
+                .Concat(ChangelogValidations.Checks)
+                .Concat(DocumentationValidations.Checks)
+                .Concat(LicenseValidations.Checks)
+                .Concat(ManifestTypeValidations.Checks)
+                .Concat(ManifestValidations.Checks)
+                .Concat(MetaFileValidations.Checks)
+                .Concat(PathValidations.Checks)
+                .Concat(SampleValidations.Checks)
+                .Concat(ThirdPartyNoticesValidations.Checks)
+                .OrderBy(s => s, StringComparer.Ordinal)
+                .ToArray();
 
         // If some precondition fails, ALL dependent checks must be marked
         // as failed. This exception may be used to do so.
@@ -138,6 +139,12 @@ namespace PureFileValidationPvp
 
             public void RunBatch(string[] checks, Action<Context> runner)
             {
+                var undeclaredChecks = checks.Except(Validator.Checks).ToArray();
+                if (undeclaredChecks.Any())
+                {
+                    throw new InvalidOperationException($"batch run for undeclared checks: {string.Join(", ", undeclaredChecks)}");
+                }
+
                 m_CurrentBatchChecks.Clear();
                 m_CurrentBatchChecks.UnionWith(checks);
 
@@ -169,6 +176,7 @@ namespace PureFileValidationPvp
             context.RunBatch(PathValidations.Checks, PathValidations.Run);
             context.RunBatch(SampleValidations.Checks, SampleValidations.Run);
             context.RunBatch(ThirdPartyNoticesValidations.Checks, ThirdPartyNoticesValidations.Run);
+            context.RunBatch(DocumentationValidations.Checks, DocumentationValidations.Run);
         }
     }
 }

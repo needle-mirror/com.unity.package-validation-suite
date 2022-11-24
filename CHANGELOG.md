@@ -4,6 +4,9 @@ All notable changes to this package will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## [0.40.0-preview] - 2022-11-24
+- PVP: Add PFV implementation of manifest file PFV checks `PVP-102-2 PVP-103-1 PVP-105-1 PVP-108-1 PVP-111-1 PVP-112-1`. (PVS-134)
+
 ## [0.39.0-preview] - 2022-11-14
 - PVP: Add new iteration of meta file PFV check `PVP-26-2` that ignores contents of hidden directories. (PVS-115)
 
