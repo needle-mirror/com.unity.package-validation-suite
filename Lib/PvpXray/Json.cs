@@ -5,7 +5,7 @@ using System.Text;
 using System.Text.RegularExpressions;
 using JsonObject = System.Collections.Generic.Dictionary<string, object>;
 
-namespace PureFileValidationPvp
+namespace PvpXray
 {
     public enum Undefined { Undefined }
 

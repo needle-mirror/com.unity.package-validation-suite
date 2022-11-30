@@ -1,7 +1,7 @@
 using System.Linq;
 using System.Text.RegularExpressions;
 
-namespace PureFileValidationPvp
+namespace PvpXray
 {
     static class ThirdPartyNoticesValidations
     {

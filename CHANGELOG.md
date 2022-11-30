@@ -4,35 +4,42 @@ All notable changes to this package will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## [0.41.0-preview] - 2022-11-30
+- PVP: Add `PVP-107-2` that allows a `host` string property in package manifest and remove `PVP-107-1`. (PVS-158)
+- Add PvpXray namespace with a number of useful string extension methods.
+- Removed references to "Pure File Validation", now instead called "X-ray".
+- New, more robust HTTP implementation for querying package registry data. (PVS-160)
+
 ## [0.40.0-preview] - 2022-11-24
-- PVP: Add PFV implementation of manifest file PFV checks `PVP-102-2 PVP-103-1 PVP-105-1 PVP-108-1 PVP-111-1 PVP-112-1`. (PVS-134)
+- PVP: Add x-ray implementation of manifest file PVP checks `PVP-102-2 PVP-103-1 PVP-105-1 PVP-108-1 PVP-111-1 PVP-112-1`. (PVS-134)
+- PVP: Add x-ray implementation of documentation PVP checks `PVP-60-1 PVP-61-1`. (PVS-133)
 
 ## [0.39.0-preview] - 2022-11-14
-- PVP: Add new iteration of meta file PFV check `PVP-26-2` that ignores contents of hidden directories. (PVS-115)
+- PVP: Add new iteration of meta file x-ray check `PVP-26-2` that ignores contents of hidden directories. (PVS-115)
 
 ## [0.38.0-preview] - 2022-11-10
-- Disable PVP-107-1 manifest validation check in legacy PVS ("Pure File Validations" validation). (PVS-157)
+- Disable PVP-107-1 manifest validation check in legacy PVS ("X-ray Validations" validation). (PVS-157)
 
 ## [0.37.0-preview] - 2022-11-09
-- Don't include meta file check `PVP-26-1` in "Pure File Validations" validation. (PVS-155)
+- Don't include meta file check `PVP-26-1` in "X-ray Validations" validation. (PVS-155)
 
 ## [0.36.0-preview] - 2022-11-08
 - Failed attempt at fixing PVS-155.
 
 ## [0.35.0-preview] - 2022-11-08
 - Remove legacy placeholder signature validation. (PVS-71)
-- PVP: Add PFV implementation of signature PVP check `PVP-28-1`. (PVS-71)
-- PVP: Add PFV implementation of allowed manifest properties PVP check `PVP-107-1`. Check included in "Pure File Validations" validation. (PVS-115)
-- PVP: Add PFV implementation of meta file PFV check `PVP-26-1`. (PVS-129)
-- PVP: Add PFV implementations of changelog PVP checks `PVP-{40,41,43}-1`. (PVS-130)
-- PVP: Add PFV implementations of license PVP checks `PVP-{30,31,32}-1`. (PVS-131)
+- PVP: Add x-ray implementation of signature PVP check `PVP-28-1`. (PVS-71)
+- PVP: Add x-ray implementation of allowed manifest properties PVP check `PVP-107-1`. Check included in "X-ray Validations" validation. (PVS-115)
+- PVP: Add x-ray implementation of meta file PVP check `PVP-26-1`. (PVS-129)
+- PVP: Add x-ray implementations of changelog PVP checks `PVP-{40,41,43}-1`. (PVS-130)
+- PVP: Add x-ray implementations of license PVP checks `PVP-{30,31,32}-1`. (PVS-131)
 - PVP: Change JSON path syntax used in PVP error messages. Object keys not matching regex `^[_a-zA-Z][_a-zA-Z0-9]*$` are now represented as `.["foo.bar"]` instead of `.foo.bar` to avoid ambiguities.
 
 ## [0.34.0-preview] - 2022-10-24
 - PVP: fix "IPvpChecker added result for undeclared check PVP-80-1" error
 
 ## [0.33.0-preview] - 2022-10-24
-- PVP: Add PFV implementations of PVP checks `PVP-{80,81}-1`. (PVS-135)
+- PVP: Add x-ray implementations of PVP checks `PVP-{80,81}-1`. (PVS-135)
 - Added retry logic and logging to a handful of flaky IO operations. (PVS-122)
 
 ## [0.32.0-preview] - 2022-10-19
@@ -44,7 +51,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [0.30.0-preview] - 2022-09-21
 - Add new check to catch `index.md` documentation files with wrong filename casing. (PVS-121)
-- PVP: Add PureFileValidation framework and a number of new PVP checks: `PVP-{21,22,23,24,25,62,100,101,102}-1`. (PVS-128)
+- PVP: Add "X-ray" validation framework and a number of new PVP checks: `PVP-{21,22,23,24,25,62,100,101,102}-1`. (PVS-128)
 - Allow the new Burst LLD wrapper executable to pass package validation.
 - Fixed ApiValidation and UpdateConfigurationValidation potentially validating against assemblies of unrelated package if package name is a prefix of another package name. (PETS-1043)
 

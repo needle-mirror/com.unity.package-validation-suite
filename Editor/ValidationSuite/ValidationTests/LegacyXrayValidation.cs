@@ -2,23 +2,23 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using JetBrains.Annotations;
-using PureFileValidationPvp;
+using PvpXray;
 
 namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
 {
     [UsedImplicitly]
-    class PureFileValidation : BaseValidation
+    class LegacyXrayValidation : BaseValidation
     {
         static readonly Dictionary<string, string> k_ChecksAppliedInLegacyPVS = new Dictionary<string, string>
         {
             ["PVP-62-1"] = "index.md filename must be spelled in lowercase",
         };
 
-        static PureFileValidation()
+        static LegacyXrayValidation()
         {
             if (k_ChecksAppliedInLegacyPVS.Keys.Except(Validator.Checks).Count() != 0)
             {
-                throw new InvalidOperationException("Trying to enforce non-existing PFV check in legacy PVS");
+                throw new InvalidOperationException("Trying to enforce non-existing x-ray check in legacy PVS");
             }
         }
 
@@ -26,19 +26,19 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
         readonly Dictionary<string, string> m_AppliedChecks;
         readonly Validator m_Validator = new Validator();
 
-        public PureFileValidation()
+        public LegacyXrayValidation()
         {
-            TestName = "Pure File Validations";
+            TestName = "X-ray Validations";
             TestDescription = "Assorted requirements on package file contents.";
             TestCategory = TestCategory.ContentScan;
 
-            // Don't apply these new PFV checks in VerifiedSet (APV) context, for compatibility with old vendored PVS versions.
+            // Don't apply these new x-ray checks in VerifiedSet (APV) context, for compatibility with old vendored PVS versions.
             SupportedValidations = new[] { ValidationType.CI, ValidationType.LocalDevelopment, ValidationType.LocalDevelopmentInternal, ValidationType.Promotion };
 
             m_AppliedChecks = k_ChecksAppliedInLegacyPVS;
         }
 
-        internal PureFileValidation(params string[] appliedChecks)
+        internal LegacyXrayValidation(params string[] appliedChecks)
             : this()
         {
             m_AppliedChecks = new Dictionary<string, string>();
@@ -74,7 +74,7 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
         {
             return m_AppliedChecks == k_ChecksAppliedInLegacyPVS
                 ? base.ToString()
-                : $"{nameof(PureFileValidation)}: {string.Join(", ", m_AppliedChecks.Keys)}";
+                : $"{nameof(LegacyXrayValidation)}: {string.Join(", ", m_AppliedChecks.Keys)}";
         }
     }
 }

@@ -10,7 +10,7 @@ using UnityEditor.Compilation;
 using UnityEditor.PackageManager.ValidationSuite;
 using UnityEditor.PackageManager.ValidationSuite.ValidationTests;
 using UnityEngine;
-using PureFileValidationPvp;
+using PvpXray;
 
 static class Pvp
 {
@@ -74,7 +74,7 @@ namespace UnityEditor.PackageManager.ValidationSuite
     }
 
     [UsedImplicitly]
-    class PureFileValidationChecker : IPvpChecker
+    class XrayValidationChecker : IPvpChecker
     {
         public string[] Checks { get; } = Validator.Checks.ToArray();
 
@@ -239,14 +239,14 @@ namespace UnityEditor.PackageManager.ValidationSuite
             var allAssemblyInfo = CompilationPipeline.GetAssemblies().Select(Utilities.AssemblyInfoFromAssembly).Where(a => a != null).ToArray();
 
             var packagePathPrefix = Path.GetFullPath(packagePath) + Path.DirectorySeparatorChar;
-            var assemblyInfoOutsidePackage = allAssemblyInfo.Where(a => !a.asmdefPath.StartsWith(packagePathPrefix, StringComparison.Ordinal)).ToArray();
+            var assemblyInfoOutsidePackage = allAssemblyInfo.Where(a => !a.asmdefPath.StartsWithOrdinal(packagePathPrefix)).ToArray();
             var badFilePath = assemblyInfoOutsidePackage.SelectMany(a => a.assembly.sourceFiles).Where(files.Contains).FirstOrDefault();
             if (badFilePath != null)
             {
                 throw new InvalidOperationException($"Script \"{badFilePath}\" is not included by any asmdefs in the package.");
             }
 
-            return allAssemblyInfo.Where(a => a.asmdefPath.StartsWith(packagePathPrefix, StringComparison.Ordinal)).ToArray();
+            return allAssemblyInfo.Where(a => a.asmdefPath.StartsWithOrdinal(packagePathPrefix)).ToArray();
         }
 
         public Results Run(string packageName, Action<int, int> onProgress = null)

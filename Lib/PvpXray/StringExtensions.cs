@@ -1,8 +1,11 @@
 using System;
 
-namespace PureFileValidationPvp
+namespace PvpXray
 {
-    static class StringExtensions
+    // This is a public API to facilitate code sharing. The nature of extension
+    // methods is that even ADDING a public extension method to a namespace is
+    // a breaking change. New extension methods must thus go in a new namespace.
+    public static class StringExtensions
     {
         // We want string comparisons to be culturally invariant (so the program
         // doesn't unexpectedly change behavior just because OS settings changed),
@@ -16,7 +19,9 @@ namespace PureFileValidationPvp
         // See also: https://confluence.unity3d.com/pages/viewpage.action?pageId=43573703 ('Locale / culture considerations')
         public static bool StartsWithOrdinal(this string str, string value) => str.StartsWith(value, StringComparison.Ordinal);
         public static bool EndsWithOrdinal(this string str, string value) => str.EndsWith(value, StringComparison.Ordinal);
-        public static int IndexOfOrdinal(this string str, string value) => str.IndexOf(value, StringComparison.Ordinal);
-        public static int LastIndexOfOrdinal(this string str, string value) => str.LastIndexOf(value, StringComparison.Ordinal);
+        public static int IndexOfOrdinal(this string str, string value, int startIndex = 0) => str.IndexOf(value, startIndex, StringComparison.Ordinal);
+        public static int IndexOfOrdinal(this string str, string value, int startIndex, int count) => str.IndexOf(value, startIndex, count, StringComparison.Ordinal);
+        public static int LastIndexOfOrdinal(this string str, string value, int startIndex = 0) => str.LastIndexOf(value, startIndex, StringComparison.Ordinal);
+        public static int LastIndexOfOrdinal(this string str, string value, int startIndex, int count) => str.LastIndexOf(value, startIndex, count, StringComparison.Ordinal);
     }
 }

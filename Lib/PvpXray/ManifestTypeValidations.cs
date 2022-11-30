@@ -1,13 +1,13 @@
 using System.Collections.Generic;
 using System.Linq;
 
-using Requirement = PureFileValidationPvp.ManifestValidations.Requirement;
+using Requirement = PvpXray.ManifestValidations.Requirement;
 
-namespace PureFileValidationPvp
+namespace PvpXray
 {
     static class ManifestTypeValidations
     {
-        public static readonly string[] Checks = { "PVP-107-1" };
+        public static readonly string[] Checks = { "PVP-107-2" };
 
         static Requirement IsBoolean => new Requirement() { Message = "must be a boolean", Func = json => json.IsBoolean };
         static Requirement IsNumber => new Requirement() { Message = "must be a number", Func = json => json.IsNumber };
@@ -54,6 +54,7 @@ namespace PureFileValidationPvp
             (new[] { "documentationUrl" }, IsString),
             (new[] { "files" }, IsArrayOfString),
             (new[] { "hideInEditor" }, IsBoolean),
+            (new[] { "host" }, IsString),
             (new[] { "keywords" }, IsArrayOfString),
             (new[] { "license" }, IsString),
             (new[] { "name" }, IsString),
@@ -107,7 +108,7 @@ namespace PureFileValidationPvp
                     var requirement = fullMatch.Value;
                     if (!requirement.Func(member))
                     {
-                        context.AddError("PVP-107-1", $"{member.Path}: {requirement.Message}");
+                        context.AddError("PVP-107-2", $"{member.Path}: {requirement.Message}");
                     }
                 }
                 else if (partialMatch)
@@ -118,12 +119,12 @@ namespace PureFileValidationPvp
                     }
                     else
                     {
-                        context.AddError("PVP-107-1", $"{member.Path}: property must be an object");
+                        context.AddError("PVP-107-2", $"{member.Path}: property must be an object");
                     }
                 }
                 else
                 {
-                    context.AddError("PVP-107-1", $"{member.Path}: property not allowed");
+                    context.AddError("PVP-107-2", $"{member.Path}: property not allowed");
                 }
 
                 location.RemoveAt(location.Count - 1);
@@ -140,7 +141,7 @@ namespace PureFileValidationPvp
             }
             catch (JsonException e)
             {
-                context.AddError("PVP-107-1", e.Message);
+                context.AddError("PVP-107-2", e.Message);
             }
         }
     }

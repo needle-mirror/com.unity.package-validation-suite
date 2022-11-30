@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using PvpXray;
 using UnityEditor.Compilation;
 using UnityEditorInternal;
 using UnityEngine;
@@ -58,12 +59,11 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
 
             var packagePathPrefix = Path.GetFullPath(packagePath) + Path.DirectorySeparatorChar;
             var assemblyInfoOutsidePackage =
-                allAssemblyInfo.Where(a => !a.asmdefPath.StartsWith(packagePathPrefix, StringComparison.Ordinal)).ToArray();
+                allAssemblyInfo.Where(a => !a.asmdefPath.StartsWithOrdinal(packagePathPrefix)).ToArray();
             foreach (var badFilePath in assemblyInfoOutsidePackage.SelectMany(a => a.assembly.sourceFiles).Where(files.Contains))
                 AddError("Script \"{0}\" is not included by any asmdefs in the package.", badFilePath);
 
-            var relevantAssemblyInfo =
-                allAssemblyInfo.Where(a => a.asmdefPath.StartsWith(packagePathPrefix, StringComparison.Ordinal));
+            var relevantAssemblyInfo = allAssemblyInfo.Where(a => a.asmdefPath.StartsWithOrdinal(packagePathPrefix));
 
             if (IncludePrecompiledAssemblies)
             {

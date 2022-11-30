@@ -1,6 +1,6 @@
 {
-    "name": "PureFileValidationPvp",
-    "rootNamespace": "PureFileValidationPvp",
+    "name": "PvpXray",
+    "rootNamespace": "PvpXray",
     "references": [],
     "includePlatforms": [
         "Editor"

@@ -16,7 +16,7 @@ using System.Text;
 // - bugfix: now correctly rejects this invalid JSON: ""
 // - raises exception on invalid JSON or duplicate keys
 
-namespace PureFileValidationPvp
+namespace PvpXray
 {
     class JsonException : Exception
     {

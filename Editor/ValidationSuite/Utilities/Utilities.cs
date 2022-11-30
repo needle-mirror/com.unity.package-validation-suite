@@ -9,6 +9,7 @@ using System.Reflection;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using PvpXray;
 using Semver;
 using UnityEngine;
 using UnityEngine.Profiling;
@@ -141,52 +142,12 @@ namespace UnityEditor.PackageManager.ValidationSuite
             return packageName;
         }
 
-        static (int, string) ReadHttpTextFile(string url)
-        {
-            var nRetry = 0;
-            while (true)
-            {
-                using (var client = new HttpClient())
-                {
-                    client.DefaultRequestHeaders.ExpectContinue = false;
-                    client.Timeout = TimeSpan.FromMinutes(1);
-
-                    using (var request = new HttpRequestMessage(HttpMethod.Get, url))
-                    {
-                        request.Headers.Add("User-Agent", VSuiteName);
-
-                        int status;
-                        string contents;
-                        try
-                        {
-                            (status, contents) = Task.Run(async () =>
-                            {
-                                // ReSharper disable AccessToDisposedClosure -- Task.Run blocks until we're done
-                                var response = await client.SendAsync(request, HttpCompletionOption.ResponseContentRead);
-                                return ((int)response.StatusCode, await response.Content.ReadAsStringAsync());
-                            }).GetAwaiter().GetResult();
-                        }
-                        catch (Exception e)
-                        {
-                            if (++nRetry < 3)
-                            {
-                                Thread.Sleep(10);
-                                continue;
-                            }
-
-                            throw new Exception($"HTTP request for URL {url} failed: {e.Message}");
-                        }
-
-                        return (status, contents);
-                    }
-                }
-            }
-        }
+        static readonly PvpHttpClient k_HttpClient = new PvpHttpClient(VSuiteName);
 
         public static List<string> GetPackageVersionsOnProduction(string packageName)
         {
             var url = NodeLauncher.ProductionRepositoryUrl + packageName;
-            var (status, response) = ReadHttpTextFile(url);
+            var response = k_HttpClient.GetString(url, out var status);
 
             if (status == 404)
             {
