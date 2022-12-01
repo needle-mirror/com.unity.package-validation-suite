@@ -4,6 +4,9 @@ All notable changes to this package will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## [0.43.0-preview] - 2022-12-01
+- Includes Data/Tools/Compilation/ApiUpdater folder when probing for APIUpdater.ConfigurationValidator (this is a preparation for the actual move in trunk)
+
 ## [0.42.0-preview] - 2022-12-01
 - Use new HTTP implementation to download packages from production registry instead of using npm. (PVS-141)
 - Remove "Structure" and "Against Asset Store standards" validation type items from dropdown in UI. (PVS-137)

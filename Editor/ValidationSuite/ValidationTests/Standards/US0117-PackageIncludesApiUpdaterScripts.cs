@@ -15,6 +15,8 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests.Standards
 
         public override StandardVersion Version => new StandardVersion(1, 0, 0);
 
+        private static readonly string LegacyApiUpdaterValidationPath = Path.Combine(EditorApplication.applicationContentsPath, "Tools/ScriptUpdater/APIUpdater.ConfigurationValidator.exe");
+
         public void Check(AssemblyInfo[] info, string packagePath, string packageName)
         {
             if (info.Length == 0)
@@ -22,11 +24,19 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests.Standards
                 return;
             }
 
-            var validatorPath = Path.Combine(EditorApplication.applicationContentsPath, "Tools/ScriptUpdater/APIUpdater.ConfigurationValidator.exe");
+            // We check for the validator in the legacy (original) folder to support Unity versions before ApiUpdater move to Unity-Compiler repo.
+            var validatorPath = LegacyApiUpdaterValidationPath;
             if (!File.Exists(validatorPath))
             {
-                AddInformation("APIUpdater.ConfigurationValidator.exe is not present in this version of Unity. Not validating update configurations.");
-                return;
+
+                //When we stop supporting the last version of Unity (2023.2 ?) that expects ApiUpdater to be under Tools/ScriptUpdater folder
+                //we can probe only the path below. We can also do that when/if a PVS version requires Unity > 2023.2
+                validatorPath = Path.Combine(EditorApplication.applicationContentsPath, "Tools/Compilation/ApiUpdater/APIUpdater.ConfigurationValidator.dll");
+                if (!File.Exists(validatorPath))
+                {
+                    AddInformation("APIUpdater.ConfigurationValidator.exe is not present in this version of Unity. Not validating update configurations.");
+                    return;
+                }
             }
 
             var asmdefAssemblies = info.Where(i => i.assemblyKind == AssemblyInfo.AssemblyKind.Asmdef).ToArray();
