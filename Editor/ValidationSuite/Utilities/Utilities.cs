@@ -121,25 +121,45 @@ namespace UnityEditor.PackageManager.ValidationSuite
             return result.ToArray();
         }
 
-        internal static string DownloadPackage(PackageId package, string workingDirectory)
+        internal static string DownloadPackage(PackageId package, string workingDirectory, IPvpHttpClient httpClient = null)
         {
-            //No Need to delete the file, npm pack always overwrite: https://docs.npmjs.com/cli/pack
-            var launcher = new NodeLauncher();
-            launcher.WorkingDirectory = workingDirectory;
-            launcher.NpmRegistry = NodeLauncher.ProductionRepositoryUrl;
+            httpClient = httpClient ?? k_HttpClient;
 
-            try
+            var metadataUrl = NodeLauncher.ProductionRepositoryUrl + package.Name;
+            var metadataJson = httpClient.GetString(metadataUrl, out var metadataStatus);
+            if (metadataStatus == 404)
             {
-                launcher.NpmPack(package.Id);
+                throw new Exception($"{package.Name} not found on production registry");
             }
-            catch (ApplicationException exception)
+            if (metadataStatus != 200)
             {
-                exception.Data["code"] = "fetchFailed";
-                throw exception;
+                throw new Exception($"Got HTTP status {metadataStatus} for URL: {metadataUrl}");
             }
 
-            var packageName = launcher.OutputLog.ToString().Trim();
-            return packageName;
+            var metadata = new Json(metadataJson);
+            var versionMetadata = metadata["versions"][package.Version];
+            if (!versionMetadata.IsPresent)
+            {
+                throw new Exception($"{package.Id} not found on production registry");
+            }
+
+            var tarballUrl = versionMetadata["dist"]["tarball"].String;
+            using (var tarballBody = httpClient.GetStream(tarballUrl, out var tarballStatus))
+            {
+                if (tarballStatus != 200)
+                {
+                    throw new Exception($"Got HTTP status {tarballStatus} for URL: {tarballUrl}");
+                }
+
+                var tarballFilename = $"{package.Name}-{package.Version}.tgz";
+                var tarballPath = Path.Combine(workingDirectory, tarballFilename);
+                using (var tarballFile = File.Create(tarballPath))
+                {
+                    tarballBody.CopyTo(tarballFile);
+                }
+
+                return tarballFilename;
+            }
         }
 
         static readonly PvpHttpClient k_HttpClient = new PvpHttpClient(VSuiteName);

@@ -4,6 +4,11 @@ All notable changes to this package will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## [0.42.0-preview] - 2022-12-01
+- Use new HTTP implementation to download packages from production registry instead of using npm. (PVS-141)
+- Remove "Structure" and "Against Asset Store standards" validation type items from dropdown in UI. (PVS-137)
+- Change "Against Unity production standards" validation type item always correspond to `ValidationType.Promotion`. It would previously resolve to `ValidationType.LocalDevelopmentInternal` if the package source was not `PackageSource.Registry`. (PVS-137)
+
 ## [0.41.0-preview] - 2022-11-30
 - PVP: Add `PVP-107-2` that allows a `host` string property in package manifest and remove `PVP-107-1`. (PVS-158)
 - Add PvpXray namespace with a number of useful string extension methods.

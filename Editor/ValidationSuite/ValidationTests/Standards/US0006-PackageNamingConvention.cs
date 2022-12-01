@@ -64,10 +64,5 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests.Standards
                 AddError(String.Format("In package.json, \"displayName\" cannot have any special characters. {0}", ErrorDocumentation.GetLinkMessage(ManifestValidation.k_DocsFilePath, "displayName-cannot-have-any-special-characters")));
             }
         }
-
-        public string[] GetPackageNamePrefixList()
-        {
-            return PackageNamePrefixList;
-        }
     }
 }

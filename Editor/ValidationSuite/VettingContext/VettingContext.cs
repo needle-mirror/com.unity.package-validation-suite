@@ -320,7 +320,9 @@ namespace UnityEditor.PackageManager.ValidationSuite
                     var previousPackageId = new PackageId(projectPackageInfo.name, previousVersion);
                     var previousPackagePath = Path.Combine(Utilities.UnityTempPath, "previous-" + previousPackageId);
                     var packageFileName = Utilities.DownloadPackage(previousPackageId, Utilities.UnityTempPath);
-                    Utilities.ExtractPackage(Path.Combine(Utilities.UnityTempPath, packageFileName), Utilities.UnityTempPath, previousPackagePath, projectPackageInfo.name);
+                    var packagePath = Path.Combine(Utilities.UnityTempPath, packageFileName);
+                    ActivityLogger.Log($"Extracting {packageFileName}");
+                    Utilities.ExtractPackage(packagePath, Utilities.UnityTempPath, previousPackagePath, projectPackageInfo.name);
                     return previousPackagePath;
                 }
                 catch (Exception exception)

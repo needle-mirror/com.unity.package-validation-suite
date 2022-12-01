@@ -1,9 +1,9 @@
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Linq;
 using System.Diagnostics;
 using System.IO;
-using UnityEditor.PackageManager.ValidationSuite.ValidationTests.Standards;
 using UnityEngine;
 
 #if UNITY_2019_1_OR_NEWER
@@ -24,16 +24,11 @@ namespace UnityEditor.PackageManager.ValidationSuite.UI
 
         private VisualElement root;
 
-        private PopupField<string> validationPopupField;
+        private PopupField<ValidationType> validationPopupField;
 
-        private List<string> _validationChoices = ValidationTypeDropdown.ToList();
-        public List<string> ValidationChoices
-        {
-            get => _validationChoices;
-            private set => _validationChoices = value;
-        }
+        static readonly List<ValidationType> k_ValidationChoices = new List<ValidationType> { ValidationType.CI, ValidationType.Promotion };
+        const ValidationType k_DefaultValidationType = ValidationType.Promotion;
 
-        private PackageNamingConventionUS0006 _namingConventionUs0006 = new PackageNamingConventionUS0006();
         private PackageInfo CurrentPackageinfo { get; set; }
         PackageId PackageId { get; set; }
 
@@ -51,12 +46,22 @@ namespace UnityEditor.PackageManager.ValidationSuite.UI
             root.styleSheets.Add(styleSheet);
             Add(root);
 
-            validationPopupField = new PopupField<string>("", ValidationChoices, 0);
+            validationPopupField = new PopupField<ValidationType>(k_ValidationChoices, k_DefaultValidationType, FormatValidationType, FormatValidationType);
             root.Q<VisualElement>("ValidationTypeDropdown").Add(validationPopupField);
 
             ValidateButton.clickable.clicked += Validate;
             ViewResultsButton.clickable.clicked += ViewResults;
             ViewDiffButton.clickable.clicked += ViewDiffs;
+        }
+
+        static string FormatValidationType(ValidationType validationType)
+        {
+            switch (validationType)
+            {
+                case ValidationType.CI: return "Against Unity candidates standards";
+                case ValidationType.Promotion: return "Against Unity production standards";
+                default: throw new InvalidEnumArgumentException(nameof(validationType));
+            }
         }
 
         static bool PackageAvailable(PackageInfo packageInfo)
@@ -98,28 +103,12 @@ namespace UnityEditor.PackageManager.ValidationSuite.UI
             PackageId = new PackageId(CurrentPackageinfo);
             ValidationResults.text = string.Empty;
 
-            AddRemoveUnitySpecificValidations(NamePrefixEligibleForUnityStandardsOptions(CurrentPackageinfo.name));
-
-            validationPopupField.value = NamePrefixEligibleForUnityStandardsOptions(CurrentPackageinfo.name) ? ValidationTypeDropdown.UnityProductionStandardsLabelText : ValidationTypeDropdown.StructureLabelText;
+            validationPopupField.value = k_DefaultValidationType;
 
             UIUtils.SetElementDisplay(ViewResultsButton, ValidationSuiteReport.ReportExists(PackageId.Id));
             UIUtils.SetElementDisplay(ViewDiffButton, ValidationSuiteReport.DiffsReportExists(PackageId.Id));
 
             root.style.backgroundColor = Color.gray;
-        }
-
-        public void AddRemoveUnitySpecificValidations(bool showUnityStandards)
-        {
-            ValidationChoices.Clear();
-
-            ValidationChoices.Add(ValidationTypeDropdown.StructureLabelText);
-            ValidationChoices.Add(ValidationTypeDropdown.AssetStoreLabelText);
-
-            if (showUnityStandards)
-            {
-                ValidationChoices.Add(ValidationTypeDropdown.UnityCandidatesStandardsLabelText);
-                ValidationChoices.Add(ValidationTypeDropdown.UnityProductionStandardsLabelText);
-            }
         }
 
         private void Validate()
@@ -133,7 +122,7 @@ namespace UnityEditor.PackageManager.ValidationSuite.UI
                 return;
             }
 
-            var validationType = ValidationTypeDropdown.ValidationTypeFromDropdown(validationPopupField.value, CurrentPackageinfo.source);
+            var validationType = validationPopupField.value;
 
             var results = ValidationSuite.ValidatePackage(PackageId, validationType);
             var report = ValidationSuiteReport.GetReport(PackageId.Id);
@@ -189,12 +178,6 @@ namespace UnityEditor.PackageManager.ValidationSuite.UI
             {
                 Application.OpenURL("file://" + Path.GetFullPath(ValidationSuiteReport.DiffsReportPath(PackageId.Id)));
             }
-        }
-
-        public bool NamePrefixEligibleForUnityStandardsOptions(string packageName)
-        {
-            return _namingConventionUs0006.GetPackageNamePrefixList()
-                .Any(packageName.StartsWith);
         }
 
         internal Label ValidationResults { get { return root.Q<Label>("validationResults");} }

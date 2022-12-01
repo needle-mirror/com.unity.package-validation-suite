@@ -19,6 +19,9 @@ As shown below, once the validation package is installed in your project, the Pa
  - The validation tests will get run.
  - A report will be produced for viewing.
 
+ Note that there are two different validation types available via the dropdown next to the validate button:
+- _Against Unity candidates standards_: Run validation required to publish a package to the candidates registry.
+- _Against Unity production standards_: Run validation required to promote a package to the production registry.
 
  ![results](images/ValidateResults.png)
 
