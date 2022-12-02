@@ -53,6 +53,9 @@ namespace PvpXray
             ("PVP-101-1", m => m["version"], SemVer),
 
             ("PVP-102-1", m => m["displayName"], new Regex("^[ a-zA-Z0-9]{1,50}$")),
+
+            ("PVP-104-1", m => m["displayName"], new Regex(@"^(?!unity).*$", k_IgnoreCase)),
+
             ("PVP-102-1", m => m["unity"].IfPresent, new Regex(@"^[0-9]{4}\.[1-9][0-9]*$")),
             ("PVP-102-1", m => m["unityRelease"].IfPresent, new Regex(@"^[0-9]+[abf][1-9][0-9]*$")),
             ("PVP-102-1", m => m["unityRelease"].IfPresent.Unless(m["unity"].IsPresent), Fail("requires that the 'unity' key is present")),
@@ -65,6 +68,7 @@ namespace PvpXray
             ("PVP-102-2", m => m["unityRelease"].IfPresent.Unless(m["unity"].IsPresent), Fail("requires that the 'unity' key is present")),
             ("PVP-102-2", m => m["dependencies"].MembersIfPresent.Where(e => !k_ValidPackageName.IsMatch(e.Key)), Fail($"key must match {k_ValidPackageName}")),
             ("PVP-102-2", m => m["dependencies"].MembersIfPresent.Unless(m["type"].IsPresent && m["type"].String == "feature"), SemVer),
+
             ("PVP-108-1", m => m["description"], new Regex("(?s)^.{50,}")),
 
             ("PVP-103-1", m => m.Unless(!IsUnityPackage(m))?["author"].IfPresent, Fail("must not be specified in Unity packages")),
