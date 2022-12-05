@@ -52,10 +52,9 @@ namespace PvpXray
             ("PVP-101-1", m => m["name"], k_ValidPackageName),
             ("PVP-101-1", m => m["version"], SemVer),
 
-            ("PVP-102-1", m => m["displayName"], new Regex("^[ a-zA-Z0-9]{1,50}$")),
-
             ("PVP-104-1", m => m["displayName"], new Regex(@"^(?!unity).*$", k_IgnoreCase)),
 
+            ("PVP-102-1", m => m["displayName"], new Regex("^[ a-zA-Z0-9]{1,50}$")),
             ("PVP-102-1", m => m["unity"].IfPresent, new Regex(@"^[0-9]{4}\.[1-9][0-9]*$")),
             ("PVP-102-1", m => m["unityRelease"].IfPresent, new Regex(@"^[0-9]+[abf][1-9][0-9]*$")),
             ("PVP-102-1", m => m["unityRelease"].IfPresent.Unless(m["unity"].IsPresent), Fail("requires that the 'unity' key is present")),
@@ -75,6 +74,8 @@ namespace PvpXray
             ("PVP-103-1", m => m.Unless(IsUnityPackage(m))?["author"]["name"], k_NonEmpty),
 
             ("PVP-105-1", m => m["name"], k_ValidCompany),
+
+            ("PVP-110-1", m => m["dist"].IfPresent, Fail("key must not be present")),
 
             ("PVP-111-1", m => m["repository"]["url"], k_NonEmpty),
             ("PVP-111-1", m => m["repository"]["revision"], k_ValidSHA1Hash),
