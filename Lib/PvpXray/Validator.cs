@@ -17,6 +17,7 @@ namespace PvpXray
                 .Concat(ManifestTypeValidations.Checks)
                 .Concat(ManifestValidations.Checks)
                 .Concat(MetaFileValidations.Checks)
+                .Concat(MetaGuidValidations.Checks)
                 .Concat(PathValidations.Checks)
                 .Concat(SampleValidations.Checks)
                 .Concat(ThirdPartyNoticesValidations.Checks)
@@ -173,6 +174,7 @@ namespace PvpXray
             context.RunBatch(ManifestTypeValidations.Checks, ManifestTypeValidations.Run);
             context.RunBatch(ManifestValidations.Checks, ManifestValidations.Run);
             context.RunBatch(MetaFileValidations.Checks, MetaFileValidations.Run);
+            context.RunBatch(MetaGuidValidations.Checks, MetaGuidValidations.Run);
             context.RunBatch(PathValidations.Checks, PathValidations.Run);
             context.RunBatch(SampleValidations.Checks, SampleValidations.Run);
             context.RunBatch(ThirdPartyNoticesValidations.Checks, ThirdPartyNoticesValidations.Run);

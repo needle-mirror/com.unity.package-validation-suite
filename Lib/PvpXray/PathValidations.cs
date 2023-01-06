@@ -74,6 +74,8 @@ namespace PvpXray
         {
             // PVP-28-1: Must have .signature file (US-0134)
             ("PVP-28-1", paths => paths.Contains(".signature"), "Missing .signature file"),
+            // PVP-50-1: Must have README.md file
+            ("PVP-50-1", paths => paths.Contains("README.md"), "Missing README.md file"),
         };
 
         public static readonly string[] Checks =
