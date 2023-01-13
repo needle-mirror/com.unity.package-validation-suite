@@ -81,6 +81,8 @@ namespace PvpXray
             ("PVP-111-1", m => m["repository"]["revision"], k_ValidSHA1Hash),
 
             ("PVP-112-1", m => m["dependencies"].MembersIfPresent.Unless(m["type"].IfPresent?.String != "feature"), Literal("default")),
+
+            ("PVP-113-1", m => m["type"].IfPresent, new Regex(@"^(feature|template)$")),
         };
 
         public static readonly string[] Checks = k_LocationChecks.Select(v => v.Item1).Distinct().ToArray();

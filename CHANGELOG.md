@@ -4,6 +4,9 @@ All notable changes to this package will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## [0.47.0-preview] - 2023-01-13
+- PVP: Add x-ray check `PVP-113-1`, checking manifest type attribute for a valid value (PVS-168)
+
 ## [0.46.0-preview] - 2023-01-06
 - PVP: Add x-ray check `PVP-27-1`, checking for duplicate GUIDs in .meta files. (PVS-162)
 - PVP: Add x-ray check `PVP-50-1`, checking for presence of README.md file.
