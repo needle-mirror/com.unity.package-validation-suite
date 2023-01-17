@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.IO;
+using PvpXray;
 
 namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests.Standards
 {
@@ -22,28 +23,6 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests.Standards
                 AddError("In a published package, the `Samples` needs to be renamed to `Samples~`. It should have been done automatically in the CI publishing process.");
             }
 
-            var samplesDir = samplesDirInfo.SamplesDirExists ? SamplesUtilities.SamplesDirName : SamplesUtilities.SamplesTildeDirName;
-            var matchingFiles = new List<string>();
-            Utilities.RecursiveDirectorySearch(Path.Combine(path, samplesDir), ".sample.json", ref matchingFiles);
-
-            if (validationType != ValidationType.VerifiedSet)
-            {
-                if (matchingFiles.Count == 0)
-                {
-                    AddError(samplesDir + " folder exists but no `.sample.json` files found in it." +
-                             "A `.sample.json` file is required for a sample to be recognized." +
-                             "Please refer to https://github.cds.internal.unity3d.com/unity/com.unity.package-starter-kit/blob/master/Samples/Example/.sample.json for more info.");
-                }
-            }
-
-            if (validationType == ValidationType.Promotion)
-            {
-                if (samples.Count != matchingFiles.Count)
-                {
-                    AddError("The number of samples in `package.json` does not match the number of `.sample.json` files found in `" + samplesDir + "`.");
-                }
-            }
-
             if (validationType == ValidationType.Promotion || validationType == ValidationType.VerifiedSet)
             {
                 foreach (var sample in samples)
@@ -52,15 +31,17 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests.Standards
                         AddError("Sample path must be set and non-empty in `package.json`.");
                     if (string.IsNullOrEmpty(sample.displayName))
                         AddError("Sample display name will be shown in the UI, and it must be set and non-empty in `package.json`.");
-                    var samplePath = Path.Combine(path, sample.path);
-                    var sampleJsonPath = Path.Combine(samplePath, ".sample.json");
-                    if (!Directory.Exists(samplePath))
+                    if ((sample.path + "/").Contains("/../"))
+                    {
+                        AddError("Sample path set in `package.json` cannot contain `..`");
+                    }
+                    if (sample.path != "Samples~" && !sample.path.StartsWithOrdinal("Samples~/"))
+                    {
+                        AddError("Sample path set in `package.json` must be rooted in the Samples~ directory.");
+                    }
+                    if (!Directory.Exists(Path.Combine(path, sample.path)))
                     {
                         AddError("Sample path set in `package.json` does not exist: " + sample.path + ".");
-                    }
-                    else if (validationType == ValidationType.Promotion && !File.Exists(sampleJsonPath))
-                    {
-                        AddError("Cannot find `.sample.json` file in the sample path: " + sample.path + ".");
                     }
                 }
             }
