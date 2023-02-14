@@ -5,12 +5,12 @@ using System.Text;
 
 namespace PvpXray
 {
-    static class MetaFileValidations
+    static class MetaFileVerifier
     {
         // Augment Entry type to also represent directories.
         class Entry
         {
-            public PathValidations.Entry FileEntry;
+            public PathVerifier.Entry FileEntry;
             public bool IsDirectory;
         }
 
@@ -21,7 +21,7 @@ namespace PvpXray
         // Derive directories from file paths. This assumes that there are no empty directories.
         static List<Entry> GetFileAndDirectoryEntries(IEnumerable<string> files)
         {
-            var fileEntries = files.Select(path => new PathValidations.Entry(path)).ToList();
+            var fileEntries = files.Select(path => new PathVerifier.Entry(path)).ToList();
             var entries = fileEntries.Select(fileEntry => new Entry
             {
                 FileEntry = fileEntry,
@@ -50,7 +50,7 @@ namespace PvpXray
                         {
                             entries.Add(new Entry
                             {
-                                FileEntry = new PathValidations.Entry(directoryPath),
+                                FileEntry = new PathVerifier.Entry(directoryPath),
                                 IsDirectory = true,
                             });
                         }
@@ -66,7 +66,7 @@ namespace PvpXray
             foreach (var entry in entries)
             {
                 var directoryWithCase = entry.FileEntry.DirectoryWithCase;
-                var insideHiddenDirectory = directoryWithCase != "" && new PathValidations.Entry(directoryWithCase).IsHidden;
+                var insideHiddenDirectory = directoryWithCase != "" && new PathVerifier.Entry(directoryWithCase).IsHidden;
 
                 if (entry.FileEntry.HasExtension(k_MetaExtension))
                 {
@@ -104,7 +104,7 @@ namespace PvpXray
             }
         }
 
-        public static void Run(Validator.Context context)
+        public static void Run(Verifier.Context context)
         {
             // We need to know about directories since folder assets also have corresponding meta files.
             var entries = GetFileAndDirectoryEntries(context.Files);

@@ -162,7 +162,7 @@ namespace UnityEditor.PackageManager.ValidationSuite
             }
         }
 
-        static readonly PvpHttpClient k_HttpClient = new PvpHttpClient(VSuiteName);
+        internal static readonly PvpHttpClient k_HttpClient = new PvpHttpClient(VSuiteName);
 
         public static List<string> GetPackageVersionsOnProduction(string packageName)
         {

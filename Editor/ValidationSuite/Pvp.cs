@@ -76,14 +76,14 @@ namespace UnityEditor.PackageManager.ValidationSuite
     [UsedImplicitly]
     class XrayValidationChecker : IPvpChecker
     {
-        public string[] Checks { get; } = Validator.Checks.ToArray();
+        public string[] Checks { get; } = Verifier.Checks.ToArray();
 
-        readonly Validator m_Validator = new Validator();
+        readonly Verifier m_Verifier = new Verifier();
 
         public void Run(in PvpRunner.Input input, PvpRunner.Output output)
         {
             var package = new FileSystemPackage(input.Package.path);
-            m_Validator.Validate(package, output.Error);
+            m_Verifier.Verify(package, output.Error, output.Skip, Utilities.k_HttpClient);
         }
     }
 
@@ -97,27 +97,47 @@ namespace UnityEditor.PackageManager.ValidationSuite
 
         public readonly struct Output
         {
-            readonly Dictionary<string, List<string>> m_Checks;
+            readonly Dictionary<string, CheckResult> m_Checks;
 
-            internal Output(Dictionary<string, List<string>> checks)
+            internal Output(Dictionary<string, CheckResult> checks)
             {
                 m_Checks = checks;
             }
 
             public void Error(string checkId, string message)
             {
-                if (!m_Checks.TryGetValue(checkId, out var errors))
+                if (!m_Checks.TryGetValue(checkId, out var checkResult))
                 {
                     ValidateCheckId(checkId);
-                    throw new ArgumentException($"IPvpChecker added result for undeclared check {checkId}");
+                    throw new ArgumentException($"IPvpChecker added error for undeclared check {checkId}");
                 }
-                errors.Add(message);
+                checkResult.Errors.Add(message);
             }
+
+            public void Skip(string checkId, string reason)
+            {
+                if (!m_Checks.TryGetValue(checkId, out var checkResult))
+                {
+                    ValidateCheckId(checkId);
+                    throw new ArgumentException($"IPvpChecker added skip reason for undeclared check {checkId}");
+                }
+                if (checkResult.SkipReason != null)
+                {
+                    throw new InvalidOperationException($"IPvpChecker added skip reason for check {checkId} more than once; previous skip reason {checkResult.SkipReason}, new skip reason: {reason}");
+                }
+                checkResult.SkipReason = reason;
+            }
+        }
+
+        public class CheckResult
+        {
+            public List<string> Errors = new List<string>();
+            public string SkipReason;
         }
 
         public class Results
         {
-            readonly Dictionary<string, List<string>> m_Checks;
+            readonly Dictionary<string, CheckResult> m_Checks;
             readonly string m_Implementation;
 
             static readonly string[] k_ContextEnvVars = new[] {
@@ -135,7 +155,7 @@ namespace UnityEditor.PackageManager.ValidationSuite
             public Dictionary<string, object> Context { get; } = new Dictionary<string, object>();
             public Dictionary<string, object> Target { get; } = new Dictionary<string, object>();
 
-            public Results(Dictionary<string, List<string>> checks, string implementation)
+            public Results(Dictionary<string, CheckResult> checks, string implementation)
             {
                 m_Checks = checks;
                 m_Implementation = implementation;
@@ -164,9 +184,23 @@ namespace UnityEditor.PackageManager.ValidationSuite
                 var empty = new Dictionary<string, object>();
                 foreach (var item in m_Checks)
                 {
-                    results[item.Key] = item.Value.Count != 0
-                        ? new Dictionary<string, object> { ["errors"] = item.Value }
-                        : empty;
+                    var checkId = item.Key;
+                    var checkResult = item.Value;
+                    if (checkResult.SkipReason != null)
+                    {
+                        if (checkResult.Errors.Count != 0)
+                        {
+                            throw new InvalidOperationException("Errors must be empty if SkipReason is not null");
+                        }
+
+                        results[checkId] = new Dictionary<string, object> { ["skip_reason"] = checkResult.SkipReason };
+                    }
+                    else
+                    {
+                        results[checkId] = checkResult.Errors.Count != 0
+                            ? new Dictionary<string, object> { ["errors"] = checkResult.Errors }
+                            : empty;
+                    }
                 }
 
                 SimpleJsonWriter.EmitGeneric(sb, null, obj, 0, emitComma: false);
@@ -255,7 +289,7 @@ namespace UnityEditor.PackageManager.ValidationSuite
             var progressMax = m_Validations.Count + 1;
             onProgress?.Invoke(progressNow, progressMax);
 
-            var checks = new Dictionary<string, List<string>>();
+            var checks = new Dictionary<string, CheckResult>();
             var package = VettingContext.GetManifest(GetPackageInfo(packageName).resolvedPath);
             var input = new Input
             {
@@ -291,7 +325,7 @@ namespace UnityEditor.PackageManager.ValidationSuite
                     if (checks.ContainsKey(checkId))
                         throw new InvalidOperationException($"Multiple IPvpCheckers registered for check {checkId}");
                     ValidateCheckId(checkId);
-                    checks[checkId] = new List<string>();
+                    checks[checkId] = new CheckResult();
                 }
             }
 

@@ -3,7 +3,7 @@ using System.Text.RegularExpressions;
 
 namespace PvpXray
 {
-    static class MetaGuidValidations
+    static class MetaGuidVerifier
     {
         const string k_MetaExtension = ".meta";
 
@@ -11,7 +11,7 @@ namespace PvpXray
 
         public static readonly string[] Checks = { "PVP-27-1" };
 
-        public static void Run(Validator.Context context)
+        public static void Run(Verifier.Context context)
         {
             var pathByGuid = new Dictionary<string, string>();
             foreach (var metaPath in context.Files)

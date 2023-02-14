@@ -4,7 +4,7 @@ using System.Linq;
 
 namespace PvpXray
 {
-    static class PathValidations
+    static class PathVerifier
     {
         public class Entry
         {
@@ -83,7 +83,7 @@ namespace PvpXray
             .Concat(k_AllPathsValidations.Select(v => v.Item1))
             .ToArray();
 
-        public static void Run(Validator.Context context)
+        public static void Run(Verifier.Context context)
         {
             foreach (var path in context.Files)
             {

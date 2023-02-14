@@ -4,11 +4,11 @@ using System.Text.RegularExpressions;
 
 namespace PvpXray
 {
-    static class DocumentationValidations
+    static class DocumentationVerifier
     {
         public static readonly string[] Checks = { "PVP-60-1", "PVP-61-1" };
-        static List<PathValidations.Entry> PathEntries(IReadOnlyList<string> paths) =>
-            paths.Select(p => new PathValidations.Entry(p)).ToList();
+        static List<PathVerifier.Entry> PathEntries(IReadOnlyList<string> paths) =>
+            paths.Select(p => new PathVerifier.Entry(p)).ToList();
 
         static List<string> GetTopLevelDirectories(IReadOnlyList<string> paths) =>
             PathEntries(paths).Select(e => e.DirectoryWithCase.Split('/')[0])
@@ -26,7 +26,7 @@ namespace PvpXray
 
         static bool HasTooLittleContent(this string contents) => contents.Length < 10;
 
-        public static void Run(Validator.Context context)
+        public static void Run(Verifier.Context context)
         {
             var topLevelDirectories = GetTopLevelDirectories(context.Files);
 

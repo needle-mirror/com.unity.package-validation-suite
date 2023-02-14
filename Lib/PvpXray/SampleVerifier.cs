@@ -4,7 +4,7 @@ using System.Linq;
 
 namespace PvpXray
 {
-    static class SampleValidations
+    static class SampleVerifier
     {
         const string k_Manifest = "package.json";
         public static readonly string[] Checks = { "PVP-80-1", "PVP-81-1" };
@@ -17,7 +17,7 @@ namespace PvpXray
             public string Definition => JsonFilePath ?? $"{k_Manifest}: {Json.Path}";
         }
 
-        public static void Run(Validator.Context context)
+        public static void Run(Verifier.Context context)
         {
             var manifest = context.Manifest;
 
@@ -27,7 +27,7 @@ namespace PvpXray
 
             foreach (var path in context.Files)
             {
-                var entry = new PathValidations.Entry(path);
+                var entry = new PathVerifier.Entry(path);
                 var isInsideSampleDir = false;
 
                 void CheckSamples(string expected, string expectedLower, ref bool hasIt)
@@ -65,7 +65,7 @@ namespace PvpXray
                             context.AddError("PVP-80-1", $"{entry.PathWithCase}: .sample.json file should not contain \"path\" key");
                         }
                     }
-                    catch (Exception e) when (e is JsonException || e is Validator.FailAllException)
+                    catch (Exception e) when (e is JsonException || e is Verifier.FailAllException)
                     {
                         context.AddError("PVP-80-1", e.Message);
                     }

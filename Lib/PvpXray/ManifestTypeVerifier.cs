@@ -1,11 +1,11 @@
 using System.Collections.Generic;
 using System.Linq;
 
-using Requirement = PvpXray.ManifestValidations.Requirement;
+using Requirement = PvpXray.ManifestVerifier.Requirement;
 
 namespace PvpXray
 {
-    static class ManifestTypeValidations
+    static class ManifestTypeVerifier
     {
         public static readonly string[] Checks = { "PVP-107-2" };
 
@@ -73,7 +73,7 @@ namespace PvpXray
             (new[] { "version" }, IsString),
         };
 
-        static void ValidateAllowedProperties(IEnumerable<Json> members, List<string> location, Validator.Context context)
+        static void ValidateAllowedProperties(IEnumerable<Json> members, List<string> location, Verifier.Context context)
         {
             foreach (var member in members)
             {
@@ -131,7 +131,7 @@ namespace PvpXray
             }
         }
 
-        public static void Run(Validator.Context context)
+        public static void Run(Verifier.Context context)
         {
             var manifest = context.Manifest;
 

@@ -4,6 +4,9 @@ All notable changes to this package will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## [0.49.0-preview] - 2023-02-14
+- RestrictedFilesValidation: Allow additional Burst DLL files.
+
 ## [0.48.0-preview] - 2023-01-17
 - SamplesValidation: Allow sample directory without `.sample.json` file. (UPMCI-326)
 - SamplesValidation: Ensure samples declared in package manifest are rooted in `Samples~` directory. (UPMCI-326)
@@ -103,7 +106,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [0.23.8-preview] - 2022-05-20
 - Renamed log4net assembly to avoid name clash with other packages.
-- Package Validation Profiles: added `Pvp.RunTests` entrypoint and support for running API docs validation in PVP mode.
+- Package Verification Profiles: added `Pvp.RunTests` entrypoint and support for running API docs validation in PVP mode.
 - Adjust validation of `documentationUrl` package manifest property to prepare for UPMCI-174. (This does not affect package authors.)
 
 ## [0.23.7-preview] - 2022-03-17

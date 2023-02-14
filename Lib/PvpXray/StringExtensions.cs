@@ -21,7 +21,8 @@ namespace PvpXray
         public static bool EndsWithOrdinal(this string str, string value) => str.EndsWith(value, StringComparison.Ordinal);
         public static int IndexOfOrdinal(this string str, string value, int startIndex = 0) => str.IndexOf(value, startIndex, StringComparison.Ordinal);
         public static int IndexOfOrdinal(this string str, string value, int startIndex, int count) => str.IndexOf(value, startIndex, count, StringComparison.Ordinal);
-        public static int LastIndexOfOrdinal(this string str, string value, int startIndex = 0) => str.LastIndexOf(value, startIndex, StringComparison.Ordinal);
+        public static int LastIndexOfOrdinal(this string str, string value) => str.LastIndexOf(value, StringComparison.Ordinal);
+        public static int LastIndexOfOrdinal(this string str, string value, int startIndex) => str.LastIndexOf(value, startIndex, StringComparison.Ordinal);
         public static int LastIndexOfOrdinal(this string str, string value, int startIndex, int count) => str.LastIndexOf(value, startIndex, count, StringComparison.Ordinal);
     }
 }

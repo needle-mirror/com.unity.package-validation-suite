@@ -2,7 +2,7 @@ using System.Text.RegularExpressions;
 
 namespace PvpXray
 {
-    static class LicenseValidations
+    static class LicenseVerifier
     {
         const string k_License = "LICENSE.md";
         const string k_Manifest = "package.json";
@@ -15,7 +15,7 @@ namespace PvpXray
             "PVP-31-1", // LICENSE.md copyright notice (US-0032)
         };
 
-        public static void Run(Validator.Context context)
+        public static void Run(Verifier.Context context)
         {
             var license = context.ReadFileToString(k_License);
 

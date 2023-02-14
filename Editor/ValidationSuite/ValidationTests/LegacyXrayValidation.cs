@@ -16,7 +16,7 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
 
         static LegacyXrayValidation()
         {
-            if (k_ChecksAppliedInLegacyPVS.Keys.Except(Validator.Checks).Count() != 0)
+            if (k_ChecksAppliedInLegacyPVS.Keys.Except(Verifier.Checks).Count() != 0)
             {
                 throw new InvalidOperationException("Trying to enforce non-existing x-ray check in legacy PVS");
             }
@@ -24,7 +24,7 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
 
         // Indirection to support PVS's own test suite.
         readonly Dictionary<string, string> m_AppliedChecks;
-        readonly Validator m_Validator = new Validator();
+        readonly Verifier m_Verifier = new Verifier();
 
         public LegacyXrayValidation()
         {
@@ -61,13 +61,20 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
             }
             var package = new FileSystemPackage(manifestPath);
 
-            m_Validator.Validate(package, (checkId, error) =>
+            m_Verifier.Verify(package, (checkId, error) =>
             {
                 if (m_AppliedChecks.TryGetValue(checkId, out var messagePrefix))
                 {
                     AddError($"{checkId}: {messagePrefix}: {error}");
                 }
-            });
+            }, (checkId, reason) =>
+            {
+                if (m_AppliedChecks.TryGetValue(checkId, out var messagePrefix))
+                {
+                    // The only possibly skip reason so far should be "network_error" which is unexpected.
+                    AddError($"{checkId}: {messagePrefix}: check unexpectedly skipped: {reason}");
+                }
+            }, Utilities.k_HttpClient);
         }
 
         public override string ToString()

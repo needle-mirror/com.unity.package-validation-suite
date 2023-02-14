@@ -5,7 +5,7 @@ using System.Text.RegularExpressions;
 
 namespace PvpXray
 {
-    static class ManifestValidations
+    static class ManifestVerifier
     {
         const RegexOptions k_IgnoreCase = RegexOptions.IgnoreCase | RegexOptions.CultureInvariant; // IgnoreCase MUST be used with CultureInvariant.
 
@@ -87,7 +87,7 @@ namespace PvpXray
 
         public static readonly string[] Checks = k_LocationChecks.Select(v => v.Item1).Distinct().ToArray();
 
-        public static void Run(Validator.Context context)
+        public static void Run(Verifier.Context context)
         {
             var manifest = context.Manifest;
 

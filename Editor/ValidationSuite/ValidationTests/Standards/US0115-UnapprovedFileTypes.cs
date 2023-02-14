@@ -75,6 +75,10 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests.Standards
             "Unity.Cecil.Mdb.dll",                   // required for com.unity.burst
             "Unity.Cecil.Pdb.dll",                   // required for com.unity.burst
             "Unity.Cecil.Rocks.dll",                 // required for com.unity.burst
+            "Unity.Burst.Cecil.dll",                 // required for com.unity.burst
+            "Unity.Burst.Cecil.Mdb.dll",             // required for com.unity.burst
+            "Unity.Burst.Cecil.Pdb.dll",             // required for com.unity.burst
+            "Unity.Burst.Cecil.Rocks.dll",           // required for com.unity.burst
             "uncrustify.exe",                        // required for com.unity.coding
             "FindMissingDocs.exe",                   // required for com.unity.package-validation-suite
             "coding-cli.exe",                        // required for com.unity.coding

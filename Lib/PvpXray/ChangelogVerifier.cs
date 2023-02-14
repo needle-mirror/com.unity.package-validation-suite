@@ -5,7 +5,7 @@ using System.Text.RegularExpressions;
 
 namespace PvpXray
 {
-    static class ChangelogValidations
+    static class ChangelogVerifier
     {
         const string k_Changelog = "CHANGELOG.md";
         const string k_Manifest = "package.json";
@@ -35,7 +35,7 @@ namespace PvpXray
             return lineNumber;
         }
 
-        public static void Run(Validator.Context context)
+        public static void Run(Verifier.Context context)
         {
             var changelog = context.ReadFileToString(k_Changelog);
             var h2Matches = k_H2Pattern.Matches(changelog);
@@ -81,7 +81,7 @@ namespace PvpXray
                 }
                 else
                 {
-                    if (!ManifestValidations.SemVer.IsMatch(version))
+                    if (!ManifestVerifier.SemVer.IsMatch(version))
                     {
                         AddErrorWithLocation("PVP-40-1", "version must be a valid SemVer version");
                     }

@@ -3,7 +3,7 @@ using System.Text.RegularExpressions;
 
 namespace PvpXray
 {
-    static class ThirdPartyNoticesValidations
+    static class ThirdPartyNoticesVerifier
     {
         const string k_ThirdPartyNotices = "Third-Party Notices.md";
         const string k_Key = "Component Name";
@@ -26,7 +26,7 @@ namespace PvpXray
             return lineNumber;
         }
 
-        public static void Run(Validator.Context context)
+        public static void Run(Verifier.Context context)
         {
             if (!context.Files.Contains(k_ThirdPartyNotices))
             {
