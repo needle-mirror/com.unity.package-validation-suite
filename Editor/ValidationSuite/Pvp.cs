@@ -78,12 +78,27 @@ namespace UnityEditor.PackageManager.ValidationSuite
     {
         public string[] Checks { get; } = Verifier.Checks.ToArray();
 
-        readonly Verifier m_Verifier = new Verifier();
-
         public void Run(in PvpRunner.Input input, PvpRunner.Output output)
         {
             var package = new FileSystemPackage(input.Package.path);
-            m_Verifier.Verify(package, output.Error, output.Skip, Utilities.k_HttpClient);
+            var results = Verifier.OneShot(package, Utilities.k_HttpClient);
+
+            foreach (var entry in results)
+            {
+                var checkId = entry.Key;
+                var checkResult = entry.Value;
+                if (checkResult.SkipReason == null)
+                {
+                    foreach (var message in checkResult.Errors)
+                    {
+                        output.Error(checkId, message);
+                    }
+                }
+                else
+                {
+                    output.Skip(checkId, checkResult.SkipReason);
+                }
+            }
         }
     }
 

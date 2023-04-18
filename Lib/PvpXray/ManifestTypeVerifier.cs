@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -5,9 +6,10 @@ using Requirement = PvpXray.ManifestVerifier.Requirement;
 
 namespace PvpXray
 {
-    static class ManifestTypeVerifier
+    class ManifestTypeVerifier : Verifier.IChecker
     {
-        public static readonly string[] Checks = { "PVP-107-2" };
+        public static string[] Checks => new[] { "PVP-107-2" };
+        public static int PassCount => 0;
 
         static Requirement IsBoolean => new Requirement() { Message = "must be a boolean", Func = json => json.IsBoolean };
         static Requirement IsNumber => new Requirement() { Message = "must be a number", Func = json => json.IsNumber };
@@ -73,7 +75,21 @@ namespace PvpXray
             (new[] { "version" }, IsString),
         };
 
-        static void ValidateAllowedProperties(IEnumerable<Json> members, List<string> location, Verifier.Context context)
+        public ManifestTypeVerifier(Verifier.IContext context)
+        {
+            var manifest = context.Manifest;
+
+            try
+            {
+                ValidateAllowedProperties(manifest.Members, location: new List<string>(), context);
+            }
+            catch (JsonException e)
+            {
+                context.AddError("PVP-107-2", e.Message);
+            }
+        }
+
+        static void ValidateAllowedProperties(IEnumerable<Json> members, List<string> location, Verifier.IContext context)
         {
             foreach (var member in members)
             {
@@ -131,18 +147,13 @@ namespace PvpXray
             }
         }
 
-        public static void Run(Verifier.Context context)
+        public void CheckItem(Verifier.PackageFile file, int passIndex)
         {
-            var manifest = context.Manifest;
+            throw new InvalidOperationException();
+        }
 
-            try
-            {
-                ValidateAllowedProperties(manifest.Members, location: new List<string>(), context);
-            }
-            catch (JsonException e)
-            {
-                context.AddError("PVP-107-2", e.Message);
-            }
+        public void Finish()
+        {
         }
     }
 }

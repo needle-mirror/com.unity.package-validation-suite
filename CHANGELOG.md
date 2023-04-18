@@ -4,6 +4,11 @@ All notable changes to this package will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## [0.50.0-preview] - 2023-04-18
+- PVP: Add x-ray checks `PVP-70-1`, `PVP-71-1` and `PVP-72-1` to verify package filenames. (PVS-176)
+- MetaFilesValidation: Don't check for Meta files inside Loadable Plugin Directories. (PVS-179, UUM-9421)
+- PVP: Added new x-ray check `PVP-26-3` for meta file validation, exempting Loadable Plugin Directories and fixing a bug in the previous `PVP-26-2` check. (PVS-179, UUM-9421)
+
 ## [0.49.0-preview] - 2023-02-14
 - RestrictedFilesValidation: Allow additional Burst DLL files.
 

@@ -1,27 +1,45 @@
+using System.Collections.Generic;
+using System.Linq;
 using System.Text.RegularExpressions;
 
 namespace PvpXray
 {
-    static class LicenseVerifier
+    class LicenseVerifier : Verifier.IChecker
     {
         const string k_License = "LICENSE.md";
         const string k_Manifest = "package.json";
 
         static readonly Regex k_CopyrightNotice = new Regex(@"^(?<name>.*?) copyright \u00a9 \d+ \S(.*\S)?(?:\r?\n|$)", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
 
-        public static readonly string[] Checks =
+        public static string[] Checks => new[]
         {
             "PVP-30-1", // LICENSE.md file (US-0032)
             "PVP-31-1", // LICENSE.md copyright notice (US-0032)
         };
 
-        public static void Run(Verifier.Context context)
+        public static int PassCount => 1;
+
+        readonly Verifier.IContext m_Context;
+
+        public LicenseVerifier(Verifier.IContext context)
         {
-            var license = context.ReadFileToString(k_License);
+            m_Context = context;
+
+            if (!context.Files.Contains(k_License))
+            {
+                throw new Verifier.FailAllException($"{k_License}: file could not be read as UTF-8 text");
+            }
+        }
+
+        public void CheckItem(Verifier.PackageFile file, int passIndex)
+        {
+            if (file.Path != k_License) return;
+
+            var license = file.ReadToString();
 
             if (license == "")
             {
-                context.AddError("PVP-30-1", $"{k_License}: license file must not be empty");
+                m_Context.AddError("PVP-30-1", $"{k_License}: license file must not be empty");
             }
 
             var match = k_CopyrightNotice.Match(license);
@@ -30,22 +48,26 @@ namespace PvpXray
                 try
                 {
                     var lowerNameInNotice = match.Groups["name"].Value.ToLowerInvariant();
-                    var lowerName = context.Manifest["name"].String.ToLowerInvariant();
-                    var lowerDisplayName = context.Manifest["displayName"].String.ToLowerInvariant();
+                    var lowerName = m_Context.Manifest["name"].String.ToLowerInvariant();
+                    var lowerDisplayName = m_Context.Manifest["displayName"].String.ToLowerInvariant();
                     if (lowerNameInNotice != lowerName && lowerNameInNotice != lowerDisplayName)
                     {
-                        context.AddError("PVP-31-1", $"{k_License}: name in copyright notice must match either name or displayName of package");
+                        m_Context.AddError("PVP-31-1", $"{k_License}: name in copyright notice must match either name or displayName of package");
                     }
                 }
                 catch (JsonException e)
                 {
-                    context.AddError("PVP-31-1", $"{k_Manifest}: {e.Message}");
+                    m_Context.AddError("PVP-31-1", $"{k_Manifest}: {e.Message}");
                 }
             }
             else
             {
-                context.AddError("PVP-31-1", $"{k_License}: license must match regex: {k_CopyrightNotice}");
+                m_Context.AddError("PVP-31-1", $"{k_License}: license must match regex: {k_CopyrightNotice}");
             }
+        }
+
+        public void Finish()
+        {
         }
     }
 }

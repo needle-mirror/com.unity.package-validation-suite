@@ -4,7 +4,7 @@ using System.Linq;
 
 namespace PvpXray
 {
-    static class PathVerifier
+    class PathVerifier : Verifier.IChecker
     {
         public class Entry
         {
@@ -12,17 +12,21 @@ namespace PvpXray
 
             public string[] Components { get; }
             public string Filename { get; }
+            public bool IsDirectory { get; } // usually false, as by default, directories are not enumerated
             public bool IsHidden { get; }
+            public bool IsHiddenV2 { get; }
+            public bool IsInsidePluginDirectory { get; }
             public string Path { get; }
             public string PathWithCase { get; }
 
             public string DirectoryWithCase => Components.Length == 1 ? "" : PathWithCase.Substring(0, PathWithCase.Length - Filename.Length - 1);
             public string FilenameWithCase => PathWithCase.Substring(PathWithCase.Length - Filename.Length);
 
-            public Entry(string path)
+            public Entry(string path, bool isDirectory = false)
             {
                 // Note: avoid .NET Path APIs here; they are poorly documented and may have platform-specific quirks.
 
+                IsDirectory = isDirectory;
                 Path = path.ToLowerInvariant();
                 PathWithCase = path;
                 Components = Path.Split('/');
@@ -35,8 +39,23 @@ namespace PvpXray
                 // Files are considered "hidden" (and not imported by the asset pipeline) subject
                 // to the patterns given here: https://docs.unity3d.com/Manual/SpecialFolders.html
                 // (Implementation appears to be in Runtime/VirtualFileSystem/LocalFileSystem.h)
-                IsHidden = Components.Any(name => name[0] == '.' || name[name.Length - 1] == '~' || name == "cvs")
-                    || m_Extension == ".tmp";
+                var hasHiddenComponent = Components.Any(name => name[0] == '.' || name[name.Length - 1] == '~' || name == "cvs");
+                IsHidden = hasHiddenComponent || m_Extension == ".tmp"; // bug: .tmp directories should not be considered hidden, only .tmp files
+                IsHiddenV2 = hasHiddenComponent || (!IsDirectory && m_Extension == ".tmp");
+
+                // As of 2023.1.0a24 and corresponding backports (UUM-9421), Unity will ignore
+                // files inside directories with certain file extensions IF a plugin has been
+                // registered for that path. Whether files are "hidden" or not can thus no longer
+                // be determined from the path alone, but depends on the exact Unity patch version
+                // and runtime plugin config.
+                // But for PVP, we assume that such paths are always plugins. For details, see:
+                // - https://github.cds.internal.unity3d.com/unity/unity/pull/19042
+                // - PluginImporter::GetLoadableDirectoryExtensionTypes
+                IsInsidePluginDirectory = Components.Take(Components.Length - 1).Any(name =>
+                        name.EndsWith(".androidlib", StringComparison.OrdinalIgnoreCase) ||
+                        name.EndsWith(".bundle", StringComparison.OrdinalIgnoreCase) ||
+                        name.EndsWith(".framework", StringComparison.OrdinalIgnoreCase) ||
+                        name.EndsWith(".plugin", StringComparison.OrdinalIgnoreCase));
             }
 
             public bool HasComponent(params string[] components) => Components.Any(components.Contains);
@@ -78,12 +97,14 @@ namespace PvpXray
             ("PVP-50-1", paths => paths.Contains("README.md"), "Missing README.md file"),
         };
 
-        public static readonly string[] Checks =
+        public static string[] Checks =>
             k_SinglePathValidations.Select(v => v.Item1)
             .Concat(k_AllPathsValidations.Select(v => v.Item1))
             .ToArray();
 
-        public static void Run(Verifier.Context context)
+        public static int PassCount => 0;
+
+        public PathVerifier(Verifier.IContext context)
         {
             foreach (var path in context.Files)
             {
@@ -104,6 +125,15 @@ namespace PvpXray
                     context.AddError(check, error);
                 }
             }
+        }
+
+        public void CheckItem(Verifier.PackageFile file, int passIndex)
+        {
+            throw new InvalidOperationException();
+        }
+
+        public void Finish()
+        {
         }
     }
 }

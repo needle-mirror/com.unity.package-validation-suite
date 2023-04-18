@@ -5,7 +5,13 @@ using System.Text.RegularExpressions;
 
 namespace PvpXray
 {
-    static class ManifestVerifier
+    static class ManifestVerifierExtensions
+    {
+        public static Json Unless(this Json elm, bool condition) => condition ? null : elm;
+        public static IEnumerable<Json> Unless(this IEnumerable<Json> elm, bool condition) => condition ? null : elm;
+    }
+
+    class ManifestVerifier : Verifier.IChecker
     {
         const RegexOptions k_IgnoreCase = RegexOptions.IgnoreCase | RegexOptions.CultureInvariant; // IgnoreCase MUST be used with CultureInvariant.
 
@@ -28,10 +34,6 @@ namespace PvpXray
         public static readonly Regex SemVer = new Regex(@"^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)(?:-((?:0|[1-9][0-9]*|[0-9]*[a-zA-Z-][0-9a-zA-Z-]*)(?:\.(?:0|[1-9][0-9]*|[0-9]*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\+([0-9a-zA-Z-]+(?:\.[0-9a-zA-Z-]+)*))?$");
 
         static Requirement Fail(string message) => new Requirement { Message = message, Func = _ => false };
-
-        static Json Unless(this Json elm, bool condition) => condition ? null : elm;
-
-        static IEnumerable<Json> Unless(this IEnumerable<Json> elm, bool condition) => condition ? null : elm;
 
         static bool IsUnityPackage(Json manifest) => manifest["name"].String.StartsWithOrdinal("com.unity.");
 
@@ -85,9 +87,10 @@ namespace PvpXray
             ("PVP-113-1", m => m["type"].IfPresent, new Regex(@"^(feature|template)$")),
         };
 
-        public static readonly string[] Checks = k_LocationChecks.Select(v => v.Item1).Distinct().ToArray();
+        public static string[] Checks => k_LocationChecks.Select(v => v.Item1).Distinct().ToArray();
+        public static int PassCount => 0;
 
-        public static void Run(Verifier.Context context)
+        public ManifestVerifier(Verifier.IContext context)
         {
             var manifest = context.Manifest;
 
@@ -120,6 +123,15 @@ namespace PvpXray
                     context.AddError(checkId, e.Message);
                 }
             }
+        }
+
+        public void CheckItem(Verifier.PackageFile file, int passIndex)
+        {
+            throw new InvalidOperationException();
+        }
+
+        public void Finish()
+        {
         }
     }
 }

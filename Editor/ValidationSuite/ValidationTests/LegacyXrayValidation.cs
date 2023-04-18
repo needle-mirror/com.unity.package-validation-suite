@@ -24,7 +24,6 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
 
         // Indirection to support PVS's own test suite.
         readonly Dictionary<string, string> m_AppliedChecks;
-        readonly Verifier m_Verifier = new Verifier();
 
         public LegacyXrayValidation()
         {
@@ -59,22 +58,29 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
             {
                 manifestPath = manifestPath.Substring(0, manifestPath.Length - "package.json".Length);
             }
-            var package = new FileSystemPackage(manifestPath);
 
-            m_Verifier.Verify(package, (checkId, error) =>
+            var package = new FileSystemPackage(manifestPath);
+            var results = Verifier.OneShot(package, Utilities.k_HttpClient);
+
+            foreach (var entry in results)
             {
-                if (m_AppliedChecks.TryGetValue(checkId, out var messagePrefix))
+                var checkId = entry.Key;
+                if (!m_AppliedChecks.TryGetValue(checkId, out var messagePrefix)) continue;
+
+                var checkResult = entry.Value;
+                if (checkResult.SkipReason == null)
                 {
-                    AddError($"{checkId}: {messagePrefix}: {error}");
+                    foreach (var error in checkResult.Errors)
+                    {
+                        AddError($"{checkId}: {messagePrefix}: {error}");
+                    }
                 }
-            }, (checkId, reason) =>
-            {
-                if (m_AppliedChecks.TryGetValue(checkId, out var messagePrefix))
+                else
                 {
                     // The only possibly skip reason so far should be "network_error" which is unexpected.
-                    AddError($"{checkId}: {messagePrefix}: check unexpectedly skipped: {reason}");
+                    AddError($"{checkId}: {messagePrefix}: check unexpectedly skipped: {checkResult.SkipReason}");
                 }
-            }, Utilities.k_HttpClient);
+            }
         }
 
         public override string ToString()

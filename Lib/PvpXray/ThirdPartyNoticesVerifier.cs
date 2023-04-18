@@ -1,16 +1,23 @@
-using System.Linq;
 using System.Text.RegularExpressions;
 
 namespace PvpXray
 {
-    static class ThirdPartyNoticesVerifier
+    class ThirdPartyNoticesVerifier : Verifier.IChecker
     {
         const string k_ThirdPartyNotices = "Third-Party Notices.md";
         const string k_Key = "Component Name";
         const string k_Value = "License Type";
         static readonly Regex k_KeyOrValuePattern = new Regex($"^(?:(?<key>{k_Key})|{k_Value}):", RegexOptions.Multiline);
 
-        public static readonly string[] Checks = { "PVP-32-1" }; // Third-Party Notices.md file (US-0065)
+        public static string[] Checks => new[] { "PVP-32-1" }; // Third-Party Notices.md file (US-0065)
+        public static int PassCount => 1;
+
+        readonly Verifier.IContext m_Context;
+
+        public ThirdPartyNoticesVerifier(Verifier.IContext context)
+        {
+            m_Context = context;
+        }
 
         static int LineNumber(string text, int index)
         {
@@ -26,21 +33,18 @@ namespace PvpXray
             return lineNumber;
         }
 
-        public static void Run(Verifier.Context context)
+        public void CheckItem(Verifier.PackageFile file, int passIndex)
         {
-            if (!context.Files.Contains(k_ThirdPartyNotices))
-            {
-                return;
-            }
+            if (file.Path != k_ThirdPartyNotices) return;
 
-            var thirdPartyNotices = context.ReadFileToString(k_ThirdPartyNotices);
+            var thirdPartyNotices = file.ReadToString();
 
             var keyExpected = true; // Value expected if false.
             var startIndex = 0;
             var match = k_KeyOrValuePattern.Match(thirdPartyNotices);
 
             void AddErrorWithLocation(string checkId, string error) =>
-                context.AddError(checkId, $"{k_ThirdPartyNotices}: line {LineNumber(thirdPartyNotices, match.Index)}: {error}");
+                m_Context.AddError(checkId, $"{k_ThirdPartyNotices}: line {LineNumber(thirdPartyNotices, match.Index)}: {error}");
 
             // Check that key and value entries come in ordered pairs
             while (match.Success)
@@ -62,12 +66,16 @@ namespace PvpXray
 
             if (startIndex == 0)
             {
-                context.AddError("PVP-32-1", $"{k_ThirdPartyNotices}: third-party notices file must have at least one \"{k_Key}\"-\"{k_Value}\" pair if it exists");
+                m_Context.AddError("PVP-32-1", $"{k_ThirdPartyNotices}: third-party notices file must have at least one \"{k_Key}\"-\"{k_Value}\" pair if it exists");
             }
             else if (!keyExpected)
             {
                 AddErrorWithLocation("PVP-32-1", $"\"{k_Key}\" entry must be followed by \"{k_Value}\" entry");
             }
+        }
+
+        public void Finish()
+        {
         }
     }
 }

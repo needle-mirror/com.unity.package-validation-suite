@@ -3,37 +3,49 @@ using System.Text.RegularExpressions;
 
 namespace PvpXray
 {
-    static class MetaGuidVerifier
+    class MetaGuidVerifier : Verifier.IChecker
     {
         const string k_MetaExtension = ".meta";
 
         static readonly Regex k_GuidLine = new Regex(@"^guid: ([0-9a-f]{32})$", RegexOptions.Multiline);
 
-        public static readonly string[] Checks = { "PVP-27-1" };
+        public static string[] Checks => new[] { "PVP-27-1" };
+        public static int PassCount => 1;
 
-        public static void Run(Verifier.Context context)
+        readonly Verifier.IContext m_Context;
+        readonly Dictionary<string, string> m_PathByGuid;
+
+        public MetaGuidVerifier(Verifier.IContext context)
         {
-            var pathByGuid = new Dictionary<string, string>();
-            foreach (var metaPath in context.Files)
+            m_Context = context;
+            m_PathByGuid = new Dictionary<string, string>();
+        }
+
+        public void CheckItem(Verifier.PackageFile file, int passIndex)
+        {
+            var metaPath = file.Path;
+
+            if (!metaPath.EndsWithOrdinal(k_MetaExtension)) return;
+            var assetPath = metaPath.Substring(0, metaPath.Length - k_MetaExtension.Length);
+
+            var text = file.ReadToString();
+            var match = k_GuidLine.Match(text);
+            if (!match.Success) return;
+            var guid = match.Groups[1].Value;
+
+            if (m_PathByGuid.TryGetValue(guid, out var existing))
             {
-                if (!metaPath.EndsWithOrdinal(k_MetaExtension)) continue;
-                var assetPath = metaPath.Substring(0, metaPath.Length - k_MetaExtension.Length);
-
-                var text = context.ReadFileToString(metaPath);
-                var match = k_GuidLine.Match(text);
-                if (!match.Success) continue;
-                var guid = match.Groups[1].Value;
-
-                if (pathByGuid.TryGetValue(guid, out var existing))
-                {
-                    context.AddError("PVP-27-1", $"{existing}: {guid}");
-                    context.AddError("PVP-27-1", $"{assetPath}: {guid}");
-                }
-                else
-                {
-                    pathByGuid[guid] = assetPath;
-                }
+                m_Context.AddError("PVP-27-1", $"{existing}: {guid}");
+                m_Context.AddError("PVP-27-1", $"{assetPath}: {guid}");
             }
+            else
+            {
+                m_PathByGuid[guid] = assetPath;
+            }
+        }
+
+        public void Finish()
+        {
         }
     }
 }

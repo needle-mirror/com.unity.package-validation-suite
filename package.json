@@ -1,25 +1,25 @@
 {
   "name": "com.unity.package-validation-suite",
   "displayName": "Package Validation Suite",
-  "version": "0.49.0-preview",
+  "version": "0.50.0-preview",
   "unity": "2018.4",
   "description": "Unity Package Manager validation suite, used to evaluate a package's integrity before it's considered for publishing.  This is a Unity internal tool at the moment, no support will be provided for this package.",
   "dependencies": {
     "com.unity.nuget.mono-cecil": "0.1.6-preview.2"
   },
   "relatedPackages": {
-    "com.unity.package-validation-suite.tests": "0.49.0-preview"
+    "com.unity.package-validation-suite.tests": "0.50.0-preview"
   },
   "_upm": {
-    "changelog": "- RestrictedFilesValidation: Allow additional Burst DLL files."
+    "changelog": "- PVP: Add x-ray checks `PVP-70-1`, `PVP-71-1` and `PVP-72-1` to verify package filenames. (PVS-176)\n- MetaFilesValidation: Don't check for Meta files inside Loadable Plugin Directories. (PVS-179, UUM-9421)\n- PVP: Added new x-ray check `PVP-26-3` for meta file validation, exempting Loadable Plugin Directories and fixing a bug in the previous `PVP-26-2` check. (PVS-179, UUM-9421)"
   },
   "upmCi": {
-    "footprint": "a4d01bfc2195e8ee6710ff7bcd9c0112b6923715"
+    "footprint": "1f86058583fa9536ebd3033db5ef82fec1ee0b59"
   },
-  "documentationUrl": "https://docs.unity3d.com/Packages/com.unity.package-validation-suite@0.49/manual/index.html",
+  "documentationUrl": "https://docs.unity3d.com/Packages/com.unity.package-validation-suite@0.50/manual/index.html",
   "repository": {
     "url": "https://github.cds.internal.unity3d.com/unity/com.unity.package-validation-suite.git",
     "type": "git",
-    "revision": "0c7a35b23aed9bb3a4acbf199c98c3ea1fcecaeb"
+    "revision": "115ea996a6b07a5fc43d289684c98ff8b0651161"
   }
 }

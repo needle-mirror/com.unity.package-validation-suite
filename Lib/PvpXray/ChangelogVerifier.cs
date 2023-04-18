@@ -5,7 +5,7 @@ using System.Text.RegularExpressions;
 
 namespace PvpXray
 {
-    static class ChangelogVerifier
+    class ChangelogVerifier : Verifier.IChecker
     {
         const string k_Changelog = "CHANGELOG.md";
         const string k_Manifest = "package.json";
@@ -14,12 +14,26 @@ namespace PvpXray
         static readonly Regex k_HeaderPattern = new Regex(@"^\[(?<version>.*)\]( - (?<date>\d{4}-\d{2}-\d{2}))?$");
         const string k_DateFormat = "yyyy-MM-dd";
 
-        public static readonly string[] Checks =
+        public static string[] Checks => new[]
         {
             "PVP-40-1", // Changelog sections are well-formed (US-0039)
             "PVP-41-1", // Changelog has no [Unreleased] section (US-0039)
             "PVP-43-1", // Changelog has entry for package version (US-0039)
         };
+
+        public static int PassCount => 1;
+
+        readonly Verifier.IContext m_Context;
+
+        public ChangelogVerifier(Verifier.IContext context)
+        {
+            m_Context = context;
+
+            if (!context.Files.Contains(k_Changelog))
+            {
+                throw new Verifier.FailAllException($"{k_Changelog}: file could not be read as UTF-8 text");
+            }
+        }
 
         static int LineNumber(string text, int index)
         {
@@ -35,15 +49,17 @@ namespace PvpXray
             return lineNumber;
         }
 
-        public static void Run(Verifier.Context context)
+        public void CheckItem(Verifier.PackageFile file, int passIndex)
         {
-            var changelog = context.ReadFileToString(k_Changelog);
+            if (file.Path != k_Changelog) return;
+
+            var changelog = file.ReadToString();
             var h2Matches = k_H2Pattern.Matches(changelog);
 
             if (h2Matches.Count == 0)
             {
-                context.AddError("PVP-40-1", $"{k_Changelog}: at least one changelog section is required");
-                context.AddError("PVP-43-1", $"{k_Changelog}: missing Unreleased section or section for package version");
+                m_Context.AddError("PVP-40-1", $"{k_Changelog}: at least one changelog section is required");
+                m_Context.AddError("PVP-43-1", $"{k_Changelog}: missing Unreleased section or section for package version");
             }
 
             foreach (var (h2Match, sectionIndex) in h2Matches.Cast<Match>().Select((match, index) => (match, index)))
@@ -52,7 +68,7 @@ namespace PvpXray
 
                 string cachedLocation = null;
                 string Location() => cachedLocation = cachedLocation ?? $"line {LineNumber(changelog, h2Match.Index)}";
-                void AddErrorWithLocation(string checkId, string error) => context.AddError(checkId, $"{k_Changelog}: {Location()}: {error}");
+                void AddErrorWithLocation(string checkId, string error) => m_Context.AddError(checkId, $"{k_Changelog}: {Location()}: {error}");
 
                 var headerMatch = k_HeaderPattern.Match(h2Text);
                 if (!headerMatch.Success)
@@ -103,18 +119,22 @@ namespace PvpXray
                     {
                         try
                         {
-                            if (version != context.Manifest["version"].String)
+                            if (version != m_Context.Manifest["version"].String)
                             {
                                 AddErrorWithLocation("PVP-43-1", "version in first section header doesn't match version in package manifest");
                             }
                         }
                         catch (JsonException e)
                         {
-                            context.AddError("PVP-43-1", $"{k_Manifest}: ${e.Message}");
+                            m_Context.AddError("PVP-43-1", $"{k_Manifest}: ${e.Message}");
                         }
                     }
                 }
             }
+        }
+
+        public void Finish()
+        {
         }
     }
 }

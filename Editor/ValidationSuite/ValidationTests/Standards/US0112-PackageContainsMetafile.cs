@@ -15,7 +15,7 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests.Standards
 
         bool ShouldIgnore(string name)
         {
-            //Names starting with a "." are being ignored by AssetDB.
+            //Names starting with a "." are ignored by AssetDB.
             //Names finishing with ".meta" are considered meta files in Editor Code.
             if (Path.GetFileName(name).StartsWith(".") || name.EndsWith(".meta"))
                 return true;
@@ -31,11 +31,27 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests.Standards
             return false;
         }
 
+        // Files in Loadable Plugin Directories are ignored by AssetDB
+        // if a plugin has been configured for the directory.
+        static readonly string[] k_LoadableDirectoryExtensionTypes = { ".androidlib", ".bundle", ".plugin", ".framework" };
+
+        bool ShouldIgnoreChildren(string name)
+        {
+            // Newer Unity versions ignore files inside plugin directories.
+            // This has been backported to 2020.3 LTS, 2021.3 LTS, 2022.2 LTS, 2023.1 LTS.
+#if UNITY_2020_3 || UNITY_2021_3 || UNITY_2022_2_OR_NEWER
+            var fileName = Path.GetFileName(name);
+            foreach (var value in k_LoadableDirectoryExtensionTypes)
+            {
+                if (fileName.EndsWith(value, StringComparison.OrdinalIgnoreCase))
+                    return true;
+            }
+#endif
+            return false;
+        }
+
         void CheckMeta(string toCheck)
         {
-            if (ShouldIgnore(toCheck))
-                return;
-
             if (System.IO.File.Exists(toCheck + ".meta"))
                 return;
 
@@ -48,7 +64,8 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests.Standards
             {
                 foreach (string file in Directory.GetFiles(folder))
                 {
-                    CheckMeta(file);
+                    if (!ShouldIgnore(file))
+                        CheckMeta(file);
                 }
 
                 foreach (string dir in Directory.GetDirectories(folder))
@@ -57,7 +74,9 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests.Standards
                         continue;
 
                     CheckMeta(dir);
-                    CheckMetaInFolderRecursively(dir);
+
+                    if (!ShouldIgnoreChildren(dir))
+                        CheckMetaInFolderRecursively(dir);
                 }
             }
             catch (Exception e)
