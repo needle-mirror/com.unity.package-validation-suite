@@ -4,6 +4,10 @@ All notable changes to this package will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## [0.51.0-preview] - 2023-04-27
+- PVP: Add x-ray checks `PVP-130-1`, `PVP-131-1`, `PVP-132-1`, and `PVP-133-1` to verify assembly definition files. (PVS-113)
+- PVP: Add check `PVP-140-1` that wraps `UpdateConfigurationValidation`. (PVS-180)
+
 ## [0.50.0-preview] - 2023-04-18
 - PVP: Add x-ray checks `PVP-70-1`, `PVP-71-1` and `PVP-72-1` to verify package filenames. (PVS-176)
 - MetaFilesValidation: Don't check for Meta files inside Loadable Plugin Directories. (PVS-179, UUM-9421)
