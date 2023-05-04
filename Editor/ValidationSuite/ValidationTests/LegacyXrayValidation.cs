@@ -12,6 +12,7 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
         static readonly Dictionary<string, string> k_ChecksAppliedInLegacyPVS = new Dictionary<string, string>
         {
             ["PVP-62-1"] = "index.md filename must be spelled in lowercase",
+            ["PVP-106-1"] = "Version tag must follow Package Lifecycle rules",
         };
 
         static LegacyXrayValidation()

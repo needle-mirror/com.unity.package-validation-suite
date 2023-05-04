@@ -4,6 +4,10 @@ All notable changes to this package will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## [0.53.0-preview] - 2023-05-04
+- Relax "Package Lifecycle Validation" to always allow version numbers with major version zero without a pre-release version. (PVP-178)
+- Include `PVP-106-1` (Version tag complies with Package Lifecycle rules) in "X-ray Validations" validation. (PVS-178)
+
 ## [0.52.0-preview] - 2023-05-01
 - PVP: Add x-ray check `PVP-106-1` to verify package lifecycle. (PVS-132)
 

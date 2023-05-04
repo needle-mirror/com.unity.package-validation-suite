@@ -89,7 +89,7 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
                 return;
             }
 
-            if (packageVersionNumber.Major < 1 && (versionTag.IsEmpty() || versionTag.Tag != "preview"))
+            if (packageVersionNumber.Major < 1 && !versionTag.IsEmpty() && versionTag.Tag != "preview")
             {
                 AddError("In package.json, \"version\" < 1, please tag the package as " + packageVersionNumber.VersionOnly() + "-preview. " + ErrorDocumentation.GetLinkMessage(k_DocsFilePath, "version-1-please-tag-the-package-as-xxx-preview"));
                 return;
