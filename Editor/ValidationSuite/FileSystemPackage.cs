@@ -7,7 +7,7 @@ using System.Linq;
 
 namespace UnityEditor.PackageManager.ValidationSuite
 {
-    public class FileSystemPackage : IEnumerable<IPackageFile>
+    class FileSystemPackage : IEnumerable<IPackageFile>
     {
         class PackageFile : IPackageFile, IDisposable
         {

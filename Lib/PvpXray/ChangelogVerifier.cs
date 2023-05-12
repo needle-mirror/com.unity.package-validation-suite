@@ -124,7 +124,7 @@ namespace PvpXray
                                 AddErrorWithLocation("PVP-43-1", "version in first section header doesn't match version in package manifest");
                             }
                         }
-                        catch (JsonException e)
+                        catch (SimpleJsonException e)
                         {
                             m_Context.AddError("PVP-43-1", $"{k_Manifest}: ${e.Message}");
                         }

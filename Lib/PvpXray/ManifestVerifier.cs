@@ -118,7 +118,7 @@ namespace PvpXray
                         }
                     }
                 }
-                catch (JsonException e)
+                catch (SimpleJsonException e)
                 {
                     context.AddError(checkId, e.Message);
                 }

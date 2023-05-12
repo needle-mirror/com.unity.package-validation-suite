@@ -18,9 +18,9 @@ using System.Text;
 
 namespace PvpXray
 {
-    class JsonException : Exception
+    class SimpleJsonException : Exception
     {
-        public JsonException(string message) : base(message) { }
+        public SimpleJsonException(string message) : base(message) { }
     }
 
     static class SimpleJsonReader
@@ -54,10 +54,10 @@ namespace PvpXray
         {
             var idx = ParseValue(json, 0, out var value);
             if (idx == -1)
-                throw new JsonException("Invalid JSON document");
+                throw new SimpleJsonException("Invalid JSON document");
             SkipSpace(json, ref idx, json.Length);
             if (idx != json.Length)
-                throw new JsonException("Garbage following JSON document");
+                throw new SimpleJsonException("Garbage following JSON document");
             return value;
         }
 
@@ -181,7 +181,7 @@ namespace PvpXray
                     return -1;
 
                 if (res.ContainsKey(name))
-                    throw new JsonException($"Duplicate JSON key: {name}");
+                    throw new SimpleJsonException($"Duplicate JSON key: {name}");
                 res.Add(name, val);
                 idx = endO;
 

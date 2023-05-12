@@ -69,7 +69,7 @@ namespace PvpXray
         {
             if (Kind != typeof(T))
             {
-                throw new JsonException($"{Path} was {k_JsonTypeNames[Kind]}, expected {k_JsonTypeNames[typeof(T)]}");
+                throw new SimpleJsonException($"{Path} was {k_JsonTypeNames[Kind]}, expected {k_JsonTypeNames[typeof(T)]}");
             }
 
             return (T)m_Value;
@@ -90,7 +90,7 @@ namespace PvpXray
             {
                 if (!allowedKeys.Contains(key))
                 {
-                    throw new JsonException($"illegal key '{key}' in object {Path}");
+                    throw new SimpleJsonException($"illegal key '{key}' in object {Path}");
                 }
             }
         }

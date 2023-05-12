@@ -75,7 +75,7 @@ namespace PvpXray
                         m_Context.AddError("PVP-80-1", $"{entry.PathWithCase}: .sample.json file should not contain \"path\" key");
                     }
                 }
-                catch (Exception e) when (e is JsonException || e is Verifier.FailAllException)
+                catch (Exception e) when (e is SimpleJsonException || e is Verifier.FailAllException)
                 {
                     m_Context.AddError("PVP-80-1", e.Message);
                 }
@@ -131,7 +131,7 @@ namespace PvpXray
 
                         m_SamplesByDir[sampleDir] = manifestSample;
                     }
-                    catch (JsonException e)
+                    catch (SimpleJsonException e)
                     {
                         m_Context.AddError("PVP-80-1", $"{k_Manifest}: {e.Message}");
                     }
@@ -152,7 +152,7 @@ namespace PvpXray
                         m_Context.AddError("PVP-80-1", $"{entry.Definition}: displayName must be non-empty");
                     }
                 }
-                catch (JsonException e)
+                catch (SimpleJsonException e)
                 {
                     m_Context.AddError("PVP-80-1", $"{entry.Definition}: {e.Message}");
                 }

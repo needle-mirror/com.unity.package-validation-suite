@@ -61,9 +61,9 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
             }
 
             var package = new FileSystemPackage(manifestPath);
-            var results = Verifier.OneShot(package, Utilities.k_HttpClient);
+            var resultFileStub = Verifier.OneShot(package, httpClient: null);
 
-            foreach (var entry in results)
+            foreach (var entry in resultFileStub.Results)
             {
                 var checkId = entry.Key;
                 if (!m_AppliedChecks.TryGetValue(checkId, out var messagePrefix)) continue;

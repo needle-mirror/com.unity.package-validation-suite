@@ -55,7 +55,7 @@ namespace PvpXray
                         m_Context.AddError("PVP-31-1", $"{k_License}: name in copyright notice must match either name or displayName of package");
                     }
                 }
-                catch (JsonException e)
+                catch (SimpleJsonException e)
                 {
                     m_Context.AddError("PVP-31-1", $"{k_Manifest}: {e.Message}");
                 }

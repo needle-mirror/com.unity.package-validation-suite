@@ -1,25 +1,25 @@
 {
   "name": "com.unity.package-validation-suite",
   "displayName": "Package Validation Suite",
-  "version": "0.53.0-preview",
+  "version": "0.54.0-preview",
   "unity": "2018.4",
   "description": "Unity Package Manager validation suite, used to evaluate a package's integrity before it's considered for publishing.  This is a Unity internal tool at the moment, no support will be provided for this package.",
   "dependencies": {
     "com.unity.nuget.mono-cecil": "0.1.6-preview.2"
   },
   "relatedPackages": {
-    "com.unity.package-validation-suite.tests": "0.53.0-preview"
+    "com.unity.package-validation-suite.tests": "0.54.0-preview"
   },
   "_upm": {
-    "changelog": "- Relax \"Package Lifecycle Validation\" to always allow version numbers with major version zero without a pre-release version. (PVP-178)\n- Include `PVP-106-1` (Version tag complies with Package Lifecycle rules) in \"X-ray Validations\" validation. (PVS-178)"
+    "changelog": "- PVP: Add x-ray checks `PVP-{90,91,92}-1` for NDA validation. (PETS-1221)\n- PVP: Add x-ray checks `PVP-{120,121,122,123,124,125}-1` to verify that text files are well-formed. (PVS-154)"
   },
   "upmCi": {
-    "footprint": "b77216604c56a172b7531efb52d8994ee73f7e0f"
+    "footprint": "75f68c7c67c7ec6c2fadb4645c436866ee1c51f3"
   },
-  "documentationUrl": "https://docs.unity3d.com/Packages/com.unity.package-validation-suite@0.53/manual/index.html",
+  "documentationUrl": "https://docs.unity3d.com/Packages/com.unity.package-validation-suite@0.54/manual/index.html",
   "repository": {
     "url": "https://github.cds.internal.unity3d.com/unity/com.unity.package-validation-suite.git",
     "type": "git",
-    "revision": "d03272efa6f0fab9643661736e491ba5ae4df4b9"
+    "revision": "84f7cd3b2adca23dd0f99dbc879b1783eb07f59f"
   }
 }

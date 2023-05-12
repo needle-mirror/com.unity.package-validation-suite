@@ -60,7 +60,7 @@ namespace UnityEditor.PackageManager.ValidationSuite
             else throw new ArgumentException($"Cannot {nameof(EmitGeneric)} value of type {val.GetType()}: '{val}'");
         }
 
-        static void EmitGenericItems(StringBuilder sb, IEnumerable<KeyValuePair<string, object>> items, int indent)
+        public static void EmitGenericItems(StringBuilder sb, IEnumerable<KeyValuePair<string, object>> items, int indent)
         {
             var anyElements = false;
             foreach (var item in items)

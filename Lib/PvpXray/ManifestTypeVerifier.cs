@@ -83,7 +83,7 @@ namespace PvpXray
             {
                 ValidateAllowedProperties(manifest.Members, location: new List<string>(), context);
             }
-            catch (JsonException e)
+            catch (SimpleJsonException e)
             {
                 context.AddError("PVP-107-2", e.Message);
             }

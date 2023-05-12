@@ -8,14 +8,14 @@ using System.Text;
 
 namespace PvpXray
 {
-    public interface IPackageFile
+    interface IPackageFile
     {
         string Path { get; }
         long Size { get; }
         Stream Content { get; }
     }
 
-    public class VerifierContext
+    class VerifierContext
     {
         public List<string> Files { get; set; }
         public List<long> Sizes { get; set; }
@@ -40,20 +40,22 @@ namespace PvpXray
                 if (file.Path == "package.json")
                 {
                     Manifest = new byte[file.Size];
-                    file.Content.CopyTo(new MemoryStream(Manifest));
+                    XrayUtils.ReadExactly(file.Content, Manifest);
                 }
             }
         }
     }
 
-    public sealed class CheckResult
+    class ResultFileStub
+    {
+        public Dictionary<string, string> Baselines { get; } = new Dictionary<string, string>();
+        public Dictionary<string, CheckResult> Results { get; } = new Dictionary<string, CheckResult>();
+    }
+
+    sealed class CheckResult
     {
         public string SkipReason { get; internal set; }
         public List<string> Errors { get; internal set; }
-
-        internal CheckResult()
-        {
-        }
     }
 
     public class Verifier
@@ -81,18 +83,13 @@ namespace PvpXray
                 {
                     if (m_Content == null)
                     {
-                        // Attempting to read the entire file into a byte array imposes a limit on the maximum supported file size.
-                        // For .NET Core (and thus, upm-pvp xray) the limit is 2147483591 bytes.
-                        // For Mono (and thus, Unity) the limit is Int32.MaxValue (2147483647) bytes (tested on 2019.2.21f1 and 2023.2.0a5).
-                        // For consistency, always enforce the lower of the two limits.
-                        const long maximumSize = 2147483591;
-                        if (Size > maximumSize)
+                        if (Size > XrayUtils.MaxByteArrayLength)
                         {
-                            throw new InvalidOperationException($"Reading content of files bigger than {maximumSize} bytes is not supported");
+                            throw new FailAllException($"Cannot read file {Path} which, at {Size} bytes, exceeds the limit of {XrayUtils.MaxByteArrayLength} bytes");
                         }
 
                         m_Content = new byte[Size];
-                        m_File.Content.CopyTo(new MemoryStream(m_Content));
+                        XrayUtils.ReadExactly(m_File.Content, m_Content);
                     }
 
                     return m_Content;
@@ -113,13 +110,22 @@ namespace PvpXray
             public FailAllException(string message) : base(message) { }
         }
 
+        // If some precondition fails, ALL dependent checks must be marked
+        // as failed. This exception may be used to do so.
+        internal class SkipAllException : Exception
+        {
+            public SkipAllException(string reason) : base(reason) { }
+        }
+
         internal interface IContext
         {
             IReadOnlyList<string> Files { get; }
+            IPvpHttpClient HttpClient { get; }
             Json Manifest { get; }
             void AddError(string checkId, string error);
             void Skip(string checkId, string reason);
             bool DirectoryExists(string path);
+            void SetBlobBaseline(string name, string hash);
         }
 
         class Context : IContext
@@ -128,20 +134,22 @@ namespace PvpXray
             public static string[] ContextChecks => new[] { "PVP-100-1" };
 
             public IReadOnlyList<string> Files { get; }
+            public IPvpHttpClient HttpClient => m_HttpClient ?? throw new SkipAllException("offline_requested");
             public Json Manifest => m_Manifest ?? throw new FailAllException(m_ManifestError);
-            public Dictionary<string, CheckResult> Results { get; }
+            public ResultFileStub ResultFile { get; }
 
             readonly HashSet<string> m_CurrentBatchChecks;
+            readonly IPvpHttpClient m_HttpClient;
             readonly Json m_Manifest;
             readonly string m_ManifestError;
             readonly HashSet<string> m_PreviousErrors;
 
             public Context(VerifierContext verifierContext)
             {
-                Results = new Dictionary<string, CheckResult>();
+                ResultFile = new ResultFileStub();
                 foreach (var check in Checks)
                 {
-                    Results.Add(check, new CheckResult
+                    ResultFile.Results.Add(check, new CheckResult
                     {
                         Errors = new List<string>(),
                         SkipReason = null,
@@ -151,6 +159,7 @@ namespace PvpXray
                 m_CurrentBatchChecks = new HashSet<string>();
                 m_PreviousErrors = new HashSet<string>();
                 Files = verifierContext.Files;
+                m_HttpClient = verifierContext.HttpClient;
 
                 try
                 {
@@ -159,7 +168,7 @@ namespace PvpXray
                     // UTF-8 BOM is unwelcome, but we can proceed with verification.
                     if (text.StartsWithOrdinal("\ufeff"))
                     {
-                        Results["PVP-100-1"].Errors.Add("manifest file contains UTF-8 BOM");
+                        ResultFile.Results["PVP-100-1"].Errors.Add("manifest file contains UTF-8 BOM");
                         text = text.Substring(1);
                     }
 
@@ -169,8 +178,8 @@ namespace PvpXray
                 catch (Exception e)
                 {
                     m_Manifest = null;
-                    m_ManifestError = e is JsonException ? "package.json manifest is not valid JSON" : "package.json manifest could not be read";
-                    Results["PVP-100-1"].Errors.Add(m_ManifestError);
+                    m_ManifestError = e is SimpleJsonException ? "package.json manifest is not valid JSON" : "package.json manifest could not be read";
+                    ResultFile.Results["PVP-100-1"].Errors.Add(m_ManifestError);
                 }
             }
 
@@ -184,7 +193,7 @@ namespace PvpXray
                         throw new InvalidOperationException($"batch tried to add error with undeclared check ID {checkId}: {error}");
                     }
 
-                    var result = Results[checkId];
+                    var result = ResultFile.Results[checkId];
                     if (result.SkipReason == null)
                     {
                         result.Errors.Add(error);
@@ -199,11 +208,24 @@ namespace PvpXray
                     throw new InvalidOperationException($"batch tried to skip undeclared check ID {checkId}: {reason}");
                 }
 
-                var result = Results[checkId];
+                var result = ResultFile.Results[checkId];
                 if (result.SkipReason == null)
                 {
                     result.Errors.Clear();
                     result.SkipReason = reason;
+                }
+            }
+
+            public void SetBlobBaseline(string id, string hash)
+            {
+                if (hash.Length != 64) throw new ArgumentException("invalid blob hash");
+                try
+                {
+                    ResultFile.Baselines.Add($"blob:{id}", $"\"{hash}\"");
+                }
+                catch (ArgumentException)
+                {
+                    throw new InvalidOperationException($"blob baseline with same ID set multiple times: {id}");
                 }
             }
 
@@ -232,6 +254,20 @@ namespace PvpXray
                     foreach (var check in checks)
                     {
                         AddError(check, e.Message);
+                    }
+                }
+                catch (PvpHttpException)
+                {
+                    foreach (var check in Checks)
+                    {
+                        Skip(check, "network_error");
+                    }
+                }
+                catch (SkipAllException e)
+                {
+                    foreach (var check in checks)
+                    {
+                        Skip(check, e.Message);
                     }
                 }
             }
@@ -275,11 +311,8 @@ namespace PvpXray
             return (T)property.GetMethod.Invoke(null, null);
         }
 
-        public Verifier(VerifierContext verifierContext)
+        internal Verifier(VerifierContext verifierContext)
         {
-            // TODO: New checks that require access to a network resource must be skipped immediately with reason "offline_requested" if httpClient is null.
-            // TODO: New checks that call httpClient.GetStream must be skipped with reason "network_error" if it throws PvpHttpException.
-
             m_Context = new Context(verifierContext);
             m_Checkers = new Dictionary<Type, (IChecker, string[], int)>();
 
@@ -308,6 +341,9 @@ namespace PvpXray
                 }
 
                 m_Context.RunBatch(checks, CreateChecker);
+                // If constructor threw PvpHttpException, SkipAllException or
+                // FailAllException, checker will be null here, and we won't be
+                // calling CheckItem or Finish on the checker.
                 if (checker != null)
                 {
                     m_Checkers.Add(type, (checker, checks, passCount));
@@ -317,7 +353,7 @@ namespace PvpXray
 
         /// file.Content must be disposed by the caller and is assumed to be a read-only
         /// non-seekable stream that is only valid for the duration of this method call.
-        public void CheckItem(IPackageFile file, int passIndex)
+        internal void CheckItem(IPackageFile file, int passIndex)
         {
             var checkerFile = new PackageFile(file);
 
@@ -330,17 +366,17 @@ namespace PvpXray
             }
         }
 
-        public Dictionary<string, CheckResult> Finish()
+        internal ResultFileStub Finish()
         {
             foreach (var (checker, checks, _) in m_Checkers.Values)
             {
                 m_Context.RunBatch(checks, checker.Finish);
             }
 
-            return m_Context.Results;
+            return m_Context.ResultFile;
         }
 
-        public static Dictionary<string, CheckResult> OneShot(IEnumerable<IPackageFile> files, IPvpHttpClient httpClient)
+        internal static ResultFileStub OneShot(IEnumerable<IPackageFile> files, IPvpHttpClient httpClient)
         {
             var context = new VerifierContext(files, httpClient);
             var verifier = new Verifier(context);

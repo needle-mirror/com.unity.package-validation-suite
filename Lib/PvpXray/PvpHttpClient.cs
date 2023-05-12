@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Net.Http;
 using System.Text;
@@ -12,7 +13,10 @@ namespace PvpXray
         public string Url { get; }
 
         public PvpHttpException(string url, Exception inner)
-            : base($"HTTP request for URL {url} failed: {inner.Message}", inner)
+            : this(url, inner.Message, inner) { }
+
+        public PvpHttpException(string url, string message, Exception inner = null)
+            : base($"HTTP request for URL {url} failed: {message}", inner)
         {
             Url = url;
         }
@@ -51,8 +55,6 @@ namespace PvpXray
     /// Default IPvpHttpClient implementation, with automatic retry logic.
     public class PvpHttpClient : IPvpHttpClient
     {
-        readonly string m_UserAgent;
-
         // A wrapper Stream that disposes both its underlying Stream and the
         // HttpClient. The ever decorative .NET type system has no distinct
         // type for a read-only, non-seekable stream, so most methods here
@@ -90,13 +92,58 @@ namespace PvpXray
             public override long Position { get => throw new NotSupportedException(); set => throw new NotSupportedException(); }
         }
 
-        public PvpHttpClient(string userAgent)
+        struct CacheEntry
+        {
+            public readonly byte[] Data;
+            public readonly int Length;
+            public readonly int Status;
+
+            static int CheckLen(long length)
+                => length <= XrayUtils.MaxByteArrayLength ? (int)length
+                    : throw new IOException($"HTTP response too large to cache: {length} bytes");
+
+            public CacheEntry(int status, long? length, Stream stream)
+            {
+                Status = status;
+                if (length.HasValue) // Fast path for when we know exact size
+                {
+                    Length = CheckLen(length.Value);
+                    Data = new byte[Length];
+                    XrayUtils.ReadExactly(stream, Data);
+                }
+                else
+                {
+                    var ms = new MemoryStream();
+                    stream.CopyTo(ms);
+
+                    // MemoryStream will usually have thrown by now, but on Mono, we might make it to this point.
+                    Length = CheckLen(ms.Length);
+                    Data = ms.GetBuffer();
+                }
+            }
+
+            public MemoryStream GetStream() => new MemoryStream(Data, index: 0, count: Length, writable: false, publiclyVisible: true);
+        }
+
+        readonly string m_UserAgent;
+        readonly Dictionary<string, CacheEntry> m_Cache;
+
+        public PvpHttpClient(string userAgent) : this(userAgent, false) { }
+
+        public PvpHttpClient(string userAgent, bool cache)
         {
             m_UserAgent = userAgent;
+            m_Cache = cache ? new Dictionary<string, CacheEntry>() : null;
         }
 
         public Stream GetStream(string url, out int status)
         {
+            if (m_Cache != null && m_Cache.TryGetValue(url, out var entry))
+            {
+                status = entry.Status;
+                return entry.GetStream();
+            }
+
             // Perform 4 retries (5 total attempts) with intervals 10ms, 100ms, 1s, 10s.
             var retryDelayMs = 10;
             for (var nRetries = 4; ; --nRetries, retryDelayMs *= 10)
@@ -119,15 +166,35 @@ namespace PvpXray
                         request.Headers.Add("User-Agent", m_UserAgent);
 
                         Stream body;
+                        long? contentLength;
                         try
                         {
-                            (status, body) = Task.Run(async () =>
+                            (status, contentLength, body) = Task.Run(async () =>
                             {
                                 // ReSharper disable AccessToDisposedClosure -- Task.Run blocks until we're done
                                 // ReSharper disable AccessToModifiedClosure
                                 var response = await client.SendAsync(request, HttpCompletionOption.ResponseHeadersRead);
-                                return ((int)response.StatusCode, await response.Content.ReadAsStreamAsync());
+
+                                return (
+                                    (int)response.StatusCode,
+                                    response.Content.Headers.ContentLength,
+                                    await response.Content.ReadAsStreamAsync()
+                                );
                             }).GetAwaiter().GetResult();
+
+                            // Retry on HTTP server error.
+                            if (status >= 500 && status < 600 && nRetries > 0)
+                            {
+                                Thread.Sleep(retryDelayMs);
+                                continue;
+                            }
+
+                            // If caching the response, read entire thing into memory now and return stream wrapping it.
+                            if (m_Cache != null)
+                            {
+                                var newEntry = m_Cache[url] = new CacheEntry(status, contentLength, body);
+                                return newEntry.GetStream();
+                            }
                         }
                         catch (Exception e)
                         {
@@ -140,14 +207,8 @@ namespace PvpXray
 
                             throw new PvpHttpException(url, e);
                         }
-                        // Retry on HTTP server error.
-                        if (status >= 500 && status < 600 && nRetries > 0)
-                        {
-                            Thread.Sleep(retryDelayMs);
-                            continue;
-                        }
 
-                        // Success: pass responsibility for disposing HttpClient onto caller.
+                        // If streaming response, pass responsibility for disposing HttpClient onto caller.
                         var result = new HttpStream(client, body);
                         client = null;
                         return result;

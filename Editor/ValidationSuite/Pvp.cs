@@ -81,9 +81,9 @@ namespace UnityEditor.PackageManager.ValidationSuite
         public void Run(in PvpRunner.Input input, PvpRunner.Output output)
         {
             var package = new FileSystemPackage(input.Package.path);
-            var results = Verifier.OneShot(package, Utilities.k_HttpClient);
+            var resultFileStub = Verifier.OneShot(package, Utilities.k_HttpClient);
 
-            foreach (var entry in results)
+            foreach (var entry in resultFileStub.Results)
             {
                 var checkId = entry.Key;
                 var checkResult = entry.Value;
@@ -99,6 +99,11 @@ namespace UnityEditor.PackageManager.ValidationSuite
                     output.Skip(checkId, checkResult.SkipReason);
                 }
             }
+
+            foreach (var entry in resultFileStub.Baselines)
+            {
+                output.Baseline(entry.Key, entry.Value);
+            }
         }
     }
 
@@ -113,10 +118,12 @@ namespace UnityEditor.PackageManager.ValidationSuite
         public readonly struct Output
         {
             readonly Dictionary<string, CheckResult> m_Checks;
+            readonly Dictionary<string, string> m_Baselines;
 
-            internal Output(Dictionary<string, CheckResult> checks)
+            internal Output(Dictionary<string, CheckResult> checks, Dictionary<string, string> baselines)
             {
                 m_Checks = checks;
+                m_Baselines = baselines;
             }
 
             public void Error(string checkId, string message)
@@ -142,6 +149,11 @@ namespace UnityEditor.PackageManager.ValidationSuite
                 }
                 checkResult.SkipReason = reason;
             }
+
+            public void Baseline(string name, string hash)
+            {
+                m_Baselines[name] = hash;
+            }
         }
 
         public class CheckResult
@@ -153,6 +165,7 @@ namespace UnityEditor.PackageManager.ValidationSuite
         public class Results
         {
             readonly Dictionary<string, CheckResult> m_Checks;
+            readonly Dictionary<string, string> m_Baselines;
             readonly string m_Implementation;
 
             static readonly string[] k_ContextEnvVars = new[] {
@@ -170,9 +183,10 @@ namespace UnityEditor.PackageManager.ValidationSuite
             public Dictionary<string, object> Context { get; } = new Dictionary<string, object>();
             public Dictionary<string, object> Target { get; } = new Dictionary<string, object>();
 
-            public Results(Dictionary<string, CheckResult> checks, string implementation)
+            public Results(Dictionary<string, CheckResult> checks, Dictionary<string, string> baselines, string implementation)
             {
                 m_Checks = checks;
+                m_Baselines = baselines;
                 m_Implementation = implementation;
                 foreach (var name in k_ContextEnvVars)
                 {
@@ -186,7 +200,6 @@ namespace UnityEditor.PackageManager.ValidationSuite
 
             public string ToJson()
             {
-                var sb = new StringBuilder();
                 var results = new Dictionary<string, object>();
                 var obj = new Dictionary<string, object>
                 {
@@ -218,7 +231,31 @@ namespace UnityEditor.PackageManager.ValidationSuite
                     }
                 }
 
-                SimpleJsonWriter.EmitGeneric(sb, null, obj, 0, emitComma: false);
+                var sb = new StringBuilder();
+                sb.Append('{');
+                SimpleJsonWriter.EmitGenericItems(sb, obj.OrderBy(kv => kv.Key, StringComparer.Ordinal), 0);
+
+                if (m_Baselines.Count != 0)
+                {
+                    sb.Length -= 1; // remove '\n'
+                    sb.Append(",\n  \"baselines\": {\n");
+                    var first = true;
+                    foreach (var baseline in m_Baselines.OrderBy(kv => kv.Key, StringComparer.Ordinal))
+                    {
+                        if (!first)
+                        {
+                            sb.Append(",\n");
+                        }
+                        first = false;
+
+                        SimpleJsonWriter.EmitName(sb, baseline.Key, 2);
+                        sb.Append(baseline.Value);
+                    }
+
+                    sb.Append("\n  }\n");
+                }
+
+                sb.Append("}\n");
                 return sb.ToString();
             }
         }
@@ -305,15 +342,16 @@ namespace UnityEditor.PackageManager.ValidationSuite
             onProgress?.Invoke(progressNow, progressMax);
 
             var checks = new Dictionary<string, CheckResult>();
+            var baselines = new Dictionary<string, string>();
             var package = VettingContext.GetManifest(GetPackageInfo(packageName).resolvedPath);
             var input = new Input
             {
                 AssemblyInfo = GetRelevantAssemblyInfo(package.path),
                 Package = package,
             };
-            var output = new Output(checks);
+            var output = new Output(checks, baselines);
 
-            var results = new Results(checks, implementation: m_PvsPackageInfo.packageId)
+            var results = new Results(checks, baselines, implementation: m_PvsPackageInfo.packageId)
             {
                 Target = {
                     ["package"] = new Dictionary<string, object> {
