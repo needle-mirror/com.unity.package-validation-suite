@@ -88,7 +88,7 @@ namespace PvpXray
             public string GetJsonString()
             {
                 var jsonOffset = JsonOffset;
-                return Encoding.UTF8.GetString(Contents, jsonOffset, Length - jsonOffset);
+                return XrayUtils.Utf8Strict.GetString(Contents, jsonOffset, Length - jsonOffset);
             }
 
             public unsafe int GetSmallestFileSize()
@@ -236,10 +236,7 @@ namespace PvpXray
             m_Context = context;
 
             var stream = context.HttpClient.GetStream(k_NdaPatternUrl, out var status);
-            if (status != 200)
-            {
-                throw new PvpHttpException(k_NdaPatternUrl, $"Unexpected HTTP status {status}");
-            }
+            PvpHttpException.CheckHttpStatus(k_NdaPatternUrl, status, 200);
 
             XrayUtils.GetStreamArray(stream, out var patternArray, out var patternLength);
             try

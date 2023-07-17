@@ -4,6 +4,10 @@ All notable changes to this package will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## [0.55.0-preview] - 2023-07-17
+- Enable HTTP response compression when fetching files over HTTP. (PETS-1367)
+- PVP: Add x-ray check `PVP-100-2`, doing strict UTF-8 validation of the manifest (which `PVP-100-1` doesn't). (PVS-182)
+
 ## [0.54.0-preview] - 2023-05-12
 - PVP: Add x-ray checks `PVP-{90,91,92}-1` for NDA validation. (PETS-1221)
 - PVP: Add x-ray checks `PVP-{120,121,122,123,124,125}-1` to verify that text files are well-formed. (PVS-154)

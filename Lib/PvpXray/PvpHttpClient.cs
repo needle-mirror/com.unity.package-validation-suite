@@ -1,6 +1,8 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.IO;
+using System.Net;
 using System.Net.Http;
 using System.Text;
 using System.Threading;
@@ -20,6 +22,14 @@ namespace PvpXray
         {
             Url = url;
         }
+
+        internal static void CheckHttpStatus(string url, int status, int expected)
+        {
+            if (status != expected)
+            {
+                throw new PvpHttpException(url, $"unexpected HTTP status {status}");
+            }
+        }
     }
 
     public interface IPvpHttpClient
@@ -31,19 +41,28 @@ namespace PvpXray
 
     public static class PvpHttpClientExtensions
     {
+        public static void GetArray(this IPvpHttpClient self, string url, out int status, out byte[] buffer, out int length)
+        {
+            try
+            {
+                using (var stream = self.GetStream(url, out status))
+                {
+                    XrayUtils.GetStreamArray(stream, out buffer, out length);
+                }
+            }
+            catch (Exception e) when (!(e is PvpHttpException))
+            {
+                throw new PvpHttpException(url, e);
+            }
+        }
+
         /// Perform a HTTP GET request to the given URL, returning the
         /// HTTP status and response body (decoded as UTF-8) as a string.
         public static string GetString(this IPvpHttpClient self, string url, out int status)
         {
             try
             {
-                using (var sr = new StreamReader(
-                    self.GetStream(url, out status),
-                    Encoding.UTF8,
-                    detectEncodingFromByteOrderMarks: false))
-                {
-                    return sr.ReadToEnd();
-                }
+                return XrayUtils.ReadToString(self.GetStream(url, out status));
             }
             catch (Exception e) when (!(e is PvpHttpException))
             {
@@ -155,7 +174,10 @@ namespace PvpXray
                 // code might run on. (There are e.g. known bugs in its timeout
                 // logic in several .NET runtimes, which we may have to work
                 // around in the future, as was already done in Stevedore.)
-                var client = new HttpClient();
+                var client = new HttpClient(new HttpClientHandler
+                {
+                    AutomaticDecompression = DecompressionMethods.GZip | DecompressionMethods.Deflate,
+                });
                 try
                 {
                     client.DefaultRequestHeaders.ExpectContinue = false;
@@ -166,9 +188,9 @@ namespace PvpXray
                         request.Headers.Add("User-Agent", m_UserAgent);
 
                         Stream body;
-                        long? contentLength;
                         try
                         {
+                            long? contentLength;
                             (status, contentLength, body) = Task.Run(async () =>
                             {
                                 // ReSharper disable AccessToDisposedClosure -- Task.Run blocks until we're done
@@ -218,6 +240,52 @@ namespace PvpXray
                 {
                     client?.Dispose();
                 }
+            }
+        }
+    }
+
+    class TestHttpClient : IEnumerable, IPvpHttpClient
+    {
+        readonly Action<string> m_Assert;
+        readonly List<(string, int, byte[])> m_Expected = new List<(string, int, byte[])>();
+        int m_ExpectedIndex;
+
+        public TestHttpClient(Action<string> assert)
+        {
+            m_Assert = assert;
+        }
+
+        public bool IsFinished => m_ExpectedIndex >= m_Expected.Count;
+
+        public void Add(string url, int status, byte[] response) => m_Expected.Add((url, status, response));
+        public void Add(string url, int status, string response) => Add(url, status, Encoding.UTF8.GetBytes(response));
+
+        public Stream GetStream(string url, out int status)
+        {
+            if (url == null) throw new ArgumentNullException(nameof(url));
+
+            var expectedUrl = IsFinished ? null : m_Expected[m_ExpectedIndex].Item1;
+            if (url != expectedUrl)
+            {
+                m_Assert($"Unexpected request for {url}; expected {expectedUrl ?? "no more requests"}.");
+                status = -1;
+                return null;
+            }
+
+            var resp = m_Expected[m_ExpectedIndex++];
+            status = resp.Item2;
+            return new MemoryStream(resp.Item3, 0, resp.Item3.Length, writable: false, publiclyVisible: false);
+        }
+
+        IEnumerator IEnumerable.GetEnumerator()
+            => throw new NotImplementedException("IEnumerator only implemented to enable Add syntax");
+
+
+        public void AssertFinished()
+        {
+            if (!IsFinished)
+            {
+                m_Assert($"Expected {m_Expected.Count - m_ExpectedIndex} further HTTP request(s), starting with: {m_Expected[m_ExpectedIndex].Item1}");
             }
         }
     }

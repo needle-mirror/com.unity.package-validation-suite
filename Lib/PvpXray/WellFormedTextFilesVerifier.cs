@@ -62,7 +62,7 @@ namespace PvpXray
             var content = file.Content;
             try
             {
-                var _ = new UTF8Encoding(false, true).GetCharCount(content);
+                _ = XrayUtils.Utf8Strict.GetCharCount(content);
             }
             catch (ArgumentException)
             {

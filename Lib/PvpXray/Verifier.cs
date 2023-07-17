@@ -131,7 +131,7 @@ namespace PvpXray
         class Context : IContext
         {
             // Checks implemented directly in Context.
-            public static string[] ContextChecks => new[] { "PVP-100-1" };
+            public static string[] ContextChecks => new[] { "PVP-100-1", "PVP-100-2" };
 
             public IReadOnlyList<string> Files { get; }
             public IPvpHttpClient HttpClient => m_HttpClient ?? throw new SkipAllException("offline_requested");
@@ -163,12 +163,26 @@ namespace PvpXray
 
                 try
                 {
-                    var text = Encoding.UTF8.GetString(verifierContext.Manifest);
+                    string text;
+                    try
+                    {
+                        text = XrayUtils.Utf8Strict.GetString(verifierContext.Manifest);
+                    }
+                    catch (DecoderFallbackException)
+                    {
+                        // If strict decoding fails, decode with replacement.
+                        text = Encoding.UTF8.GetString(verifierContext.Manifest);
+
+                        // If Encoding.UTF8 also throws, the following error is
+                        // intentionally not added (but an error is added below).
+                        ResultFile.Results["PVP-100-2"].Errors.Add("package.json: contains invalid UTF-8");
+                    }
 
                     // UTF-8 BOM is unwelcome, but we can proceed with verification.
                     if (text.StartsWithOrdinal("\ufeff"))
                     {
                         ResultFile.Results["PVP-100-1"].Errors.Add("manifest file contains UTF-8 BOM");
+                        ResultFile.Results["PVP-100-2"].Errors.Add("package.json: contains UTF-8 BOM");
                         text = text.Substring(1);
                     }
 
@@ -180,6 +194,7 @@ namespace PvpXray
                     m_Manifest = null;
                     m_ManifestError = e is SimpleJsonException ? "package.json manifest is not valid JSON" : "package.json manifest could not be read";
                     ResultFile.Results["PVP-100-1"].Errors.Add(m_ManifestError);
+                    ResultFile.Results["PVP-100-2"].Errors.Add(e is SimpleJsonException ? $"package.json: {e.Message}" : "package.json: could not be read");
                 }
             }
 
