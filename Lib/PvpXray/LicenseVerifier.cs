@@ -7,7 +7,6 @@ namespace PvpXray
     class LicenseVerifier : Verifier.IChecker
     {
         const string k_License = "LICENSE.md";
-        const string k_Manifest = "package.json";
 
         static readonly Regex k_CopyrightNotice = new Regex(@"^(?<name>.*?) copyright \u00a9 \d+ \S(.*\S)?(?:\r?\n|$)", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
 
@@ -35,7 +34,7 @@ namespace PvpXray
         {
             if (file.Path != k_License) return;
 
-            var license = file.ReadToString();
+            var license = file.ReadToStringLegacy();
 
             if (license == "")
             {
@@ -57,7 +56,7 @@ namespace PvpXray
                 }
                 catch (SimpleJsonException e)
                 {
-                    m_Context.AddError("PVP-31-1", $"{k_Manifest}: {e.Message}");
+                    m_Context.AddError("PVP-31-1", e.FullMessage);
                 }
             }
             else

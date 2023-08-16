@@ -8,7 +8,6 @@ namespace PvpXray
     class ChangelogVerifier : Verifier.IChecker
     {
         const string k_Changelog = "CHANGELOG.md";
-        const string k_Manifest = "package.json";
 
         static readonly Regex k_H2Pattern = new Regex(@"^## (?<text>.*?)\r?$", RegexOptions.Multiline);
         static readonly Regex k_HeaderPattern = new Regex(@"^\[(?<version>.*)\]( - (?<date>\d{4}-\d{2}-\d{2}))?$");
@@ -53,7 +52,7 @@ namespace PvpXray
         {
             if (file.Path != k_Changelog) return;
 
-            var changelog = file.ReadToString();
+            var changelog = file.ReadToStringLegacy();
             var h2Matches = k_H2Pattern.Matches(changelog);
 
             if (h2Matches.Count == 0)
@@ -112,7 +111,7 @@ namespace PvpXray
                     }
                     else
                     {
-                        AddErrorWithLocation("PVP-40-1", $"date must be specified");
+                        AddErrorWithLocation("PVP-40-1", "date must be specified");
                     }
 
                     if (firstSection)
@@ -126,7 +125,7 @@ namespace PvpXray
                         }
                         catch (SimpleJsonException e)
                         {
-                            m_Context.AddError("PVP-43-1", $"{k_Manifest}: ${e.Message}");
+                            m_Context.AddError("PVP-43-1", e.FullMessage);
                         }
                     }
                 }

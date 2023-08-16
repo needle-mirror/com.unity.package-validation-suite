@@ -11,6 +11,24 @@ namespace PvpXray
         public static IEnumerable<Json> Unless(this IEnumerable<Json> elm, bool condition) => condition ? null : elm;
     }
 
+    // These checks are special (because they're actually checked in the
+    // Context), and must be handled in a separate checker in case the
+    // main ManifestVerifier checker throws FailAll.
+    class ManifestContextVerifier : Verifier.IChecker
+    {
+        public static string[] Checks => new[] { "PVP-100-1", "PVP-100-2" };
+        public static int PassCount => 0;
+
+        public ManifestContextVerifier(Verifier.IContext context)
+        {
+            foreach (var (checkId, error) in context.ManifestContextErrors)
+                context.AddError(checkId, error);
+        }
+
+        public void CheckItem(Verifier.PackageFile file, int passIndex) { }
+        public void Finish() { }
+    }
+
     class ManifestVerifier : Verifier.IChecker
     {
         const RegexOptions k_IgnoreCase = RegexOptions.IgnoreCase | RegexOptions.CultureInvariant; // IgnoreCase MUST be used with CultureInvariant.

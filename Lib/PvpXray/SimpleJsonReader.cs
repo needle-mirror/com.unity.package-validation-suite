@@ -21,6 +21,8 @@ namespace PvpXray
     class SimpleJsonException : Exception
     {
         public SimpleJsonException(string message) : base(message) { }
+        public string PackageFilePath { get; set; }
+        public string FullMessage => PackageFilePath != null ? $"{PackageFilePath}: {Message}" : Message;
     }
 
     static class SimpleJsonReader
@@ -49,16 +51,25 @@ namespace PvpXray
         /// - "true", "false" and "null" are returned as themselves
         /// </summary>
         /// <param name="json">JSON string</param>
+        /// <param name="packageFilePath">Path to be passed to any raised <see cref="SimpleJsonException"/>.</param>
         /// <returns>Object read from JSON.</returns>
-        public static object Read(string json)
+        public static object Read(string json, string packageFilePath)
         {
-            var idx = ParseValue(json, 0, out var value);
-            if (idx == -1)
-                throw new SimpleJsonException("Invalid JSON document");
-            SkipSpace(json, ref idx, json.Length);
-            if (idx != json.Length)
-                throw new SimpleJsonException("Garbage following JSON document");
-            return value;
+            try
+            {
+                var idx = ParseValue(json, 0, out var value);
+                if (idx == -1)
+                    throw new SimpleJsonException("Invalid JSON document");
+                SkipSpace(json, ref idx, json.Length);
+                if (idx != json.Length)
+                    throw new SimpleJsonException("Garbage following JSON document");
+                return value;
+            }
+            catch (SimpleJsonException e)
+            {
+                e.PackageFilePath = packageFilePath;
+                throw;
+            }
         }
 
         static int SkipUntilStringEnd(string json, int beginIdx, int len)

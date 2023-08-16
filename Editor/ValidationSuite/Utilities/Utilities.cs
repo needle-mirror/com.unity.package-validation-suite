@@ -136,7 +136,7 @@ namespace UnityEditor.PackageManager.ValidationSuite
                 throw new Exception($"Got HTTP status {metadataStatus} for URL: {metadataUrl}");
             }
 
-            var metadata = new Json(metadataJson);
+            var metadata = new Json(metadataJson, null);
             var versionMetadata = metadata["versions"][package.Version];
             if (!versionMetadata.IsPresent)
             {

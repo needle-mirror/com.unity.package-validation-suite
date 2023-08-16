@@ -8,7 +8,6 @@ namespace PvpXray
     {
         const string k_Check = "PVP-26-3";
         const string k_MetaExtension = ".meta";
-        readonly bool m_TargetUnityRequiresMetaFilesInPluginDirs;
 
         public static string[] Checks => new[] { k_Check };
         public static int PassCount => 0;
@@ -20,7 +19,7 @@ namespace PvpXray
 
             var minVersion = context.Manifest["unity"].IfPresent?.String;
             int i;
-            m_TargetUnityRequiresMetaFilesInPluginDirs = minVersion == null || (
+            var targetUnityRequiresMetaFilesInPluginDirs = minVersion == null || (
                 (i = minVersion.IndexOf('.')) != -1 &&
                 int.TryParse(minVersion.Substring(0, i), NumberStyles.Integer, CultureInfo.InvariantCulture, out var major) &&
                 int.TryParse(minVersion.Substring(i + 1), NumberStyles.Integer, CultureInfo.InvariantCulture, out var minor) &&
@@ -31,7 +30,7 @@ namespace PvpXray
             foreach (var entry in entries)
             {
                 // ignore all files inside plugin directories, unless targeting old Unity version
-                if (!m_TargetUnityRequiresMetaFilesInPluginDirs && entry.IsInsidePluginDirectory) continue;
+                if (!targetUnityRequiresMetaFilesInPluginDirs && entry.IsInsidePluginDirectory) continue;
 
                 if (entry.HasExtension(k_MetaExtension))
                 {

@@ -35,8 +35,6 @@ namespace PvpXray
 
         public void CheckItem(Verifier.PackageFile file, int passIndex)
         {
-            var manifest = m_Context.Manifest;
-
             var entry = new PathVerifier.Entry(file.Path);
             var isInsideSampleDir = false;
 
@@ -64,9 +62,25 @@ namespace PvpXray
 
                 try
                 {
+                    var text = file.ReadToStringLegacy();
+                    if (text.StartsWithOrdinal("\ufeff"))
+                    {
+                        throw new Verifier.FailAllException($"{file.Path}: file contains UTF-8 BOM");
+                    }
+
+                    Json ret;
+                    try
+                    {
+                        ret = new Json(text, file.Path);
+                    }
+                    catch (SimpleJsonException)
+                    {
+                        throw new Verifier.FailAllException($"{file.Path}: file is not valid JSON");
+                    }
+
                     var se = m_SamplesByDir[entry.DirectoryWithCase] = new SampleEntry
                     {
-                        Json = file.ReadAsJson(),
+                        Json = ret,
                         JsonFilePath = entry.PathWithCase,
                     };
 
@@ -133,7 +147,7 @@ namespace PvpXray
                     }
                     catch (SimpleJsonException e)
                     {
-                        m_Context.AddError("PVP-80-1", $"{k_Manifest}: {e.Message}");
+                        m_Context.AddError("PVP-80-1", e.FullMessage);
                     }
                 }
             }

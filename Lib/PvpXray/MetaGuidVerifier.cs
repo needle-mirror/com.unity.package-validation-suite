@@ -28,7 +28,7 @@ namespace PvpXray
             if (!metaPath.EndsWithOrdinal(k_MetaExtension)) return;
             var assetPath = metaPath.Substring(0, metaPath.Length - k_MetaExtension.Length);
 
-            var text = file.ReadToString();
+            var text = file.ReadToStringLegacy();
             var match = k_GuidLine.Match(text);
             if (!match.Success) return;
             var guid = match.Groups[1].Value;

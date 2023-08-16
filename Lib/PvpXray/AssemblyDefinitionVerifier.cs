@@ -29,7 +29,22 @@ namespace PvpXray
         {
             if (!file.Path.EndsWithOrdinal(k_Extension)) return;
 
-            var json = file.ReadAsJson();
+            var text = file.ReadToStringLegacy();
+            if (text.StartsWithOrdinal("\ufeff"))
+            {
+                throw new Verifier.FailAllException($"{file.Path}: file contains UTF-8 BOM");
+            }
+
+            Json json;
+            try
+            {
+                json = new Json(text, file.Path);
+            }
+            catch (SimpleJsonException)
+            {
+                throw new Verifier.FailAllException($"{file.Path}: file is not valid JSON");
+            }
+
             var assemblyName = json["name"].String;
 
             var entry = new PathVerifier.Entry(file.Path);

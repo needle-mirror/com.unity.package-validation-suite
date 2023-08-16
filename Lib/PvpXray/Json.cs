@@ -20,6 +20,7 @@ namespace PvpXray
         // The key of this JSON value in the parent object, or the index (as
         // a string) in the parent array, or null if this is the root value.
         public string Key { get; }
+        string PackageFilePath { get; }
 
         void BuildPath(StringBuilder sb)
         {
@@ -69,42 +70,32 @@ namespace PvpXray
         {
             if (Kind != typeof(T))
             {
-                throw new SimpleJsonException($"{Path} was {k_JsonTypeNames[Kind]}, expected {k_JsonTypeNames[typeof(T)]}");
+                throw new SimpleJsonException($"{Path} was {k_JsonTypeNames[Kind]}, expected {k_JsonTypeNames[typeof(T)]}") { PackageFilePath = PackageFilePath };
             }
 
             return (T)m_Value;
         }
 
-        Json(object value, Json parent, string key)
+        Json(object value, Json parent, string key, string packageFilePath)
         {
             m_Value = value;
             m_Parent = parent;
             Key = key;
+            PackageFilePath = packageFilePath;
         }
 
-        public Json(string json) : this(SimpleJsonReader.Read(json), null, null) { }
-
-        public void CheckKeys(IReadOnlyCollection<string> allowedKeys)
-        {
-            foreach (var key in RawObject.Keys)
-            {
-                if (!allowedKeys.Contains(key))
-                {
-                    throw new SimpleJsonException($"illegal key '{key}' in object {Path}");
-                }
-            }
-        }
+        public Json(string json, string packageFilePath) : this(SimpleJsonReader.Read(json, packageFilePath), null, null, packageFilePath) { }
 
         // Enumerate elements of a JSON array.
         public IEnumerable<Json> Elements
-            => CheckKind<List<object>>().Select((elm, index) => new Json(elm, this, index.ToString()));
+            => CheckKind<List<object>>().Select((elm, index) => new Json(elm, this, index.ToString(), PackageFilePath));
 
         public IEnumerable<Json> ElementsIfPresent
             => IfPresent?.Elements ?? Enumerable.Empty<Json>();
 
         // Enumerate members of a JSON object.
         public IEnumerable<Json> Members
-            => RawObject.Select(kv => new Json(kv.Value, this, kv.Key));
+            => RawObject.Select(kv => new Json(kv.Value, this, kv.Key, PackageFilePath));
 
         public IEnumerable<Json> MembersIfPresent
             => IfPresent?.Members ?? Enumerable.Empty<Json>();
@@ -133,7 +124,7 @@ namespace PvpXray
         public bool Boolean => CheckKind<bool>();
         public string String => CheckKind<string>();
 
-        public Json this[string key] => new Json(RawObject.TryGetValue(key, out var result) ? result : Undefined.Undefined, this, key);
+        public Json this[string key] => new Json(RawObject.TryGetValue(key, out var result) ? result : Undefined.Undefined, this, key, PackageFilePath);
 
         static void EncodeJsonString(string str, StringBuilder sb)
         {

@@ -76,12 +76,12 @@ namespace UnityEditor.PackageManager.ValidationSuite
     [UsedImplicitly]
     class XrayValidationChecker : IPvpChecker
     {
-        public string[] Checks { get; } = Verifier.Checks.ToArray();
+        public string[] Checks { get; } = Verifier.CheckerSet.PvsCheckers.Checks;
 
         public void Run(in PvpRunner.Input input, PvpRunner.Output output)
         {
             var package = new FileSystemPackage(input.Package.path);
-            var resultFileStub = Verifier.OneShot(package, Utilities.k_HttpClient);
+            var resultFileStub = Verifier.OneShot(package, Utilities.k_HttpClient, Verifier.CheckerSet.PvsCheckers);
 
             foreach (var entry in resultFileStub.Results)
             {

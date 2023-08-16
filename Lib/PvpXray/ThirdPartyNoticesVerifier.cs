@@ -37,7 +37,7 @@ namespace PvpXray
         {
             if (file.Path != k_ThirdPartyNotices) return;
 
-            var thirdPartyNotices = file.ReadToString();
+            var thirdPartyNotices = file.ReadToStringLegacy();
 
             var keyExpected = true; // Value expected if false.
             var startIndex = 0;

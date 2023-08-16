@@ -1,161 +1,12 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 
 namespace PvpXray
 {
-    internal static class FilenameVerifierExtensions
-    {
-        static readonly byte[] ForbiddenControlChars = {
-            0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09,
-            0x0A, 0x0B, 0x0C, 0x0D, 0x0E, 0x0F,
-            0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17, 0x18, 0x19,
-            0x1A, 0x1B, 0x1C, 0x1D, 0x1E, 0x1F,
-            0x7f,
-            0x80, 0x81, 0x82, 0x83, 0x84, 0x85, 0x86, 0x87, 0x88, 0x89,
-            0x8A, 0x8B, 0x8C, 0x8D, 0x8E, 0x8F,
-            0x90, 0x91, 0x92, 0x93, 0x94, 0x95, 0x96, 0x97, 0x98, 0x99,
-            0x9A, 0x9B, 0x9C, 0x9D, 0x9E, 0x9F,
-        };
-
-        static readonly string[] ForbiddenFileNames = {
-            "aux", "clock$", "com0", "com1", "com2", "com3", "com4", "com5", "com6", "com7", "com8", "com9",
-            "con", "lpt0", "lpt1", "lpt2", "lpt3", "lpt4", "lpt5", "lpt6", "lpt7", "lpt8", "lpt9", "nul", "prn"
-        };
-
-        private static readonly char[] ForbiddenAsciiCharacters = { '<', '>', ':', '"', '|', '?', '*' };
-
-        public static bool HasForbiddenControlCharacters(this string fileName)
-        {
-            var fileNameBytes = Encoding.ASCII.GetBytes(fileName);
-            foreach (var controlChar in ForbiddenControlChars)
-            {
-                if (fileNameBytes.Contains(controlChar))
-                {
-                    return true;
-                }
-            }
-            return false;
-        }
-
-        public static bool IsNotUnicodeNormalizationFormC(this string fileName)
-        {
-            try
-            {
-                return fileName.IsNormalized() == false;
-            }
-            catch (ArgumentException)
-            {
-                // do nothing.
-                // Only interested if it is not Form C - not if it is invalid input
-            }
-            return false;
-        }
-
-        public static bool HasInvalidUTF16SurrogateSequence(this string fileName)
-        {
-            // On .NET Core, we could simply do fileName.IsNormalized() to check this;
-            // but Mono's implementation does not detect invalid UTF-16.
-            for (var i = 0; i < fileName.Length; ++i)
-            {
-                var c = fileName[i];
-
-                // Low surrogate not immediately following low surrogate?
-                if (char.IsLowSurrogate(c)) return true;
-
-                if (char.IsHighSurrogate(c))
-                {
-                    // High surrogate not followed by low surrogate?
-                    if (i == fileName.Length - 1 || !char.IsLowSurrogate(fileName[i + 1])) return true;
-
-                    // OK; skip the high surrogate.
-                    ++i;
-                }
-            }
-            return false;
-        }
-
-        public static bool HasForbiddenAsciiChars(this string fileName)
-        {
-            foreach (var asciiChar in ForbiddenAsciiCharacters)
-            {
-                if (fileName.Contains(asciiChar))
-                {
-                    return true;
-                }
-            }
-            return false;
-        }
-
-        public static bool HasSegmentsWithForbiddenName(this string path)
-        {
-            var lowercasePath = ConvertToAsciiLowercase(path);
-            var pathSegments = lowercasePath.Split('/');
-            foreach (var segment in pathSegments)
-            {
-                foreach (var forbiddenName in ForbiddenFileNames)
-                {
-                    if (segment.Split('.').First() == forbiddenName)
-                    {
-                        return true;
-                    }
-                }
-            }
-            return false;
-        }
-
-        public static string ConvertToAsciiLowercase(string path)
-        {
-            return new string(
-                path.Select(c => c >= 'A' && c <= 'Z' ? (char)((int)c + 32) : c).ToArray()
-                );
-        }
-
-        public static bool HasSegmentsEndingInPeriod(this string path)
-        {
-            var segments = path.Split('/');
-            foreach (var segment in segments)
-            {
-                if (segment.EndsWithOrdinal("."))
-                {
-                    return true;
-                }
-            }
-            return false;
-        }
-
-        public static bool HasSegmentsStartingWithSpace(this string path)
-        {
-            var segments = path.Split('/');
-            foreach (var segment in segments)
-            {
-                if (segment.StartsWithOrdinal(" "))
-                {
-                    return true;
-                }
-            }
-            return false;
-        }
-
-        public static bool HasSegmentsEndingWithSpace(this string path)
-        {
-            var segments = path.Split('/');
-            foreach (var segment in segments)
-            {
-                if (segment.EndsWithOrdinal(" "))
-                {
-                    return true;
-                }
-            }
-            return false;
-        }
-    }
-
     class FilenameVerifier : Verifier.IChecker
     {
-        public static string[] Checks => new[] { "PVP-70-1", "PVP-71-1", "PVP-72-1" };
-
+        public static string[] Checks => new[] { "PVP-70-1", "PVP-71-1", "PVP-72-1", "PVP-73-1" };
         public static int PassCount => 1;
 
         readonly Verifier.IContext m_Context;
@@ -166,35 +17,114 @@ namespace PvpXray
             CheckCollidingPaths(m_Context);
         }
 
-        string GetFilename(string filePath)
-        {
-            return filePath.Split('/').Last();
-        }
-
         public void CheckItem(Verifier.PackageFile file, int passIndex)
         {
             var path = file.Path;
-            if (path.HasForbiddenControlCharacters())
+
+            var hasForbiddenControlCharacters = false;
+            var hasSegmentsEndingInPeriod = false;
+            var hasSegmentsStartingWithSpace = false;
+            var hasSegmentsEndingWithSpace = false;
+            var hasForbiddenAsciiChars = false;
+
+            // On .NET Core, we could simply do fileName.IsNormalized() to check bad
+            // surrogates, but Mono's implementation does not detect invalid UTF-16.
+            var hasInvalidUtf16SurrogateSequence = false;
+            var isNotUnicodeNormalizationFormC = false;
+
+            try
+            {
+                isNotUnicodeNormalizationFormC = !path.IsNormalized();
+            }
+            catch (ArgumentException)
+            {
+                // do nothing.
+                // Only interested if it is not Form C - not if it is invalid input
+            }
+
+            // Note: using bit operators |, & instead of ||, && to avoid short-circuiting and reduce branching.
+            var prev = '\0';
+            for (var i = 0; i < path.Length; i++)
+            {
+                var c = path[i];
+                hasForbiddenControlCharacters |= char.IsControl(c);
+                hasSegmentsEndingInPeriod |= (c == '/') & (prev == '.');
+                hasSegmentsEndingWithSpace |= (c == '/') & (prev == ' ');
+                hasSegmentsStartingWithSpace |= (c == ' ') & (prev == '/' | i == 0);
+                hasForbiddenAsciiChars |= (c == '<') | (c == '>') | (c == ':') | (c == '"') | (c == '|') | (c == '?') | (c == '*');
+
+                // Low surrogate not immediately following high surrogate?
+                hasInvalidUtf16SurrogateSequence |= char.IsLowSurrogate(c) & !char.IsHighSurrogate(prev);
+
+                // High surrogate not immediately followed by low surrogate?
+                hasInvalidUtf16SurrogateSequence |= char.IsHighSurrogate(prev) & !char.IsLowSurrogate(c);
+
+                prev = c;
+            }
+            hasSegmentsEndingInPeriod |= prev == '.';
+            hasSegmentsEndingWithSpace |= prev == ' ';
+            // High surrogate at end of string?
+            hasInvalidUtf16SurrogateSequence |= char.IsHighSurrogate(prev);
+
+            if (hasForbiddenControlCharacters)
                 m_Context.AddError("PVP-70-1", $"{path}: control character");
-            if (path.IsNotUnicodeNormalizationFormC())
+            if (isNotUnicodeNormalizationFormC)
                 m_Context.AddError("PVP-70-1", $"{path}: not in Unicode Normalization Form C");
-            if (path.HasInvalidUTF16SurrogateSequence())
+            if (hasInvalidUtf16SurrogateSequence)
                 m_Context.AddError("PVP-70-1", $"{path}: invalid UTF-16 surrogate sequence");
-            if (path.HasSegmentsEndingInPeriod())
+            if (hasSegmentsEndingInPeriod)
                 m_Context.AddError("PVP-71-1", $"{path}: forbidden trailing period");
-            if (path.HasSegmentsStartingWithSpace())
+            if (hasSegmentsStartingWithSpace)
                 m_Context.AddError("PVP-71-1", $"{path}: forbidden leading space");
-            if (path.HasSegmentsEndingWithSpace())
+            if (hasSegmentsEndingWithSpace)
                 m_Context.AddError("PVP-71-1", $"{path}: forbidden trailing space");
-            if (path.HasForbiddenAsciiChars())
+            if (hasForbiddenAsciiChars)
                 m_Context.AddError("PVP-71-1", $"{path}: forbidden character");
-            if (path.HasSegmentsWithForbiddenName())
+            if (HasSegmentsWithForbiddenName(path))
                 m_Context.AddError("PVP-71-1", $"{path}: reserved device filename");
+
+            if (file.Extension.HasFlags(FileExt.V1 | FileExt.V2) && !file.Extension.IsCanonical)
+            {
+                var i = path.LastIndexOf('/');
+                var filename = path.Substring(i + 1, path.Length - file.Extension.Raw.Length - i - 1);
+                m_Context.AddError("PVP-73-1", $"{path}: should be {filename}{file.Extension.Canonical}");
+            }
         }
 
         public void Finish()
         {
+        }
 
+        static string ToAsciiLowercase(char[] chars)
+        {
+            for (var i = 0; i < chars.Length; i++)
+            {
+                var c = chars[i];
+                if (c >= 'A' && c <= 'Z')
+                {
+                    chars[i] = (char)(c + 32);
+                }
+            }
+            return new string(chars);
+        }
+
+        static readonly string[] k_ForbiddenFileNames = {
+            "aux", "clock$", "com0", "com1", "com2", "com3", "com4", "com5", "com6", "com7", "com8", "com9",
+            "con", "lpt0", "lpt1", "lpt2", "lpt3", "lpt4", "lpt5", "lpt6", "lpt7", "lpt8", "lpt9", "nul", "prn",
+        };
+
+        static bool HasSegmentsWithForbiddenName(string path)
+        {
+            foreach (var segment in path.Split('/'))
+            {
+                var i = segment.IndexOf('.');
+                if (i == -1) i = segment.Length;
+                if (i < 3 || i > 6) continue;
+
+                var name = ToAsciiLowercase(segment.ToCharArray(0, i));
+                if (k_ForbiddenFileNames.Contains(name)) return true;
+            }
+            return false;
         }
 
         static void CheckCollidingPaths(Verifier.IContext context)
@@ -224,7 +154,7 @@ namespace PvpXray
 
             foreach (var path in context.Files)
             {
-                var lowerCasePath = new string(path.Select(c => c >= 'A' && c <= 'Z' ? (char)((int)c + 32) : c).ToArray());
+                var lowerCasePath = ToAsciiLowercase(path.ToCharArray());
 
                 // Add full path.
                 AddEntry(path, lowerCasePath);

@@ -17,6 +17,7 @@ namespace PvpXray
 
     class VerifierContext
     {
+        public Func<string, string> GetXrayEnv { get; set; }
         public List<string> Files { get; set; }
         public List<long> Sizes { get; set; }
         public byte[] Manifest { get; set; }
@@ -26,11 +27,10 @@ namespace PvpXray
         {
         }
 
-        internal VerifierContext(IEnumerable<IPackageFile> files, IPvpHttpClient httpClient)
+        internal VerifierContext(IEnumerable<IPackageFile> files)
         {
             Files = new List<string>();
             Sizes = new List<long>();
-            HttpClient = httpClient;
 
             foreach (var file in files)
             {
@@ -58,6 +58,186 @@ namespace PvpXray
         public List<string> Errors { get; internal set; }
     }
 
+    struct FileExt
+    {
+        // "TextFile" refers only to file types developers are likely to edit
+        // by hand, and which should therefore be checked for well-formedness.
+        public const byte TextFile = 0x01;
+        public const byte V1 = 0x02;
+        public const byte V2 = 0x04;
+
+        static readonly Dictionary<string, int> k_IndexByLowerExtension;
+        static readonly string[] k_Canonical;
+        static readonly byte[] k_Flags;
+
+        static FileExt()
+        {
+            var rawData = new[] {
+                ( "", 0 ),
+                ( ".asmdef", V2 | TextFile ),
+                ( ".asmref", V2 | TextFile ),
+                ( ".cginc", V1 | TextFile ),
+                ( ".compute", V1 | TextFile ),
+                ( ".cpp", V1 | TextFile ),
+                ( ".cs", V1 | TextFile ),
+                ( ".h", V1 | TextFile ),
+                ( ".hlsl", V1 | TextFile ),
+                ( ".java", V2 | TextFile ),
+                ( ".js", V1 | TextFile ),
+                ( ".json", V1 | TextFile ),
+                ( ".m", V2 | TextFile ),
+                ( ".md", V1 | TextFile ),
+                ( ".mm", V2 | TextFile ),
+                ( ".plist", V2 | TextFile ),
+                ( ".py", V1 | TextFile ),
+                ( ".shader", V1 | TextFile ),
+                ( ".txt", V1 | TextFile ),
+                ( ".uss", V1 | TextFile ),
+                ( ".uxml", V1 | TextFile ),
+                ( ".yaml", V1 | TextFile ),
+                ( ".yml", V1 | TextFile ),
+
+                // Various common file extensions (20+ occurrences across a large sample of packages).
+                ( ".aar", V2 ),
+                ( ".dll", V2 ),
+                ( ".exr", V2 ),
+                ( ".fbx", V2 ),
+                ( ".gif", V2 ),
+                ( ".jpeg", V2 ),
+                ( ".jpg", V2 ),
+                ( ".mov", V2 ),
+                ( ".mp3", V2 ),
+                ( ".pdb", V2 ),
+                ( ".png", V2 ),
+                ( ".po", V2 ),
+                ( ".psd", V2 ),
+                ( ".so", V2 ),
+                ( ".strings", V2 ),
+                ( ".svg", V2 ),
+                ( ".tga", V2 ),
+                ( ".tgz", V2 ),
+                ( ".tif", V2 ),
+                ( ".tiff", V2 ),
+                ( ".ttf", V2 ),
+                ( ".wav", V2 ),
+                ( ".xml", V2 ),
+
+                // Unity YAML extensions as of 2319b08a8846 (pre-2023.3.0a1)
+                // from Modules/AssetPipelineEditor/Public/NativeFormatImporterExtensions.h
+                ( ".anim", V2 ),
+                ( ".animset", V2 ),
+                ( ".asset", V2 ),
+                ( ".blendtree", V2 ),
+                ( ".brush", V2 ),
+                ( ".buildreport", V2 ),
+                ( ".colors", V2 ),
+                ( ".controller", V2 ),
+                ( ".cubemap", V2 ),
+                ( ".curves", V2 ),
+                ( ".curvesNormalized", V2 ),
+                ( ".flare", V2 ),
+                ( ".fontsettings", V2 ),
+                ( ".giparams", V2 ),
+                ( ".gradients", V2 ),
+                ( ".guiskin", V2 ),
+                ( ".ht", V2 ),
+                ( ".lighting", V2 ),
+                ( ".mask", V2 ),
+                ( ".mat", V2 ),
+                ( ".mesh", V2 ),
+                ( ".mixer", V2 ),
+                ( ".overrideController", V2 ),
+                ( ".particleCurves", V2 ),
+                ( ".particleCurvesSigned", V2 ),
+                ( ".particleDoubleCurves", V2 ),
+                ( ".particleDoubleCurvesSigned", V2 ),
+                ( ".physicMaterial", V2 ),
+                ( ".physicsMaterial2D", V2 ),
+                ( ".playable", V2 ),
+                ( ".preset", V2 ),
+                ( ".renderTexture", V2 ),
+                ( ".scenetemplate", V2 ),
+                ( ".shadervariants", V2 ),
+                ( ".signal", V2 ),
+                ( ".spriteatlas", V2 ),
+                ( ".state", V2 ),
+                ( ".statemachine", V2 ),
+                ( ".terrainlayer", V2 ),
+                ( ".texture2D", V2 ),
+                ( ".transition", V2 ),
+                ( ".webCamTexture", V2 ),
+
+                // Other Unity YAML extensions, not listed in NativeFormatImporterExtensions.h.
+                ( ".meta", V2 ),
+                ( ".prefab", V2 ),
+                ( ".unity", V2 ),
+                ( ".vfxoperator", V2 ),
+                ( ".wlt", V2 ),
+
+                // Other Unity extensions, not using YAML serialization
+                ( ".shadergraph", V2 ),
+                ( ".shadersubgraph", V2 ),
+                ( ".unitypackage", V2 ),
+            };
+
+            k_IndexByLowerExtension = new Dictionary<string, int>(rawData.Length);
+            k_Canonical = new string[rawData.Length];
+            k_Flags = new byte[rawData.Length];
+            for (var i = 0; i < rawData.Length; ++i)
+            {
+                var (canonical, flags) = rawData[i];
+                // index 0 is reserved for "extension not found".
+                if (i != 0) k_IndexByLowerExtension.Add(canonical.ToLowerInvariant(), i);
+                k_Canonical[i] = canonical;
+                k_Flags[i] = (byte)flags;
+            }
+        }
+
+        public static void GetFileExtension(string path, out string suffix, out bool isProperExtension)
+        {
+            for (var i = path.Length - 1; i >= 0; --i)
+            {
+                if (path[i] == '.')
+                {
+                    suffix = path.Substring(i);
+                    isProperExtension = i > 0 && path[i - 1] != '/';
+                    return;
+                }
+
+                if (path[i] == '/') break;
+            }
+            suffix = "";
+            isProperExtension = false;
+        }
+
+        public FileExt(string extension)
+        {
+            Raw = extension;
+            if (extension.Length == 0 || !k_IndexByLowerExtension.TryGetValue(extension.ToLowerInvariant(), out m_Index)) m_Index = 0;
+        }
+
+        readonly int m_Index;
+
+        /// File extension with the leading dot, or blank if none.
+        public string Raw { get; }
+
+        /// File extension with canonical capitalization.
+        public string Canonical => k_Canonical[m_Index];
+
+        public bool IsCanonical => Raw == Canonical;
+
+        public bool HasFlags(byte flagSet)
+        {
+            return (k_Flags[m_Index] & flagSet) != 0;
+        }
+
+        public bool HasFlags(byte flagSet1, byte flagSet2)
+        {
+            var flags = k_Flags[m_Index];
+            return (flags & flagSet1) != 0 && (flags & flagSet2) != 0;
+        }
+    }
+
     public class Verifier
     {
         // Wrapper around public IPackageFile interface that reads file content into a buffer on demand
@@ -72,10 +252,20 @@ namespace PvpXray
                 m_File = file;
                 Path = file.Path;
                 Size = file.Size;
+
+                FileExt.GetFileExtension(Path, out var suffix, out var isProperExtension);
+                Suffix = new FileExt(suffix);
+                Extension = isProperExtension ? Suffix : new FileExt("");
             }
 
             public string Path { get; }
             public long Size { get; }
+
+            /// For legacy reasons, we track both file extensions and file suffixes.
+            /// ".gitignore" has no file extension, but it has a suffix.
+            /// _Usually_ the Extension is what should be used.
+            public FileExt Extension { get; }
+            public FileExt Suffix { get; }
 
             public byte[] Content
             {
@@ -119,6 +309,8 @@ namespace PvpXray
 
         internal interface IContext
         {
+            Func<string, string> GetXrayEnv { get; }
+            List<(string, string)> ManifestContextErrors { get; }
             IReadOnlyList<string> Files { get; }
             IPvpHttpClient HttpClient { get; }
             Json Manifest { get; }
@@ -128,15 +320,70 @@ namespace PvpXray
             void SetBlobBaseline(string name, string hash);
         }
 
+        internal struct CheckerMeta
+        {
+            public readonly Type Type;
+            public readonly string[] Checks;
+            public readonly int PassCount;
+
+            public CheckerMeta(Type type)
+            {
+                Type = type;
+                Checks = InvokePublicStaticPropertyGetter<string[]>(type, "Checks");
+                PassCount = InvokePublicStaticPropertyGetter<int>(type, "PassCount");
+            }
+
+            static T InvokePublicStaticPropertyGetter<T>(Type type, string name)
+            {
+                var property = type.GetProperty(name, BindingFlags.Public | BindingFlags.Static | BindingFlags.GetProperty, null, typeof(T), Array.Empty<Type>(), null);
+                if (property == null || property.GetMethod == null) throw new NotImplementedException($"{type} is missing required public static {typeof(T)} {name} property getter");
+                return (T)property.GetMethod.Invoke(null, null);
+            }
+        }
+
+        internal class CheckerSet
+        {
+            public static readonly CheckerSet PvsCheckers;
+
+            static CheckerSet()
+            {
+                var allCheckers = typeof(Verifier).Assembly.GetTypes()
+                    .Where(t => !t.IsAbstract && typeof(IChecker).IsAssignableFrom(t))
+                    .Select(t => new CheckerMeta(t))
+                    .ToList();
+
+                PvsCheckers = new CheckerSet(allCheckers);
+            }
+
+            internal readonly List<CheckerMeta> Checkers;
+            internal readonly string[] Checks;
+            internal readonly int PassCount;
+
+            public CheckerSet(List<CheckerMeta> checkers)
+            {
+                Checkers = checkers;
+                PassCount = 0;
+
+                var checkCount = 0;
+                foreach (var checker in checkers)
+                {
+                    if (checker.PassCount > PassCount) PassCount = checker.PassCount;
+                    checkCount += checker.Checks.Length;
+                }
+
+                Checks = checkers.SelectMany(c => c.Checks).Distinct().ToArray();
+                if (checkCount != Checks.Length) throw new InvalidOperationException("internal error: check ID repeated in one or more ICheckers");
+            }
+        }
+
         class Context : IContext
         {
-            // Checks implemented directly in Context.
-            public static string[] ContextChecks => new[] { "PVP-100-1", "PVP-100-2" };
-
+            public Func<string, string> GetXrayEnv { get; }
             public IReadOnlyList<string> Files { get; }
             public IPvpHttpClient HttpClient => m_HttpClient ?? throw new SkipAllException("offline_requested");
             public Json Manifest => m_Manifest ?? throw new FailAllException(m_ManifestError);
             public ResultFileStub ResultFile { get; }
+            public List<(string, string)> ManifestContextErrors { get; } = new List<(string, string)>();
 
             readonly HashSet<string> m_CurrentBatchChecks;
             readonly IPvpHttpClient m_HttpClient;
@@ -144,10 +391,10 @@ namespace PvpXray
             readonly string m_ManifestError;
             readonly HashSet<string> m_PreviousErrors;
 
-            public Context(VerifierContext verifierContext)
+            public Context(VerifierContext verifierContext, CheckerSet checkerSet)
             {
                 ResultFile = new ResultFileStub();
-                foreach (var check in Checks)
+                foreach (var check in checkerSet.Checks)
                 {
                     ResultFile.Results.Add(check, new CheckResult
                     {
@@ -158,6 +405,7 @@ namespace PvpXray
 
                 m_CurrentBatchChecks = new HashSet<string>();
                 m_PreviousErrors = new HashSet<string>();
+                GetXrayEnv = verifierContext.GetXrayEnv ?? Environment.GetEnvironmentVariable;
                 Files = verifierContext.Files;
                 m_HttpClient = verifierContext.HttpClient;
 
@@ -175,26 +423,26 @@ namespace PvpXray
 
                         // If Encoding.UTF8 also throws, the following error is
                         // intentionally not added (but an error is added below).
-                        ResultFile.Results["PVP-100-2"].Errors.Add("package.json: contains invalid UTF-8");
+                        ManifestContextErrors.Add(("PVP-100-2", "package.json: contains invalid UTF-8"));
                     }
 
                     // UTF-8 BOM is unwelcome, but we can proceed with verification.
                     if (text.StartsWithOrdinal("\ufeff"))
                     {
-                        ResultFile.Results["PVP-100-1"].Errors.Add("manifest file contains UTF-8 BOM");
-                        ResultFile.Results["PVP-100-2"].Errors.Add("package.json: contains UTF-8 BOM");
+                        ManifestContextErrors.Add(("PVP-100-1", "manifest file contains UTF-8 BOM"));
+                        ManifestContextErrors.Add(("PVP-100-2", "package.json: contains UTF-8 BOM"));
                         text = text.Substring(1);
                     }
 
-                    m_Manifest = new Json(text);
+                    m_Manifest = new Json(text, "package.json");
                     m_ManifestError = null;
                 }
                 catch (Exception e)
                 {
                     m_Manifest = null;
                     m_ManifestError = e is SimpleJsonException ? "package.json manifest is not valid JSON" : "package.json manifest could not be read";
-                    ResultFile.Results["PVP-100-1"].Errors.Add(m_ManifestError);
-                    ResultFile.Results["PVP-100-2"].Errors.Add(e is SimpleJsonException ? $"package.json: {e.Message}" : "package.json: could not be read");
+                    ManifestContextErrors.Add(("PVP-100-1", m_ManifestError));
+                    ManifestContextErrors.Add(("PVP-100-2", e is SimpleJsonException sje ? sje.FullMessage : "package.json: could not be read"));
                 }
             }
 
@@ -273,9 +521,16 @@ namespace PvpXray
                 }
                 catch (PvpHttpException)
                 {
-                    foreach (var check in Checks)
+                    foreach (var check in checks)
                     {
                         Skip(check, "network_error");
+                    }
+                }
+                catch (SimpleJsonException e) when (e.PackageFilePath != null)
+                {
+                    foreach (var check in checks)
+                    {
+                        AddError(check, e.FullMessage);
                     }
                 }
                 catch (SkipAllException e)
@@ -288,59 +543,24 @@ namespace PvpXray
             }
         }
 
-        static readonly Dictionary<Type, (string[], int)> k_CheckerTypes;
-
-        public static string[] Checks { get; }
-        public static int PassCount { get; }
+        public static string[] Checks => CheckerSet.PvsCheckers.Checks;
+        public static int PassCount => CheckerSet.PvsCheckers.PassCount;
 
         readonly Context m_Context;
-        readonly Dictionary<Type, (IChecker, string[], int)> m_Checkers;
+        readonly List<(IChecker, CheckerMeta)> m_Checkers;
 
-        static Verifier()
+        internal Verifier(VerifierContext verifierContext, CheckerSet checkerSet = null)
         {
-            k_CheckerTypes = new Dictionary<Type, (string[], int)>();
-            var allChecks = new HashSet<string>(Context.ContextChecks);
-            var maxPassCount = 0;
-
-            foreach (var type in typeof(Verifier).Assembly.GetTypes().Where(t => typeof(IChecker).IsAssignableFrom(t) && !t.IsAbstract))
-            {
-                var checks = InvokePublicStaticPropertyGetter<string[]>(type, "Checks");
-                var overlappingChecks = allChecks.Intersect(checks).ToList();
-                if (overlappingChecks.Count != 0) throw new InvalidOperationException($"{type} declares overlapping check ids with other IChecker implementations: {string.Join(", ", overlappingChecks)}");
-                allChecks.UnionWith(checks);
-
-                var passCount = InvokePublicStaticPropertyGetter<int>(type, "PassCount");
-                if (passCount > maxPassCount) maxPassCount = passCount;
-
-                k_CheckerTypes.Add(type, (checks.ToArray(), passCount));
-            }
-
-            Checks = allChecks.ToArray();
-            PassCount = maxPassCount;
-        }
-
-        static T InvokePublicStaticPropertyGetter<T>(Type type, string name)
-        {
-            var property = type.GetProperty(name, BindingFlags.Public | BindingFlags.Static | BindingFlags.GetProperty, null, typeof(T), Array.Empty<Type>(), null);
-            if (property == null || property.GetMethod == null) throw new NotImplementedException($"{type} is missing required public static {typeof(T)} {name} property getter");
-            return (T)property.GetMethod.Invoke(null, null);
-        }
-
-        internal Verifier(VerifierContext verifierContext)
-        {
-            m_Context = new Context(verifierContext);
-            m_Checkers = new Dictionary<Type, (IChecker, string[], int)>();
+            checkerSet = checkerSet ?? CheckerSet.PvsCheckers;
+            m_Context = new Context(verifierContext, checkerSet);
+            m_Checkers = new List<(IChecker, CheckerMeta)>();
 
             var parameterTypes = new[] { typeof(IContext) };
             var parameterValues = new object[] { m_Context };
-            foreach (var entry in k_CheckerTypes)
+            foreach (var meta in checkerSet.Checkers)
             {
-                var type = entry.Key;
-                var checks = entry.Value.Item1;
-                var passCount = entry.Value.Item2;
-
-                var constructor = type.GetConstructor(BindingFlags.Instance | BindingFlags.Public, null, parameterTypes, null)
-                    ?? throw new NotImplementedException($"{type} is missing required public constructor with Verifier.IContext parameter");
+                var constructor = meta.Type.GetConstructor(BindingFlags.Instance | BindingFlags.Public, null, parameterTypes, null)
+                    ?? throw new NotImplementedException($"{meta.Type} is missing required public constructor with Verifier.IContext parameter");
                 IChecker checker = null;
 
                 void CreateChecker()
@@ -355,13 +575,13 @@ namespace PvpXray
                     }
                 }
 
-                m_Context.RunBatch(checks, CreateChecker);
+                m_Context.RunBatch(meta.Checks, CreateChecker);
                 // If constructor threw PvpHttpException, SkipAllException or
                 // FailAllException, checker will be null here, and we won't be
                 // calling CheckItem or Finish on the checker.
                 if (checker != null)
                 {
-                    m_Checkers.Add(type, (checker, checks, passCount));
+                    m_Checkers.Add((checker, meta));
                 }
             }
         }
@@ -372,31 +592,36 @@ namespace PvpXray
         {
             var checkerFile = new PackageFile(file);
 
-            foreach (var (checker, checks, passCount) in m_Checkers.Values)
+            foreach (var (checker, meta) in m_Checkers)
             {
-                if (passIndex < passCount)
+                if (passIndex < meta.PassCount)
                 {
-                    m_Context.RunBatch(checks, () => checker.CheckItem(checkerFile, passIndex));
+                    m_Context.RunBatch(meta.Checks, () => checker.CheckItem(checkerFile, passIndex));
                 }
             }
         }
 
         internal ResultFileStub Finish()
         {
-            foreach (var (checker, checks, _) in m_Checkers.Values)
+            foreach (var (checker, meta) in m_Checkers)
             {
-                m_Context.RunBatch(checks, checker.Finish);
+                m_Context.RunBatch(meta.Checks, checker.Finish);
             }
 
             return m_Context.ResultFile;
         }
 
-        internal static ResultFileStub OneShot(IEnumerable<IPackageFile> files, IPvpHttpClient httpClient)
+        internal static ResultFileStub OneShot(IEnumerable<IPackageFile> files, IPvpHttpClient httpClient, CheckerSet checkerSet = null, Func<string, string> getXrayEnv = null)
         {
-            var context = new VerifierContext(files, httpClient);
-            var verifier = new Verifier(context);
+            checkerSet = checkerSet ?? CheckerSet.PvsCheckers;
+            var context = new VerifierContext(files)
+            {
+                GetXrayEnv = getXrayEnv,
+                HttpClient = httpClient,
+            };
+            var verifier = new Verifier(context, checkerSet);
 
-            for (var passIndex = 0; passIndex < PassCount; passIndex++)
+            for (var passIndex = 0; passIndex < checkerSet.PassCount; passIndex++)
             {
                 foreach (var file in files)
                 {

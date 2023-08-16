@@ -1,25 +1,25 @@
 {
   "name": "com.unity.package-validation-suite",
   "displayName": "Package Validation Suite",
-  "version": "0.55.0-preview",
+  "version": "0.56.0-preview",
   "unity": "2018.4",
   "description": "Unity Package Manager validation suite, used to evaluate a package's integrity before it's considered for publishing.  This is a Unity internal tool at the moment, no support will be provided for this package.",
   "dependencies": {
     "com.unity.nuget.mono-cecil": "0.1.6-preview.2"
   },
   "relatedPackages": {
-    "com.unity.package-validation-suite.tests": "0.55.0-preview"
+    "com.unity.package-validation-suite.tests": "0.56.0-preview"
   },
   "_upm": {
-    "changelog": "- Enable HTTP response compression when fetching files over HTTP. (PETS-1367)\n- PVP: Add x-ray check `PVP-100-2`, doing strict UTF-8 validation of the manifest (which `PVP-100-1` doesn't). (PVS-182)"
+    "changelog": "- PVP: Add x-ray check `PVP-73-1`, checking that filename extensions use correct casing.\n- PVP: Add x-ray checks `PVP-{120,121,122,123,124,125}-2` to verify that even more text files are well-formed. (PVS-182)"
   },
   "upmCi": {
-    "footprint": "7acf6590c882d126185d56eff3b5574cba07da05"
+    "footprint": "855431d97f5e8acb3ee8e68a6568c73e5a6f1417"
   },
-  "documentationUrl": "https://docs.unity3d.com/Packages/com.unity.package-validation-suite@0.55/manual/index.html",
+  "documentationUrl": "https://docs.unity3d.com/Packages/com.unity.package-validation-suite@0.56/manual/index.html",
   "repository": {
     "url": "https://github.cds.internal.unity3d.com/unity/com.unity.package-validation-suite.git",
     "type": "git",
-    "revision": "acaeb4b397eb5051ff5bbdbd395e15d3f9e4899f"
+    "revision": "99670323793c764a80726222eb3457250d866fcf"
   }
 }

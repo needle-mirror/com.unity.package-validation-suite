@@ -17,7 +17,7 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
 
         static LegacyXrayValidation()
         {
-            if (k_ChecksAppliedInLegacyPVS.Keys.Except(Verifier.Checks).Count() != 0)
+            if (k_ChecksAppliedInLegacyPVS.Keys.Except(Verifier.CheckerSet.PvsCheckers.Checks).Count() != 0)
             {
                 throw new InvalidOperationException("Trying to enforce non-existing x-ray check in legacy PVS");
             }
@@ -61,7 +61,7 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
             }
 
             var package = new FileSystemPackage(manifestPath);
-            var resultFileStub = Verifier.OneShot(package, httpClient: null);
+            var resultFileStub = Verifier.OneShot(package, httpClient: null, Verifier.CheckerSet.PvsCheckers);
 
             foreach (var entry in resultFileStub.Results)
             {

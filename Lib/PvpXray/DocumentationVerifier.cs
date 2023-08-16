@@ -52,7 +52,7 @@ namespace PvpXray
         {
             if (!m_MarkdownFiles.Contains(file.Path)) return;
 
-            if (file.ReadToString().HasTooLittleContent())
+            if (file.ReadToStringLegacy().HasTooLittleContent())
             {
                 m_Context.AddError("PVP-61-1", $"{file.Path}: Documentation Markdown files must have at least 10 characters of content");
             }
