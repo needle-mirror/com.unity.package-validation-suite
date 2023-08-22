@@ -192,25 +192,4 @@ namespace UnityEditor.PackageManager.ValidationSuite
             }
         }
     }
-
-    internal class NetCoreProgram : Program
-    {
-        static readonly string DotNetRuntimePath = EditorApplication.applicationContentsPath + "/NetCoreRuntime";
-        static readonly string DotNetMuxerPath = Path.Combine(DotNetRuntimePath, Application.platform == RuntimePlatform.WindowsEditor ? "dotnet.exe" : "dotnet");
-
-        public NetCoreProgram(string executable, string arguments, Action<ProcessStartInfo> setupStartInfo)
-        {
-            _process.StartInfo = new ProcessStartInfo
-            {
-                CreateNoWindow = true,
-                FileName = DotNetMuxerPath,
-                WorkingDirectory = Path.GetDirectoryName(Application.dataPath),
-                Arguments = $"\"{executable}\" {arguments}"
-            };
-
-            _process.StartInfo.EnvironmentVariables["DOTNET_ROOT"] = DotNetRuntimePath;
-            _process.StartInfo.EnvironmentVariables["DOTNET_MULTILEVEL_LOOKUP"] = "0";
-            setupStartInfo?.Invoke(_process.StartInfo);
-        }
-    }
 }

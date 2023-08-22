@@ -533,6 +533,20 @@ namespace PvpXray
                         AddError(check, e.FullMessage);
                     }
                 }
+                catch (YamlParseException e) when (e.PackageFilePath != null)
+                {
+                    foreach (var check in checks)
+                    {
+                        AddError(check, e.FullMessage);
+                    }
+                }
+                catch (YamlAccessException e) when (e.PackageFilePath != null)
+                {
+                    foreach (var check in checks)
+                    {
+                        AddError(check, e.FullMessage);
+                    }
+                }
                 catch (SkipAllException e)
                 {
                     foreach (var check in checks)

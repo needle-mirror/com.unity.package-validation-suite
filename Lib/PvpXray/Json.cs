@@ -126,26 +126,6 @@ namespace PvpXray
 
         public Json this[string key] => new Json(RawObject.TryGetValue(key, out var result) ? result : Undefined.Undefined, this, key, PackageFilePath);
 
-        static void EncodeJsonString(string str, StringBuilder sb)
-        {
-            // Taken from SimpleJsonWriter.
-            sb.Append('"');
-            for (var i = 0; i < str.Length; ++i)
-            {
-                var c = str[i];
-                if (c < ' ' || c == '"' || c == '\\')
-                {
-                    sb.Append('\\');
-                    var j = "\"\\\n\r\t\b\f".IndexOf(c);
-                    if (j >= 0)
-                        sb.Append("\"\\nrtbf"[j]);
-                    else
-                        sb.AppendFormat("u{0:X4}", (uint)c);
-                }
-                else
-                    sb.Append(c);
-            }
-            sb.Append('"');
-        }
+        static void EncodeJsonString(string str, StringBuilder sb) => Yaml.Encode(str, sb);
     }
 }

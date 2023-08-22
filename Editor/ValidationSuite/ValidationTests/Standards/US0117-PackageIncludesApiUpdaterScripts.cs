@@ -5,6 +5,7 @@ using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
 using UnityEditor.Compilation;
+using UnityEngine;
 
 namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests.Standards
 {
@@ -102,6 +103,7 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests.Standards
             var referencesResponseFilePath = Utilities.CreateTempFile(string.Join("\n", references));
 
             var argumentsForValidator = ArgumentsForValidator(referencesResponseFilePath, assemblyPaths, whitelistPath);
+            // The response file is only used in Unity 2021.2 and 2021.3, but always written out for... compatibility? Something like that.
             var responseFilePath = Path.Combine(ValidationSuiteReport.ResultsPath, $"{packageName}.updater.validation.arguments");
 
             // Ensure results directory exists before trying to write to it
@@ -110,12 +112,32 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests.Standards
             File.WriteAllText(responseFilePath, argumentsForValidator);
             ActivityLogger.Log($"APIUpdater.ConfigurationValidator.exe response file written to {Path.GetFullPath(responseFilePath)}");
 
-            int exitCode = 0;
-            string output = string.Empty;
+            InvokeApiUpdaterForThisUnityVersion(validatorPath, argumentsForValidator, responseFilePath, out var exitCode, out var output);
+            return exitCode != 0 ? output : null;
+        }
 
+        static void InvokeApiUpdaterForThisUnityVersion(string validatorPath, string argumentsForValidator, string responseFilePath, out int exitCode, out string output)
+        {
 #if UNITY_2022_1_OR_NEWER
             // Starting in 2022.1 ConfigurationValidator is compiled to NET 5.0
-            using(var validator = new NetCoreProgram(validatorPath, argumentsForValidator, a => {}))
+            // In newer versions, the .NET SDK is in a new location and is invoked slightly differently.
+            var dotNetRuntimePath = EditorApplication.applicationContentsPath + "/DotNetSdk";
+            var isDotNetInNewPath = Directory.Exists(dotNetRuntimePath);
+            if (!isDotNetInNewPath) dotNetRuntimePath = EditorApplication.applicationContentsPath + "/NetCoreRuntime";
+            var preArguments = isDotNetInNewPath ? "--roll-forward Major" : "";
+            var psi = new ProcessStartInfo
+            {
+                CreateNoWindow = true,
+                FileName = Path.Combine(dotNetRuntimePath, "dotnet"), // also works on Windows
+                WorkingDirectory = Path.GetDirectoryName(Application.dataPath),
+                Arguments = $"{preArguments} \"{validatorPath}\" {argumentsForValidator}",
+                EnvironmentVariables = {
+                    ["DOTNET_ROOT"] = dotNetRuntimePath,
+                    ["DOTNET_MULTILEVEL_LOOKUP"] = "0",
+                },
+            };
+
+            using (var validator = new Program(psi))
             {
                 validator.Start();
                 const int FiveMinutes = 1000 * 60 * 5;
@@ -145,13 +167,6 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests.Standards
             exitCode = process.ExitCode;
             output = string.Join("\n", stderr.GetOutput().Concat(stdout.GetOutput()));
 #endif
-
-            if (exitCode != 0)
-            {
-                return output;
-            }
-
-            return null;
         }
 
         static bool ApiUpdaterConfigurationExemptions(string stdContent)

@@ -4,6 +4,12 @@ All notable changes to this package will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## [0.57.0-preview] - 2023-08-22
+- Fix invocation of API updater for certain Unity branches. (PVS-185)
+- PVP: Add x-ray check `PVP-155-1` to verify that `Documentation~/filter.yml` is valid. (PVS-184)
+- PVP: Add x-ray check `PVP-156-1` to verify that `Documentation~/filter.yml` uses sensible regexes. (PVS-184)
+- PVP: Add x-ray check `PVP-157-1` to verify that `Documentation~/filter.yml` contains no non-standard rules. (PVS-184)
+
 ## [0.56.0-preview] - 2023-08-16
 - PVP: Add x-ray check `PVP-73-1`, checking that filename extensions use correct casing.
 - PVP: Add x-ray checks `PVP-{120,121,122,123,124,125}-2` to verify that even more text files are well-formed. (PVS-182)
