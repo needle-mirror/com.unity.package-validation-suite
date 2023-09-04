@@ -6,7 +6,7 @@ namespace PvpXray
 {
     class SampleVerifier : Verifier.IChecker
     {
-        public static string[] Checks => new[] { "PVP-80-1", "PVP-81-1" };
+        public static string[] Checks => new[] { "PVP-80-1", "PVP-81-1", "PVP-82-1" };
         public static int PassCount => 1;
 
         const string k_Manifest = "package.json";
@@ -148,6 +148,25 @@ namespace PvpXray
                     catch (SimpleJsonException e)
                     {
                         m_Context.AddError("PVP-80-1", e.FullMessage);
+                    }
+
+                    // Catch unmodified sample description from Package Starter Kit.
+                    // https://github.cds.internal.unity3d.com/unity/com.unity.package-starter-kit/blob/e72985bcd7d88ffd61e50e3b31af5426e83833c0/Samples%7E/Example/.sample.json
+                    try
+                    {
+                        var description = manifestSample.Json["description"];
+                        if (description.IsPresent)
+                        {
+                            var descriptionString = description.String;
+                            if (descriptionString.StartsWithOrdinal("Replace this string with your own description"))
+                            {
+                                m_Context.AddError("PVP-82-1", $"{k_Manifest}: {description.Path}");
+                            }
+                        }
+                    }
+                    catch (SimpleJsonException e)
+                    {
+                        m_Context.AddError("PVP-82-1", e.FullMessage);
                     }
                 }
             }

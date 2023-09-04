@@ -1,25 +1,25 @@
 {
   "name": "com.unity.package-validation-suite",
   "displayName": "Package Validation Suite",
-  "version": "0.57.0-preview",
+  "version": "0.58.0-preview",
   "unity": "2018.4",
   "description": "Unity Package Manager validation suite, used to evaluate a package's integrity before it's considered for publishing.  This is a Unity internal tool at the moment, no support will be provided for this package.",
   "dependencies": {
     "com.unity.nuget.mono-cecil": "0.1.6-preview.2"
   },
   "relatedPackages": {
-    "com.unity.package-validation-suite.tests": "0.57.0-preview"
+    "com.unity.package-validation-suite.tests": "0.58.0-preview"
   },
   "_upm": {
-    "changelog": "- Fix invocation of API updater for certain Unity branches. (PVS-185)\n- PVP: Add x-ray check `PVP-155-1` to verify that `Documentation~/filter.yml` is valid. (PVS-184)\n- PVP: Add x-ray check `PVP-156-1` to verify that `Documentation~/filter.yml` uses sensible regexes. (PVS-184)\n- PVP: Add x-ray check `PVP-157-1` to verify that `Documentation~/filter.yml` contains no non-standard rules. (PVS-184)"
+    "changelog": "- PVP: Add x-ray checks `PVP-{33,34}-1` to verify that there are no filenames that ought to never appear in a package. (PVS-186)\n- PVP: Add x-ray check `PVP-{35,82}-1` to verify that there are no unmodified Packager Starter Kit files. (PVS-186)\n- PVP: Add x-ray check `PVP-36-1` to verify that there are no Git LFS pointer files.\n- PVP: Add x-ray check `PVP-37-1` to verify that there are no Unity assets using binary serialization (PETS-1381)."
   },
   "upmCi": {
-    "footprint": "a451e08faa5d9ed3ace4c7b5f9bf431d04833280"
+    "footprint": "90b524e7757f099e5ad1ad7d6c0355acd2c29741"
   },
-  "documentationUrl": "https://docs.unity3d.com/Packages/com.unity.package-validation-suite@0.57/manual/index.html",
+  "documentationUrl": "https://docs.unity3d.com/Packages/com.unity.package-validation-suite@0.58/manual/index.html",
   "repository": {
     "url": "https://github.cds.internal.unity3d.com/unity/com.unity.package-validation-suite.git",
     "type": "git",
-    "revision": "a1448325324913aab0479f4a51cbb13407c2f71e"
+    "revision": "36efecb59770c9478c05415d379a28cff780177e"
   }
 }

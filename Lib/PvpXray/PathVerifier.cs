@@ -14,7 +14,8 @@ namespace PvpXray
             public string Filename { get; }
             public bool IsDirectory { get; } // usually false, as by default, directories are not enumerated
             public bool IsHidden { get; }
-            public bool IsHiddenV2 { get; }
+            /// <summary>Do not use (except for backwards compatibility). Incorrectly treats .tmp directories as hidden.</summary>
+            public bool IsHiddenLegacy { get; }
             public bool IsInsidePluginDirectory { get; }
             public string Path { get; }
             public string PathWithCase { get; }
@@ -40,8 +41,8 @@ namespace PvpXray
                 // to the patterns given here: https://docs.unity3d.com/Manual/SpecialFolders.html
                 // (Implementation appears to be in Runtime/VirtualFileSystem/LocalFileSystem.h)
                 var hasHiddenComponent = Components.Any(name => name[0] == '.' || name[name.Length - 1] == '~' || name == "cvs");
-                IsHidden = hasHiddenComponent || m_Extension == ".tmp"; // bug: .tmp directories should not be considered hidden, only .tmp files
-                IsHiddenV2 = hasHiddenComponent || (!IsDirectory && m_Extension == ".tmp");
+                IsHiddenLegacy = hasHiddenComponent || m_Extension == ".tmp"; // bug: .tmp directories should not be considered hidden, only .tmp files
+                IsHidden = hasHiddenComponent || (!IsDirectory && m_Extension == ".tmp");
 
                 // As of 2023.1.0a24 and corresponding backports (UUM-9421), Unity will ignore
                 // files inside directories with certain file extensions IF a plugin has been
@@ -59,6 +60,7 @@ namespace PvpXray
             }
 
             public bool HasComponent(params string[] components) => Components.Any(components.Contains);
+            public bool HasDirectoryComponent(params string[] components) => Components.Take(Components.Length - 1).Any(components.Contains);
             public bool HasExtension(params string[] extensions) => extensions.Contains(m_Extension);
             public bool HasFilename(params string[] filenames) => filenames.Contains(Filename);
         }
@@ -81,6 +83,54 @@ namespace PvpXray
 
             // PVP-25-1: Unapproved filenames (US-0115)
             ("PVP-25-1", e => e.Filename != "standard assets" && !e.Filename.StartsWithOrdinal("standard assets.") && !e.HasExtension(".unitypackage", ".zip", ".rar", ".lib", ".dll", ".js")),
+
+            // PVP-33-1: No filenames that ought to never appear in a package
+            ("PVP-33-1", e =>
+                !e.HasFilename(
+                    ".ds_store", ".volumeicon.icns", ".apdisk", ".localized", // macOS
+                    ".appcollector.yaml", ".appcollector.yml", "appcollector.yaml", "appcollector.yml", // AppCollector
+                    ".buginfo", // Buginfo
+                    ".editorconfig", // EditorConfig
+                    ".eslintrc.js", ".eslintrc.cjs", ".eslintrc.yaml", ".eslintrc.yml", ".eslintrc.json", ".eslintignore", "eslint.config.js", // ESLint
+                    ".gitattributes", ".gitignore", ".gitmodules", // Git
+                    ".gitlab-ci.yml", // GitLab
+                    ".hgeol", ".hgignore", ".hgsub", ".hgsubstate", ".hgtags", // Mercurial
+                    ".npmignore", ".npmrc", "npm-debug.log", // npm
+                    ".readme - external.md", "readme - external.md", // Package Starter Kit meta docs ("external instructions for partners")
+                    ".repoconfig", // unity-meta formatting tools
+                    ".sample.json", ".tests.json", "build.bat", "build.sh", // UPM-CI
+                    "catalog-info.yaml", "catalog-info.yml", // Backstage
+                    "codecov.yml", // Codecov
+                    "codeowners", "issue_template.md", "pull_request_template.md", // GitHub
+                    ".lock-wscript", "config.gypi", // Node.js
+                    "qareport.md", // Internal quality report
+                    "renovate.json", "renovate.json5", ".renovaterc", ".renovaterc.json", ".renovaterc.json5", // Renovate
+                    "sonarqube.analysis.xml", // SonarQube
+                    "testrunneroptions.json") // UTR
+                && e.Path != "contributing.md" // Contribution document rarely makes sense outside repository context.
+                && !e.Filename.StartsWithOrdinal("._") // macOS
+                && !e.Filename.StartsWithOrdinal(".wafpickle-") // Node.js
+                && !e.HasExtension(
+                        ".api", // API file
+                        ".orig", // Merge backup file
+                        ".swp") // Vim swap file
+                && !e.HasDirectoryComponent(
+                    ".build_script", "upm-ci~", // UPM-CI
+                    ".documentrevisions-v100", ".spotlight-v100", ".temporaryitems", ".trash", ".trashes", ".fseventsd", "__macosx", // macOS
+                    ".editor", // unity-downloader-cli
+                    ".git", // Git
+                    ".github", // GitHub
+                    ".gitlab", // GitLab
+                    ".hg", ".hglf", // Mercurial
+                    ".idea", ".vs", ".vscode", // IDEs
+                    ".svn", // Subversion
+                    ".yamato", // Yamato
+                    "cvs") // CVS
+                && !e.Path.StartsWithOrdinal("node_modules/") // Node.js
+            ),
+
+            // PVP-34-1: No file paths matching `*.zip*` glob
+            ("PVP-34-1", e => !e.Path.Contains(".zip")),
 
             // PVP-62-1: index.md filename must be spelled in lowercase
             ("PVP-62-1", e => e.Filename != "index.md" || e.Components[0] != "documentation~" || e.PathWithCase.EndsWithOrdinal("index.md")),

@@ -70,7 +70,7 @@ namespace PvpXray
             foreach (var entry in entries)
             {
                 var directoryWithCase = entry.DirectoryWithCase;
-                var insideHiddenDirectory = directoryWithCase != "" && new PathVerifier.Entry(directoryWithCase).IsHidden;
+                var insideHiddenDirectory = directoryWithCase != "" && new PathVerifier.Entry(directoryWithCase).IsHiddenLegacy;
 
                 if (entry.HasExtension(k_MetaExtension))
                 {
@@ -86,7 +86,7 @@ namespace PvpXray
                         {
                             addError($"{entry.PathWithCase}: Meta file without corresponding asset", insideHiddenDirectory);
                         }
-                        else if (assetEntry.IsHidden)
+                        else if (assetEntry.IsHiddenLegacy)
                         {
                             addError($"{entry.PathWithCase}: Meta file for hidden asset", insideHiddenDirectory);
                         }
@@ -96,7 +96,7 @@ namespace PvpXray
                         }
                     }
                 }
-                else if (!entry.IsHidden)
+                else if (!entry.IsHiddenLegacy)
                 {
                     var metaPath = entry.Path + k_MetaExtension;
                     var metaEntry = entries.FirstOrDefault(e => e.Path == metaPath);
