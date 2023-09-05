@@ -4,6 +4,9 @@ All notable changes to this package will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## [0.59.0-preview] - 2023-09-05
+- PVP: Add x-ray check `PVP-93-1` to verify that there are no files greater than 1 GB (1e9 bytes). (PVS-187)
+
 ## [0.58.0-preview] - 2023-09-04
 - PVP: Add x-ray checks `PVP-{33,34}-1` to verify that there are no filenames that ought to never appear in a package. (PVS-186)
 - PVP: Add x-ray check `PVP-{35,82}-1` to verify that there are no unmodified Packager Starter Kit files. (PVS-186)
