@@ -21,7 +21,7 @@ namespace PvpXray
             if (!isEligible) return;
 
             // Ignore hidden assets.
-            if (new PathVerifier.Entry(file.Path).IsHidden) return;
+            if (file.Entry.IsHidden) return;
 
             if (file.Size >= k_UnityYamlPrefix.Length)
             {

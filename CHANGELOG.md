@@ -4,6 +4,11 @@ All notable changes to this package will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## [0.60.0-preview] - 2023-10-13
+- PVP: Add x-ray checks `PVP-{161,162}-1` to catch certain package dependency errors. (PVS-188)
+- PVP: Now supports Unity 2018.4 or later (previously only supported 2019.2+).
+- PVP: Work around Packman issue causing spurious `_fingerprint` errors in PVP-107-2. (PVS-1414)
+
 ## [0.59.0-preview] - 2023-09-05
 - PVP: Add x-ray check `PVP-93-1` to verify that there are no files greater than 1 GB (1e9 bytes). (PVS-187)
 

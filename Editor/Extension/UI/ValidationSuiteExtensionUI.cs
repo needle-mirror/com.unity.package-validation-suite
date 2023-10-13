@@ -4,6 +4,7 @@ using System.ComponentModel;
 using System.Linq;
 using System.Diagnostics;
 using System.IO;
+using PvpXray;
 using UnityEngine;
 
 #if UNITY_2019_1_OR_NEWER
@@ -100,7 +101,7 @@ namespace UnityEditor.PackageManager.ValidationSuite.UI
                 return;
 
             CurrentPackageinfo = packageInfo;
-            PackageId = new PackageId(CurrentPackageinfo);
+            PackageId = Utilities.PackageIdFromInfo(CurrentPackageinfo);
             ValidationResults.text = string.Empty;
 
             validationPopupField.value = k_DefaultValidationType;

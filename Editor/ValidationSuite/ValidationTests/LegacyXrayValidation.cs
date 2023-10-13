@@ -61,7 +61,7 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
             }
 
             var package = new FileSystemPackage(manifestPath);
-            var resultFileStub = Verifier.OneShot(package, httpClient: null, Verifier.CheckerSet.PvsCheckers);
+            var resultFileStub = Verifier.OneShot(new VerifierContext(package), Verifier.CheckerSet.PvsCheckers, package);
 
             foreach (var entry in resultFileStub.Results)
             {

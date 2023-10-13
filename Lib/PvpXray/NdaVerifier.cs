@@ -201,27 +201,28 @@ namespace PvpXray
                 if (pathRegexCount != 0)
                 {
                     pathRegex.Append(")$");
-                    m_PathRegex = new Regex(pathRegex.ToString(), k_RegexOptions);
+                    m_PathRegex = new Regex(pathRegex.ToString().ToLowerInvariant(), k_FilenameRegexOptions);
                 }
 
                 if (filenameRegexCount != 0)
                 {
                     filenameRegex.Append(")$");
-                    m_FilenameRegex = new Regex(filenameRegex.ToString(), k_RegexOptions);
+                    m_FilenameRegex = new Regex(filenameRegex.ToString().ToLowerInvariant(), k_FilenameRegexOptions);
                 }
             }
 
-            public bool IsMatch(string fullPath, int filenameIndex)
+            public bool IsMatch(string fullPathLower, int filenameIndex)
             {
-                return (m_PathRegex != null && m_PathRegex.IsMatch(fullPath)) || (m_FilenameRegex != null && m_FilenameRegex.IsMatch(fullPath, filenameIndex));
+                return (m_PathRegex != null && m_PathRegex.IsMatch(fullPathLower)) || (m_FilenameRegex != null && m_FilenameRegex.IsMatch(fullPathLower, filenameIndex));
             }
         }
 
         const string k_NdaPatternUrl = "https://artifactory-upload.prd.it.unity3d.com/artifactory/pets-internal/pvp/nda_patterns_v1.dat";
-        const RegexOptions k_RegexOptions = RegexOptions.IgnoreCase | RegexOptions.CultureInvariant;
+        const RegexOptions k_FilenameRegexOptions = 0;
+        const RegexOptions k_ContentRegexOptions = RegexOptions.IgnoreCase | RegexOptions.CultureInvariant;
         const int k_PrefixLength = 1024; // Already divisible by 32.
         const int k_ReplacementFileMaxSize = 1024;
-        readonly byte[] k_ReplacementFileKeyword = XrayUtils.Utf8Strict.GetBytes("ipvs_hash_v1: ");
+        static readonly byte[] k_ReplacementFileKeyword = XrayUtils.Utf8Strict.GetBytes("ipvs_hash_v1: ");
 
         public static string[] Checks => new[] { "PVP-90-1", "PVP-91-1", "PVP-92-1" };
         public static int PassCount => 1;
@@ -275,7 +276,7 @@ namespace PvpXray
                     var elements = (List<object>)entry;
                     var paths = new WildcardSet(((List<object>)elements[0]).Cast<string>());
                     var regexes = ((List<object>)elements[1]).Cast<string>();
-                    var regex = new Regex("(?:" + string.Join("|", regexes) + ")", k_RegexOptions);
+                    var regex = new Regex(string.Join("|", regexes), k_ContentRegexOptions);
                     m_ContentRegexes.Add((paths, regex));
                 }
 
@@ -283,7 +284,7 @@ namespace PvpXray
                     var elements = (List<object>)json["content_keywords"];
                     var paths = new WildcardSet(((List<object>)elements[0]).Cast<string>());
                     var keywords = ((List<object>)elements[1]).Select(e => Regex.Escape((string)e));
-                    var regex = new Regex($"[\"/\\\\](?:{string.Join("|", keywords)})\"", k_RegexOptions);
+                    var regex = new Regex($"[\"/\\\\](?:{string.Join("|", keywords)})\"", k_ContentRegexOptions);
                     m_ContentRegexes.Add((paths, regex));
                 }
             }
@@ -297,14 +298,13 @@ namespace PvpXray
             using (var hasher = SHA256.Create())
             {
                 var digest = hasher.ComputeHash(patternArray, 0, patternLength);
-                var baselineHash = BitConverter.ToString(digest).Replace("-", "").ToLowerInvariant();
-                m_Context.SetBlobBaseline("nda_patterns", baselineHash);
+                m_Context.SetBlobBaseline("nda_patterns", XrayUtils.Hex(digest));
             }
 
             m_EnableReplacementFiles = m_Context.GetXrayEnv("PVP_INTERNAL_NDA_REPLACEMENT_FILES") == "1";
         }
 
-        bool TryParseReplacementFile(byte[] content, out ulong prefixHash, out ulong fullHash, out int fullFilterLength)
+        static bool TryParseReplacementFile(byte[] content, out ulong prefixHash, out ulong fullHash, out int fullFilterLength)
         {
             prefixHash = 0;
             fullHash = 0;
@@ -338,8 +338,9 @@ namespace PvpXray
         public void CheckItem(Verifier.PackageFile file, int passIndex)
         {
             // Path check
-            var filenameIndex = file.Path.LastIndexOf('/') + 1;
-            if (m_Paths.IsMatch(file.Path, filenameIndex))
+            var pathLower = file.Entry.Path;
+            var filenameIndex = pathLower.LastIndexOf('/') + 1;
+            if (m_Paths.IsMatch(pathLower, filenameIndex))
             {
                 m_Context.AddError("PVP-91-1", file.Path);
             }
@@ -357,9 +358,7 @@ namespace PvpXray
             }
 
             // Skip hashing if file is too big to be read into a byte array (or
-            // too small to match any NDA file entry). It appears all NDA files
-            // are much smaller than MaxByteArrayLength (the biggest, as of this
-            // writing, is 1 MB after filtering), so this shouldn't be a problem.
+            // too small to match any NDA file entry).
             if (replacementFile || (file.Size >= m_SmallestHashFile && file.Size <= XrayUtils.MaxByteArrayLength))
             {
                 var fileSize = (int)file.Size;
@@ -418,12 +417,12 @@ namespace PvpXray
             }
 
             // Content check
-            if (!m_ContentIgnorePaths.IsMatch(file.Path, filenameIndex))
+            if (!m_ContentIgnorePaths.IsMatch(pathLower, filenameIndex))
             {
                 string content = null;
                 foreach (var (paths, regex) in m_ContentRegexes)
                 {
-                    if (!paths.IsMatch(file.Path, filenameIndex)) continue;
+                    if (!paths.IsMatch(pathLower, filenameIndex)) continue;
 
                     if (content == null)
                     {

@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -11,6 +12,7 @@ using UnityEditor.PackageManager.ValidationSuite;
 using UnityEditor.PackageManager.ValidationSuite.ValidationTests;
 using UnityEngine;
 using PvpXray;
+using Debug = UnityEngine.Debug;
 
 static class Pvp
 {
@@ -19,23 +21,14 @@ static class Pvp
     [UsedImplicitly]
     static void RunTests()
     {
-#if UNITY_2019_2_OR_NEWER
         try
         {
             Utilities.EnsureDirectoryExists("Library/pvp");
 
             var pvp = new PvpRunner();
-            var packages = pvp.GetProjectDirectPackageDependencies();
-            foreach (var packageId in packages)
+            foreach (var packageId in pvp.VerificationSetIds)
             {
                 var path = $"Library/pvp/{packageId.Name}.result.json";
-
-                // Don't check PVS unless PVS is the only package here.
-                if (packages.Count != 1 && packageId.Name == Utilities.VSuiteName)
-                {
-                    continue;
-                }
-
                 Debug.Log($"Running PVP checks for {packageId}; results will be saved to {path}.");
                 var results = pvp.Run(packageId.Name, null);
                 File.WriteAllText(path, results.ToJson());
@@ -47,10 +40,6 @@ static class Pvp
             EditorApplication.Exit(1);
         }
         EditorApplication.Exit(0);
-#else
-        Console.Write("Pvp.RunTests requires Unity 2019.2 or later.");
-        EditorApplication.Exit(2);
-#endif
     }
 }
 
@@ -80,8 +69,12 @@ namespace UnityEditor.PackageManager.ValidationSuite
 
         public void Run(in PvpRunner.Input input, PvpRunner.Output output)
         {
-            var package = new FileSystemPackage(input.Package.path);
-            var resultFileStub = Verifier.OneShot(package, Utilities.k_HttpClient, Verifier.CheckerSet.PvsCheckers);
+            var package = new FileSystemPackage(input.Package.path, input.Manifest);
+            var resultFileStub = Verifier.OneShot(new VerifierContext(package)
+            {
+                HttpClient = Utilities.k_HttpClient,
+                VerificationSet = input.VerificationSet,
+            }, Verifier.CheckerSet.PvsCheckers, package);
 
             foreach (var entry in resultFileStub.Results)
             {
@@ -112,7 +105,9 @@ namespace UnityEditor.PackageManager.ValidationSuite
         public struct Input
         {
             public AssemblyInfo[] AssemblyInfo;
+            public byte[] Manifest;
             public ManifestData Package;
+            public List<VerifierContext.VerificationSetPackage> VerificationSet;
         }
 
         public readonly struct Output
@@ -273,6 +268,8 @@ namespace UnityEditor.PackageManager.ValidationSuite
         readonly PackageInfo[] m_PackageInfos;
         readonly PackageInfo m_PvsPackageInfo;
         readonly List<IPvpChecker> m_Validations;
+        readonly List<VerifierContext.VerificationSetPackage> m_VerificationSet;
+        internal readonly IReadOnlyList<PackageId> VerificationSetIds;
 
         public PvpRunner()
         {
@@ -288,18 +285,96 @@ namespace UnityEditor.PackageManager.ValidationSuite
                     .Select(t => (IPvpChecker)Activator.CreateInstance(t))
                 );
             }
+
+            var verificationSetIds = new List<PackageId>(m_PackageInfos.Length);
+            VerificationSetIds = verificationSetIds;
+            m_VerificationSet = new List<VerifierContext.VerificationSetPackage>();
+            foreach (var pkg in m_PackageInfos)
+            {
+                var tarballPath = GetLocalTarballPath(pkg);
+                if (tarballPath == null) continue;
+                if (!File.Exists(tarballPath)) throw new InternalTestErrorException("Cannot locate package tarball: " + pkg.packageId);
+
+                // Don't check PVS unless PVS is the only local tarball package here.
+                if (VerificationSetIds.Count != 0 && pkg.name == Utilities.VSuiteName) continue;
+                if (VerificationSetIds.Count == 1 && VerificationSetIds[0].Name == Utilities.VSuiteName)
+                {
+                    // Remove PVS again now we've found another package.
+                    verificationSetIds.RemoveAt(0);
+                    m_VerificationSet.RemoveAt(0);
+                }
+
+                verificationSetIds.Add(new PackageId(pkg.packageId));
+                m_VerificationSet.Add(new VerifierContext.VerificationSetPackage
+                {
+                    Manifest = ReadTarFile(tarballPath, "package/package.json"),
+                    Sha1 = XrayUtils.Sha1(File.Open(tarballPath, FileMode.Open, FileAccess.Read)),
+                });
+            }
         }
 
-#if UNITY_2019_2_OR_NEWER
-        // 2019.2.0a7: isRootDependency renamed to isDirectDependency and made public
-        internal List<PackageId> GetProjectDirectPackageDependencies()
+#if UNITY_2019_3_OR_NEWER
+        // 2019.3.0a3: PackageSource.LocalTarball added.
+        static string GetLocalTarballPath(PackageInfo pkg)
         {
-            return m_PackageInfos
-                .Where(pkg => pkg.isDirectDependency && pkg.source != PackageSource.BuiltIn)
-                .Select(pkg => new PackageId(pkg))
-                .ToList();
+            if (pkg.source != PackageSource.LocalTarball) return null;
+
+            var i = pkg.packageId.IndexOfOrdinal("@file:");
+            if (i == -1) throw new InternalTestErrorException("Expected @file in: " + pkg.packageId);
+
+            // Resolve path relative to Packages folder.
+            return Path.Combine("Packages", pkg.packageId.Substring(i + 6));
+        }
+#else
+        static string GetLocalTarballPath(PackageInfo pkg)
+        {
+            var i = pkg.packageId.IndexOfOrdinal("@file:");
+            if (i == -1) return null;
+
+            // Resolve path relative to Packages folder.
+            var tarballPath = Path.Combine("Packages", pkg.packageId.Substring(i + 6));
+            if (Directory.Exists(tarballPath)) return null; // directory, not tarball
+            return tarballPath;
         }
 #endif
+
+        static byte[] ReadTarFile(string tarballPath, string nestedPath)
+        {
+            var (status, stdout) = RunTarCommand("xOf", tarballPath, nestedPath);
+            if (status != 0)
+            {
+                throw new InternalTestErrorException($"'tar' could not extract file from tarball: {tarballPath}");
+            }
+            return stdout;
+        }
+
+        static (int, byte[]) RunTarCommand(params string[] arguments)
+        {
+            // This relies on 'tar' being available locally, which is the case by
+            // default on both Linux, macOS and Windows (as circa 2018).
+            var psi = new ProcessStartInfo
+            {
+                Arguments = $"\"{string.Join("\" \"", arguments)}\"",
+                CreateNoWindow = true,
+                FileName = "tar",
+                UseShellExecute = false,
+                RedirectStandardInput = true,
+                RedirectStandardOutput = true,
+            };
+
+            var p = Process.Start(psi) ?? throw new InternalTestErrorException("failed to start 'tar' command");
+            p.StandardInput.Close();
+
+            using (var buf = new MemoryStream())
+            {
+                using (var stdout = p.StandardOutput.BaseStream)
+                {
+                    stdout.CopyTo(buf);
+                }
+                p.WaitForExit();
+                return (p.ExitCode, buf.ToArray());
+            }
+        }
 
         PackageInfo GetPackageInfo(string packageName)
         {
@@ -344,10 +419,24 @@ namespace UnityEditor.PackageManager.ValidationSuite
             var checks = new Dictionary<string, CheckResult>();
             var baselines = new Dictionary<string, string>();
             var package = VettingContext.GetManifest(GetPackageInfo(packageName).resolvedPath);
+
+            // Workaround for Packman rewriting the package manifest on disk in Unity 2023.2+.
+            byte[] manifest = null;
+            for (var i = 0; i < VerificationSetIds.Count; i++)
+            {
+                if (VerificationSetIds[i].Name == packageName)
+                {
+                    manifest = m_VerificationSet[i].Manifest;
+                    break;
+                }
+            }
+
             var input = new Input
             {
                 AssemblyInfo = GetRelevantAssemblyInfo(package.path),
+                Manifest = manifest,
                 Package = package,
+                VerificationSet = m_VerificationSet,
             };
             var output = new Output(checks, baselines);
 

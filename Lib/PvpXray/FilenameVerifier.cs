@@ -80,7 +80,7 @@ namespace PvpXray
                 m_Context.AddError("PVP-71-1", $"{path}: forbidden trailing space");
             if (hasForbiddenAsciiChars)
                 m_Context.AddError("PVP-71-1", $"{path}: forbidden character");
-            if (HasSegmentsWithForbiddenName(path))
+            if (HasSegmentsWithForbiddenName(file.Entry))
                 m_Context.AddError("PVP-71-1", $"{path}: reserved device filename");
 
             if (file.Extension.HasFlags(FileExt.V1 | FileExt.V2) && !file.Extension.IsCanonical)
@@ -113,15 +113,15 @@ namespace PvpXray
             "con", "lpt0", "lpt1", "lpt2", "lpt3", "lpt4", "lpt5", "lpt6", "lpt7", "lpt8", "lpt9", "nul", "prn",
         };
 
-        static bool HasSegmentsWithForbiddenName(string path)
+        static bool HasSegmentsWithForbiddenName(PathEntry path)
         {
-            foreach (var segment in path.Split('/'))
+            foreach (var segment in path.Components)
             {
                 var i = segment.IndexOf('.');
                 if (i == -1) i = segment.Length;
                 if (i < 3 || i > 6) continue;
 
-                var name = ToAsciiLowercase(segment.ToCharArray(0, i));
+                var name = segment.Substring(0, i);
                 if (k_ForbiddenFileNames.Contains(name)) return true;
             }
             return false;

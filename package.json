@@ -1,25 +1,25 @@
 {
   "name": "com.unity.package-validation-suite",
   "displayName": "Package Validation Suite",
-  "version": "0.59.0-preview",
+  "version": "0.60.0-preview",
   "unity": "2018.4",
   "description": "Unity Package Manager validation suite, used to evaluate a package's integrity before it's considered for publishing.  This is a Unity internal tool at the moment, no support will be provided for this package.",
   "dependencies": {
     "com.unity.nuget.mono-cecil": "0.1.6-preview.2"
   },
   "relatedPackages": {
-    "com.unity.package-validation-suite.tests": "0.59.0-preview"
+    "com.unity.package-validation-suite.tests": "0.60.0-preview"
   },
   "_upm": {
-    "changelog": "- PVP: Add x-ray check `PVP-93-1` to verify that there are no files greater than 1 GB (1e9 bytes). (PVS-187)"
+    "changelog": "- PVP: Add x-ray checks `PVP-{161,162}-1` to catch certain package dependency errors. (PVS-188)\n- PVP: Now supports Unity 2018.4 or later (previously only supported 2019.2+).\n- PVP: Work around Packman issue causing spurious `_fingerprint` errors in PVP-107-2. (PVS-1414)"
   },
   "upmCi": {
-    "footprint": "9c7694038f27a43be99d5e30e392007a4d018ecb"
+    "footprint": "998346e4d4b8a2fb1e6be67f023f7363ed17d173"
   },
-  "documentationUrl": "https://docs.unity3d.com/Packages/com.unity.package-validation-suite@0.59/manual/index.html",
+  "documentationUrl": "https://docs.unity3d.com/Packages/com.unity.package-validation-suite@0.60/manual/index.html",
   "repository": {
     "url": "https://github.cds.internal.unity3d.com/unity/com.unity.package-validation-suite.git",
     "type": "git",
-    "revision": "277efe81fc3c9752c61bc4615053a5a8d1a84907"
+    "revision": "0d7dbdd61c1f7a7ff1cbdb4b00a3920fae4ee0b1"
   }
 }

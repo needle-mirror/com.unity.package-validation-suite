@@ -31,9 +31,9 @@ namespace PvpXray
         }
 
         // Derive directories from file paths. This assumes that there are no empty directories.
-        internal static List<PathVerifier.Entry> GetFileAndDirectoryEntries(IEnumerable<string> files)
+        internal static List<PathEntry> GetFileAndDirectoryEntries(IEnumerable<string> files)
         {
-            var fileEntries = files.Select(path => new PathVerifier.Entry(path)).ToList();
+            var fileEntries = files.Select(path => new PathEntry(path)).ToList();
             var entries = fileEntries.ToList();
 
             var seenDirectories = new HashSet<string>();
@@ -56,7 +56,7 @@ namespace PvpXray
                         var directoryPath = pathBuilder.ToString();
                         if (seenDirectories.Add(directoryPath))
                         {
-                            entries.Add(new PathVerifier.Entry(directoryPath, isDirectory: true));
+                            entries.Add(new PathEntry(directoryPath, isDirectory: true));
                         }
                     }
                 }
@@ -65,12 +65,12 @@ namespace PvpXray
             return entries;
         }
 
-        static void ValidateMetaFiles(List<PathVerifier.Entry> entries, Action<string, bool> addError)
+        static void ValidateMetaFiles(List<PathEntry> entries, Action<string, bool> addError)
         {
             foreach (var entry in entries)
             {
                 var directoryWithCase = entry.DirectoryWithCase;
-                var insideHiddenDirectory = directoryWithCase != "" && new PathVerifier.Entry(directoryWithCase).IsHiddenLegacy;
+                var insideHiddenDirectory = directoryWithCase != "" && new PathEntry(directoryWithCase).IsHiddenLegacy;
 
                 if (entry.HasExtension(k_MetaExtension))
                 {

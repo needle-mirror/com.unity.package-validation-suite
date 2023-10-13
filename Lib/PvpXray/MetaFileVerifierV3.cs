@@ -35,7 +35,7 @@ namespace PvpXray
                 if (entry.HasExtension(k_MetaExtension))
                 {
                     // ignore .meta files inside hidden directories (like Samples~)
-                    if (entry.Components.Length > 1 && new PathVerifier.Entry(entry.DirectoryWithCase, isDirectory: true).IsHidden) continue;
+                    if (entry.Components.Length > 1 && new PathEntry(entry.DirectoryWithCase, isDirectory: true).IsHidden) continue;
 
                     if (entry.IsDirectory)
                     {

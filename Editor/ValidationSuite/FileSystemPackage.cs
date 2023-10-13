@@ -56,9 +56,13 @@ namespace UnityEditor.PackageManager.ValidationSuite
 
         readonly string m_RootPrefix;
         readonly IEnumerable<FileInfo> m_Files;
+        readonly byte[] m_ManifestOverride;
 
-        public FileSystemPackage(string rootPath)
+        public FileSystemPackage(string rootPath, byte[] manifestOverride = null)
         {
+            // Workaround for Packman rewriting the package manifest on disk in Unity 2023.2+.
+            m_ManifestOverride = manifestOverride;
+
             rootPath = Path.GetFullPath(rootPath).TrimEnd(Path.DirectorySeparatorChar);
             m_RootPrefix = rootPath + Path.DirectorySeparatorChar;
             m_Files = new DirectoryInfo(rootPath).EnumerateFiles("*.*", SearchOption.AllDirectories).ToList();
@@ -66,11 +70,22 @@ namespace UnityEditor.PackageManager.ValidationSuite
 
         public IEnumerator<IPackageFile> GetEnumerator()
         {
+            var manifestPath = m_ManifestOverride == null ? null : m_RootPrefix + "package.json";
             foreach (var info in m_Files)
             {
-                using (var file = new PackageFile(m_RootPrefix, info))
+                if (info.FullName == manifestPath)
                 {
-                    yield return file;
+                    using (var file = new MemoryPackageFile("package.json", m_ManifestOverride))
+                    {
+                        yield return file;
+                    }
+                }
+                else
+                {
+                    using (var file = new PackageFile(m_RootPrefix, info))
+                    {
+                        yield return file;
+                    }
                 }
             }
         }

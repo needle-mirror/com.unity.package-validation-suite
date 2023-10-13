@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using PvpXray;
 using UnityEditor.PackageManager.ValidationSuite.Utils;
 
 namespace UnityEditor.PackageManager.ValidationSuite
@@ -48,6 +49,8 @@ namespace UnityEditor.PackageManager.ValidationSuite
         {
             get { return GetPackageId(name, version); }
         }
+
+        internal PackageId PackageId => new PackageId(name, version);
 
         public static string GetPackageId(string name, string version)
         {

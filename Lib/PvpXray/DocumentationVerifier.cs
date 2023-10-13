@@ -20,8 +20,8 @@ namespace PvpXray
         public static string[] Checks => new[] { "PVP-60-1", "PVP-61-1" };
         public static int PassCount => 1;
 
-        static List<PathVerifier.Entry> PathEntries(IReadOnlyList<string> paths) =>
-            paths.Select(p => new PathVerifier.Entry(p)).ToList();
+        static List<PathEntry> PathEntries(IReadOnlyList<string> paths) =>
+            paths.Select(p => new PathEntry(p)).ToList();
 
         static List<string> GetTopLevelDirectories(IReadOnlyList<string> paths) =>
             PathEntries(paths).Select(e => e.DirectoryWithCase.Split('/')[0])

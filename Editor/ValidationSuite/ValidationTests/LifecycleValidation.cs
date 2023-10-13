@@ -43,16 +43,6 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
                     Context.ValidationType != ValidationType.VerifiedSet)
                     PreReleaseChecks(Context.ProjectPackageInfo);
             }
-
-            /*
-             * TODO: this test is producing false failures, we need to rework it.
-             * Disabling so we don't block people trying to get into trunk, and to workaround they are adding full exemption to their packages
-             * We have guards further in the trunk katana process that will guard against packages depending on other packages outside the correct set.
-             * We have identified 2 challenges for making this check work in package CI:
-             *  - A new package version will never be part of the EditorManifest, so we need to tell PVS to pretend that this package will be RC
-             *  - Same as above, but for a set of related/dependent packages (think monorepos, or project context)
-            */
-            //ValidateDependenciesLifecyclePhase(Context.ProjectPackageInfo.dependencies);
         }
 
         private void ValidateVersion(ManifestData manifestData, Action<SemVersion, VersionTag> lifecycleVersionValidator)
@@ -101,31 +91,6 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
             {
                 AddError(
                     "In package.json, \"version\": the only pre-release filter supported is \"-preview.[num < 999999]\". " + ErrorDocumentation.GetLinkMessage(k_DocsFilePath, "version-the-only-pre-release-filter-supported-is--preview-num-999999"));
-            }
-        }
-
-        private void ValidateDependenciesLifecyclePhase(Dictionary<string, string> dependencies)
-        {
-            // No dependencies, exit early
-            if (!dependencies.Any()) return;
-
-            // Extract the current track, since otherwise we'd be potentially parsing the version
-            // multiple times
-            var currentTrack = PackageLifecyclePhase.GetLifecyclePhaseOrRelation(Context.ProjectPackageInfo.version, Context.ProjectPackageInfo.name, Context);
-
-            var supportedVersions = PackageLifecyclePhase.GetPhaseSupportedVersions(currentTrack);
-
-            // Check each dependency against supported versions
-            foreach (var dependency in dependencies)
-            {
-                // Skip invalid dependencies from this check
-                SemVersion depVersion;
-                if (!SemVersion.TryParse(dependency.Value, out depVersion)) continue;
-
-                LifecyclePhase dependencyTrack = PackageLifecyclePhase.GetLifecyclePhaseOrRelation(dependency.Value.ToLower(), dependency.Key.ToLower(), Context);
-                var depId = new PackageId(dependency.Key, dependency.Value);
-                if (!supportedVersions.HasFlag(dependencyTrack))
-                    AddError($"Package {Context.ProjectPackageInfo.Id} depends on package {depId} which is in an invalid track for release purposes. {currentTrack} versions can only depend on {supportedVersions.ToString()} versions. {ErrorDocumentation.GetLinkMessage(k_DocsFilePath, "package-depends-on-a-package-which-is-in-an-invalid-track-for-release-purposes")}");
             }
         }
 

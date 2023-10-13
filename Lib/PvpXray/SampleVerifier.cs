@@ -35,7 +35,7 @@ namespace PvpXray
 
         public void CheckItem(Verifier.PackageFile file, int passIndex)
         {
-            var entry = new PathVerifier.Entry(file.Path);
+            var entry = file.Entry;
             var isInsideSampleDir = false;
 
             void CheckSamples(string expected, string expectedLower, ref bool hasIt)

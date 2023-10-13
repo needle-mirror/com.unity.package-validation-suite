@@ -1,4 +1,3 @@
-using System;
 using System.Security.Cryptography;
 
 namespace PvpXray
@@ -19,13 +18,14 @@ namespace PvpXray
         {
             using (var hasher = SHA1.Create())
             {
-                var digest = hasher.ComputeHash(buffer);
-                return BitConverter.ToString(digest).Replace("-", "").ToLowerInvariant();
+                return XrayUtils.Hex(hasher.ComputeHash(buffer));
             }
         }
 
-        bool IsUnmodifiedPackageStarterKitFile(Verifier.PackageFile file, PathVerifier.Entry entry)
+        bool IsUnmodifiedPackageStarterKitFile(Verifier.PackageFile file)
         {
+            var entry = file.Entry;
+
             // https://github.cds.internal.unity3d.com/unity/com.unity.package-starter-kit/blob/e72985bcd7d88ffd61e50e3b31af5426e83833c0/.README%20-%20External.md
             // https://github.cds.internal.unity3d.com/unity/com.unity.package-starter-kit/blob/757557d470a4ac5fe01eb40b7447bebb2cbc4533/README%20-%20External.md
             // https://github.cds.internal.unity3d.com/unity/com.unity.package-starter-kit/blob/e72985bcd7d88ffd61e50e3b31af5426e83833c0/.gitignore
@@ -193,8 +193,7 @@ namespace PvpXray
 
         public void CheckItem(Verifier.PackageFile file, int passIndex)
         {
-            var entry = new PathVerifier.Entry(file.Path);
-            if (IsUnmodifiedPackageStarterKitFile(file, entry))
+            if (IsUnmodifiedPackageStarterKitFile(file))
             {
                 m_Context.AddError("PVP-35-1", file.Path);
             }

@@ -1,10 +1,35 @@
+using System;
 using System.IO;
+using System.Security.Cryptography;
 using System.Text;
+using System.Text.RegularExpressions;
 
 namespace PvpXray
 {
     static class XrayUtils
     {
+        public static readonly Regex Sha1Regex = new Regex("^[0-9a-f]{40}$");
+
+        /// Convert byte array to lowercase hex string.
+        public static string Hex(byte[] bytes)
+        {
+#if NET5_0_OR_GREATER
+            return Convert.ToHexString(bytes).ToLowerInvariant();
+#else
+            return BitConverter.ToString(bytes).Replace("-", "").ToLowerInvariant();
+#endif
+        }
+
+        /// Read and dispose stream, return SHA-1 hash as a hex string.
+        public static string Sha1(Stream stream)
+        {
+            using (var hasher = SHA1.Create())
+            using (stream)
+            {
+                return Hex(hasher.ComputeHash(stream));
+            }
+        }
+
         /// Version of Encoding.UTF8 that throws on encoding errors instead of
         /// letting them pass silently with a replacement character.
         /// This affects conversions TO string only (Encoding.GetString), not

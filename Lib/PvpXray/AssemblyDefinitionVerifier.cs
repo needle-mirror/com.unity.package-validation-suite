@@ -47,7 +47,7 @@ namespace PvpXray
 
             var assemblyName = json["name"].String;
 
-            var entry = new PathVerifier.Entry(file.Path);
+            var entry = new PathEntry(file.Path);
             if (entry.FilenameWithCase.Substring(0, entry.FilenameWithCase.Length - k_Extension.Length) != assemblyName)
             {
                 m_Context.AddError("PVP-130-1", $"{file.Path}: assembly name does not match filename: {assemblyName}");

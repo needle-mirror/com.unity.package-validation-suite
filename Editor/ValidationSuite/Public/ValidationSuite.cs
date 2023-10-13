@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using PvpXray;
 using UnityEditor.PackageManager.ValidationSuite.ValidationTests;
 using UnityEngine.Profiling;
 
@@ -145,7 +146,7 @@ namespace UnityEditor.PackageManager.ValidationSuite
         {
             Profiler.BeginSample("ValidatePackage");
 
-            report = new ValidationSuiteReport(new PackageId(context.ProjectPackageInfo.Id), context.ProjectPackageInfo.path);
+            report = new ValidationSuiteReport(context.ProjectPackageInfo.PackageId, context.ProjectPackageInfo.path);
 
             try
             {
@@ -177,7 +178,7 @@ namespace UnityEditor.PackageManager.ValidationSuite
             foreach (var directory in directories)
             {
                 ActivityLogger.Log("Starting package validation for " + directory);
-                packageIdList.Add(new PackageId(VettingContext.GetManifest(directory).Id));
+                packageIdList.Add(VettingContext.GetManifest(directory).PackageId);
             }
 
             if (packageIdList.Any())

@@ -13,6 +13,7 @@ using UnityEngine.Profiling;
 using UnityEditor.PackageManager.ValidationSuite.ValidationTests;
 using System.Security.Cryptography;
 using System.Text;
+using PvpXray;
 
 namespace UnityEditor.PackageManager.ValidationSuite
 {
@@ -74,7 +75,7 @@ namespace UnityEditor.PackageManager.ValidationSuite
             var packageList = Utilities.UpmListOffline();
 
             ActivityLogger.Log("Looking for package {0} in project", package.Name);
-            var packageInfo = packageList.SingleOrDefault(p => new PackageId(p) == package);
+            var packageInfo = packageList.SingleOrDefault(p => Utilities.PackageIdFromInfo(p) == package);
 
             if (packageInfo == null)
             {
@@ -406,9 +407,7 @@ namespace UnityEditor.PackageManager.ValidationSuite
             using (var sha256 = new SHA256Managed())
             {
                 var secretBytes = Encoding.UTF8.GetBytes(secret);
-                var hashBytes = sha256.ComputeHash(secretBytes);
-                var hashedSecret = BitConverter.ToString(hashBytes).Replace("-", "").ToLowerInvariant();
-
+                var hashedSecret = XrayUtils.Hex(sha256.ComputeHash(secretBytes));
                 return hashedSecret == expectedHashedSecret;
             }
         }

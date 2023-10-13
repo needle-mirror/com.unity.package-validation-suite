@@ -1,7 +1,8 @@
 {
     "name": "Unity.PackageValidationSuite.Editor.Extension",
     "references": [
-        "Unity.PackageValidationSuite.Editor"
+        "Unity.PackageValidationSuite.Editor",
+        "PvpXray"
     ],
     "includePlatforms": [
         "Editor"

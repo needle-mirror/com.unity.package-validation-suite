@@ -85,6 +85,10 @@ namespace PvpXray
         }
 
         public Json(string json, string packageFilePath) : this(SimpleJsonReader.Read(json, packageFilePath), null, null, packageFilePath) { }
+        internal Json(object root, string packageFilePath) : this(root, null, null, packageFilePath) { }
+
+        internal SimpleJsonException GetException(string message)
+            => new SimpleJsonException($"{Path}: {message}") { PackageFilePath = PackageFilePath };
 
         // Enumerate elements of a JSON array.
         public IEnumerable<Json> Elements
@@ -119,7 +123,7 @@ namespace PvpXray
             }
         }
 
-        JsonObject RawObject => CheckKind<JsonObject>();
+        public JsonObject RawObject => CheckKind<JsonObject>();
 
         public bool Boolean => CheckKind<bool>();
         public string String => CheckKind<string>();

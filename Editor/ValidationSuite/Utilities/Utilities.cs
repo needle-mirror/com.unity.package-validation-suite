@@ -609,5 +609,9 @@ namespace UnityEditor.PackageManager.ValidationSuite
                 }
             }
         }
+
+        // Note: This is distinct from `new PackageId(info.packageId)`,
+        // as `packageId` may be a string like "com.unity.example@file:/foo/bar".
+        internal static PackageId PackageIdFromInfo(PackageInfo info) => new PackageId(info.name, info.version);
     }
 }
