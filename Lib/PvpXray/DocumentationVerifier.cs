@@ -31,10 +31,10 @@ namespace PvpXray
         static List<string> GetDocumentationMarkdownFiles(IReadOnlyList<string> paths) =>
             paths.Where(path => Regex.IsMatch(path, @"^\.?Documentation~/[^/]*\.md$")).ToList();
 
-        readonly Verifier.IContext m_Context;
+        readonly Verifier.Context m_Context;
         readonly List<string> m_MarkdownFiles;
 
-        public DocumentationVerifier(Verifier.IContext context)
+        public DocumentationVerifier(Verifier.Context context)
         {
             m_Context = context;
 

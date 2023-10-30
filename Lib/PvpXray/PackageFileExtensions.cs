@@ -34,65 +34,18 @@ namespace PvpXray
         /// Throws FailAllException only if file is too large (> 1 GB).
         public static string ReadToStringLax(this Verifier.PackageFile file)
         {
-            // .NET has an undocumented (probably runtime dependent) size limit
-            // for strings at a little less than 2^30 chars. As we're reading
-            // UTF-8, a char can take between 1 and 4 bytes. For expediency and
-            // consistency, just assume the worst case (1 byte per character,
-            // i.e. ASCII) and use a fixed limit of 1e9 bytes.
-            if (file.Size > 1_000_000_000)
+            if (file.Size > XrayUtils.MaxUtf8BytesForString)
             {
                 throw new Verifier.FailAllException($"{file.Path}: file is too large to read as UTF-8 text");
             }
 
-            // Silently discard UTF-8 BOM if present.
-            var bytes = file.Content;
-            var hasBom = bytes.Length >= 3 && bytes[0] == 0xEF && bytes[1] == 0xBB && bytes[2] == 0xBF;
-            var start = hasBom ? 3 : 0;
-            var length = hasBom ? bytes.Length - 3 : bytes.Length;
-
-            try
-            {
-                // Attempt to decode UTF-8 string.
-                return XrayUtils.Utf8Strict.GetString(bytes, start, length);
-            }
-            catch (ArgumentException)
-            {
-                // Decode UTF-8 string replacing invalid UTF-8 sequences with replacement characters.
-                var s = Encoding.UTF8.GetString(bytes, start, length);
-
-                // The number of replacement characters resulting from an invalid UTF-8 sequence is implementation specific.
-                // For consistency, collapse consecutive replacement character substrings to a single code point.
-                var sb = new StringBuilder();
-                var i = 0;
-                while (i < s.Length)
-                {
-                    var next = s.IndexOf(k_ReplacementCharacter, i);
-                    if (next == -1) break;
-
-                    sb.Append(s.Substring(i, next - i));
-                    sb.Append(k_ReplacementCharacter);
-
-                    i = next + 1;
-                    while (i < s.Length && s[i] == k_ReplacementCharacter)
-                    {
-                        i++;
-                    }
-                };
-                sb.Append(s.Substring(i, s.Length - i));
-
-                return sb.ToString();
-            }
+            return XrayUtils.DecodeUtf8Lax(file.Content);
         }
 
         /// Deprecated. Do not use in new checks.
         public static string ReadToStringLegacy(this Verifier.PackageFile file)
         {
-            // .NET has an undocumented (probably runtime dependent) size limit
-            // for strings at a little less than 2^30 chars. As we're reading
-            // UTF-8, a char can take between 1 and 4 bytes. For expediency and
-            // consistency, just assume the worst case (1 byte per character,
-            // i.e. ASCII) and use a fixed limit of 1e9 chars.
-            if (file.Size > 1_000_000_000)
+            if (file.Size > XrayUtils.MaxUtf8BytesForString)
             {
                 throw new Verifier.FailAllException($"{file.Path}: file is too large to read as UTF-8 text");
             }

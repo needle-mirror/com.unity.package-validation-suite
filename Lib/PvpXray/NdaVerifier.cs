@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Security.Cryptography;
 using System.Text;
 using System.Text.RegularExpressions;
 
@@ -229,14 +228,14 @@ namespace PvpXray
 
         readonly byte[] m_PrefixBuffer = new byte[k_PrefixLength];
         readonly NdaPatternFile m_PatternFile;
-        readonly Verifier.IContext m_Context;
+        readonly Verifier.Context m_Context;
         readonly WildcardSet m_Paths;
         readonly WildcardSet m_ContentIgnorePaths;
         readonly List<(WildcardSet, Regex)> m_ContentRegexes;
         readonly int m_SmallestHashFile;
         readonly bool m_EnableReplacementFiles;
 
-        public NdaVerifier(Verifier.IContext context)
+        public NdaVerifier(Verifier.Context context)
         {
             m_Context = context;
 
@@ -295,11 +294,7 @@ namespace PvpXray
 
             m_SmallestHashFile = m_PatternFile.GetSmallestFileSize();
 
-            using (var hasher = SHA256.Create())
-            {
-                var digest = hasher.ComputeHash(patternArray, 0, patternLength);
-                m_Context.SetBlobBaseline("nda_patterns", XrayUtils.Hex(digest));
-            }
+            m_Context.SetBlobBaseline("nda_patterns", patternArray, patternLength);
 
             m_EnableReplacementFiles = m_Context.GetXrayEnv("PVP_INTERNAL_NDA_REPLACEMENT_FILES") == "1";
         }

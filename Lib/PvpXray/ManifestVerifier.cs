@@ -19,7 +19,7 @@ namespace PvpXray
         public static string[] Checks => new[] { "PVP-100-1", "PVP-100-2" };
         public static int PassCount => 0;
 
-        public ManifestContextVerifier(Verifier.IContext context)
+        public ManifestContextVerifier(Verifier.Context context)
         {
             foreach (var (checkId, error) in context.ManifestContextErrors)
                 context.AddError(checkId, error);
@@ -47,8 +47,6 @@ namespace PvpXray
                 };
         }
 
-        public static readonly Regex SemVer = new Regex(@"^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)(?:-((?:0|[1-9][0-9]*|[0-9]*[a-zA-Z-][0-9a-zA-Z-]*)(?:\.(?:0|[1-9][0-9]*|[0-9]*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\+([0-9a-zA-Z-]+(?:\.[0-9a-zA-Z-]+)*))?$");
-
         static Requirement Fail(string message) => new Requirement { Message = message, Func = _ => false };
 
         static bool IsUnityPackage(Json manifest) => manifest["name"].String.StartsWithOrdinal("com.unity.");
@@ -66,7 +64,7 @@ namespace PvpXray
         {
             ("PVP-101-1", m => m["name"], new Regex(@"$(?<!\.plugin|\.framework|\.bundle)", k_IgnoreCase)), // Unity technical restriction
             ("PVP-101-1", m => m["name"], PackageId.ValidName),
-            ("PVP-101-1", m => m["version"], SemVer),
+            ("PVP-101-1", m => m["version"], PackageId.ValidSemVer),
 
             ("PVP-104-1", m => m["displayName"], new Regex(@"^(?!unity).*$", k_IgnoreCase)),
 
@@ -75,14 +73,14 @@ namespace PvpXray
             ("PVP-102-1", m => m["unityRelease"].IfPresent, new Regex(@"^[0-9]+[abf][1-9][0-9]*$")),
             ("PVP-102-1", m => m["unityRelease"].IfPresent.Unless(m["unity"].IsPresent), Fail("requires that the 'unity' key is present")),
             ("PVP-102-1", m => m["dependencies"].MembersIfPresent.Where(e => !PackageId.ValidName.IsMatch(e.Key)), Fail($"key must match {PackageId.ValidName}")),
-            ("PVP-102-1", m => m["dependencies"].MembersIfPresent, SemVer),
+            ("PVP-102-1", m => m["dependencies"].MembersIfPresent, PackageId.ValidSemVer),
 
             ("PVP-102-2", m => m["displayName"], new Regex("^[ a-zA-Z0-9]{1,50}$")),
             ("PVP-102-2", m => m["unity"].IfPresent, new Regex(@"^[0-9]{4}\.[1-9]$")),
             ("PVP-102-2", m => m["unityRelease"].IfPresent, new Regex(@"^[0-9]+[abf][1-9][0-9]*$")),
             ("PVP-102-2", m => m["unityRelease"].IfPresent.Unless(m["unity"].IsPresent), Fail("requires that the 'unity' key is present")),
             ("PVP-102-2", m => m["dependencies"].MembersIfPresent.Where(e => !PackageId.ValidName.IsMatch(e.Key)), Fail($"key must match {PackageId.ValidName}")),
-            ("PVP-102-2", m => m["dependencies"].MembersIfPresent.Unless(m["type"].IsPresent && m["type"].String == "feature"), SemVer),
+            ("PVP-102-2", m => m["dependencies"].MembersIfPresent.Unless(m["type"].IsPresent && m["type"].String == "feature"), PackageId.ValidSemVer),
 
             ("PVP-108-1", m => m["description"], new Regex("(?s)^.{50,}")),
 
@@ -104,7 +102,7 @@ namespace PvpXray
         public static string[] Checks => k_LocationChecks.Select(v => v.Item1).Distinct().ToArray();
         public static int PassCount => 0;
 
-        public ManifestVerifier(Verifier.IContext context)
+        public ManifestVerifier(Verifier.Context context)
         {
             var manifest = context.Manifest;
 

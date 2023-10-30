@@ -5,9 +5,9 @@ namespace PvpXray
         public static string[] Checks => new[] { "PVP-93-1" };
         public static int PassCount => 1;
 
-        readonly Verifier.IContext m_Context;
+        readonly Verifier.Context m_Context;
 
-        public LargeFileVerifier(Verifier.IContext context)
+        public LargeFileVerifier(Verifier.Context context)
         {
             m_Context = context;
         }

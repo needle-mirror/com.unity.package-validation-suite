@@ -12,10 +12,10 @@ namespace PvpXray
         public static string[] Checks => new[] { "PVP-27-1" };
         public static int PassCount => 1;
 
-        readonly Verifier.IContext m_Context;
+        readonly Verifier.Context m_Context;
         readonly Dictionary<string, string> m_PathByGuid;
 
-        public MetaGuidVerifier(Verifier.IContext context)
+        public MetaGuidVerifier(Verifier.Context context)
         {
             m_Context = context;
             m_PathByGuid = new Dictionary<string, string>();

@@ -11,8 +11,6 @@ using UnityEngine;
 using UnityEngine.Networking;
 using UnityEngine.Profiling;
 using UnityEditor.PackageManager.ValidationSuite.ValidationTests;
-using System.Security.Cryptography;
-using System.Text;
 using PvpXray;
 
 namespace UnityEditor.PackageManager.ValidationSuite
@@ -404,12 +402,7 @@ namespace UnityEditor.PackageManager.ValidationSuite
             const string expectedHashedSecret = "e7b9469389ff421a18b8cdde6e9e1a1cf12f941687f5183e8b99e937530a612d";
 
             // Check secret against hard-coded hashed secret
-            using (var sha256 = new SHA256Managed())
-            {
-                var secretBytes = Encoding.UTF8.GetBytes(secret);
-                var hashedSecret = XrayUtils.Hex(sha256.ComputeHash(secretBytes));
-                return hashedSecret == expectedHashedSecret;
-            }
+            return XrayUtils.Sha256(secret) == expectedHashedSecret;
         }
     }
 }

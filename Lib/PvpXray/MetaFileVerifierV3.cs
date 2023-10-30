@@ -1,6 +1,8 @@
 using System;
+using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
+using System.Text;
 
 namespace PvpXray
 {
@@ -12,17 +14,49 @@ namespace PvpXray
         public static string[] Checks => new[] { k_Check };
         public static int PassCount => 0;
 
-        public MetaFileVerifierV3(Verifier.IContext context)
+        // Derive directories from file paths. This assumes that there are no empty directories.
+        internal static List<PathEntry> GetFileAndDirectoryEntries(IEnumerable<string> files)
+        {
+            var fileEntries = files.Select(path => new PathEntry(path)).ToList();
+            var entries = fileEntries.ToList();
+            var seenDirectories = new HashSet<string>();
+            var pathBuilder = new StringBuilder();
+            foreach (var fileEntry in fileEntries)
+            {
+                if (fileEntry.Components.Length > 1)
+                {
+                    var componentsWithCase = fileEntry.PathWithCase.Split('/');
+                    for (var length = 1; length < componentsWithCase.Length; length++)
+                    {
+                        pathBuilder.Clear();
+                        pathBuilder.Append(componentsWithCase[0]);
+                        for (var index = 1; index < length; index++)
+                        {
+                            pathBuilder.Append("/");
+                            pathBuilder.Append(componentsWithCase[index]);
+                        }
+                        var directoryPath = pathBuilder.ToString();
+                        if (seenDirectories.Add(directoryPath))
+                        {
+                            entries.Add(new PathEntry(directoryPath, isDirectory: true));
+                        }
+                    }
+                }
+            }
+            return entries;
+        }
+
+        public MetaFileVerifierV3(Verifier.Context context)
         {
             // We need to know about directories since folder assets also have corresponding meta files.
-            var entries = MetaFileVerifier.GetFileAndDirectoryEntries(context.Files);
+            var entries = GetFileAndDirectoryEntries(context.Files);
 
             var minVersion = context.Manifest["unity"].IfPresent?.String;
             int i;
             var targetUnityRequiresMetaFilesInPluginDirs = minVersion == null || (
                 (i = minVersion.IndexOf('.')) != -1 &&
-                int.TryParse(minVersion.Substring(0, i), NumberStyles.Integer, CultureInfo.InvariantCulture, out var major) &&
-                int.TryParse(minVersion.Substring(i + 1), NumberStyles.Integer, CultureInfo.InvariantCulture, out var minor) &&
+                int.TryParse(minVersion.SpanOrSubstring(0, i), NumberStyles.Integer, CultureInfo.InvariantCulture, out var major) &&
+                int.TryParse(minVersion.SpanOrSubstring(i + 1), NumberStyles.Integer, CultureInfo.InvariantCulture, out var minor) &&
                 (major < 2020 || (major <= 2021 && minor < 3) || (major == 2022 && minor < 2))
             );
 

@@ -18,9 +18,9 @@ namespace PvpXray
 
         public static int PassCount => 1;
 
-        readonly Verifier.IContext m_Context;
+        readonly Verifier.Context m_Context;
 
-        public LicenseVerifier(Verifier.IContext context)
+        public LicenseVerifier(Verifier.Context context)
         {
             m_Context = context;
 

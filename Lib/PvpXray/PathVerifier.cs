@@ -95,7 +95,7 @@ namespace PvpXray
 
         public static int PassCount => 0;
 
-        public PathVerifier(Verifier.IContext context)
+        public PathVerifier(Verifier.Context context)
         {
             foreach (var path in context.Files)
             {

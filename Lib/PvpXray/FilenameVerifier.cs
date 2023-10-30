@@ -9,9 +9,9 @@ namespace PvpXray
         public static string[] Checks => new[] { "PVP-70-1", "PVP-71-1", "PVP-72-1", "PVP-73-1" };
         public static int PassCount => 1;
 
-        readonly Verifier.IContext m_Context;
+        readonly Verifier.Context m_Context;
 
-        public FilenameVerifier(Verifier.IContext context)
+        public FilenameVerifier(Verifier.Context context)
         {
             m_Context = context;
             CheckCollidingPaths(m_Context);
@@ -127,7 +127,7 @@ namespace PvpXray
             return false;
         }
 
-        static void CheckCollidingPaths(Verifier.IContext context)
+        static void CheckCollidingPaths(Verifier.Context context)
         {
             var entries = new Dictionary<string, List<string>>(context.Files.Count);
 

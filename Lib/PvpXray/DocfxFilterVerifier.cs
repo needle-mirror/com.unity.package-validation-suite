@@ -18,11 +18,11 @@ namespace PvpXray
         public static string[] Checks => new[] { "PVP-155-1", "PVP-156-1", "PVP-157-1" };
         public static int PassCount => 1;
 
-        readonly Verifier.IContext m_Context;
+        readonly Verifier.Context m_Context;
         bool m_DiscardNonStandardRuleErrors;
         List<string> m_NonStandardRuleErrors;
 
-        public DocfxFilterVerifier(Verifier.IContext context)
+        public DocfxFilterVerifier(Verifier.Context context)
         {
             m_Context = context;
         }

@@ -10,9 +10,9 @@ namespace PvpXray
         public static string[] Checks => new[] { "PVP-36-1" }; // No Git LFS pointer files
         public static int PassCount => 1;
 
-        readonly Verifier.IContext m_Context;
+        readonly Verifier.Context m_Context;
 
-        public GitLfsVerifier(Verifier.IContext context)
+        public GitLfsVerifier(Verifier.Context context)
         {
             m_Context = context;
         }

@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Net;
 using System.Reflection;
 using System.Runtime.ExceptionServices;
 using System.Text;
@@ -53,10 +54,34 @@ namespace PvpXray
 
     class VerifierContext
     {
-        public struct VerificationSetPackage
+        public class VerificationSetPackage
         {
-            public byte[] Manifest;
-            public string Sha1;
+            internal Verifier.PackageBaseline Baseline;
+            internal readonly PackageId Id;
+            public byte[] Manifest { get; }
+
+            public VerificationSetPackage(string sha1, byte[] manifest)
+            {
+                if (!XrayUtils.Sha1Regex.IsMatch(sha1)) throw new ArgumentException(nameof(sha1));
+
+                // Convert the manifest to string in "relaxed" mode; strict validation will happen elsewhere.
+                var manifestText = XrayUtils.DecodeUtf8Lax(manifest);
+
+                Baseline = new Verifier.PackageBaseline
+                {
+                    Sha1 = sha1,
+                };
+                Manifest = manifest;
+
+                try
+                {
+                    Baseline.Manifest = new Json(manifestText, null);
+                    Id = new PackageId(Baseline.Manifest);
+                }
+                catch (SimpleJsonException)
+                {
+                }
+            }
         }
 
         // Mandatory context (package under test)
@@ -421,20 +446,6 @@ namespace PvpXray
             public string Sha1;
         }
 
-        internal interface IContext
-        {
-            Func<string, string> GetXrayEnv { get; }
-            List<(string, string)> ManifestContextErrors { get; }
-            IReadOnlyList<string> Files { get; }
-            IPvpHttpClient HttpClient { get; }
-            Json Manifest { get; }
-            void AddError(string checkId, string error);
-            void Skip(string checkId, string reason);
-            bool DirectoryExists(string path);
-            void SetBlobBaseline(string name, string hash);
-            bool TryFetchPackageBaseline(PackageId package, out PackageBaseline baseline);
-        }
-
         internal struct CheckerMeta
         {
             public readonly Type Type;
@@ -474,6 +485,11 @@ namespace PvpXray
             internal readonly string[] Checks;
             internal readonly int PassCount;
 
+            internal CheckerSet(Type checker)
+                : this(new List<CheckerMeta> { new CheckerMeta(checker) })
+            {
+            }
+
             public CheckerSet(List<CheckerMeta> checkers)
             {
                 Checkers = checkers;
@@ -491,13 +507,12 @@ namespace PvpXray
             }
         }
 
-        class Context : IContext
+        internal class Context
         {
             public Func<string, string> GetXrayEnv { get; }
             public IReadOnlyList<string> Files { get; }
             public IPvpHttpClient HttpClient => m_HttpClient ?? throw new SkipAllException("offline_requested");
             public Json Manifest => m_Manifest ?? throw new FailAllException(m_ManifestError);
-            public ResultFileStub ResultFile { get; }
             public List<(string, string)> ManifestContextErrors { get; } = new List<(string, string)>();
 
             readonly HashSet<string> m_CurrentBatchChecks;
@@ -506,26 +521,15 @@ namespace PvpXray
             readonly string m_ManifestError;
             readonly HashSet<string> m_PreviousErrors;
             readonly Dictionary<string, Dictionary<string, object>> m_ProductionRegistryVersions = new Dictionary<string, Dictionary<string, object>>();
+            readonly ResultFileStub m_ResultFile;
             readonly Dictionary<PackageId, PackageBaseline> m_VerificationSetBaselines = new Dictionary<PackageId, PackageBaseline>();
+            readonly Dictionary<string, HashSet<PackageId>> m_EditorManifestPackages = new Dictionary<string, HashSet<PackageId>>();
 
-            public Context(VerifierContext verifierContext, CheckerSet checkerSet)
+            public Context(VerifierContext verifierContext, CheckerSet checkerSet, ResultFileStub resultFile)
             {
                 foreach (var pkg in verifierContext.VerificationSet ?? Enumerable.Empty<VerifierContext.VerificationSetPackage>())
                 {
-                    if (!XrayUtils.Sha1Regex.IsMatch(pkg.Sha1)) throw new InvalidOperationException("Bad verification set SHA-1: " + pkg.Sha1);
-
-                    // Convert the manifest to string in "relaxed" mode; strict validation will happen elsewhere.
-                    var text = Encoding.UTF8.GetString(pkg.Manifest);
-                    if (text.StartsWithOrdinal("\ufeff")) text = text.Substring(1);
-
-                    PackageId packageId;
-                    Json mani;
-                    try
-                    {
-                        mani = new Json(text, null);
-                        packageId = new PackageId(mani);
-                    }
-                    catch (SimpleJsonException)
+                    if (pkg.Baseline.Manifest == null)
                     {
                         // Ignore entries in the verification set with invalid JSON in their manifests.
                         continue;
@@ -533,11 +537,7 @@ namespace PvpXray
 
                     try
                     {
-                        m_VerificationSetBaselines.Add(packageId, new PackageBaseline
-                        {
-                            Manifest = mani,
-                            Sha1 = pkg.Sha1,
-                        });
+                        m_VerificationSetBaselines.Add(pkg.Id, pkg.Baseline);
                     }
                     catch (ArgumentException)
                     {
@@ -547,10 +547,10 @@ namespace PvpXray
                     }
                 }
 
-                ResultFile = new ResultFileStub();
+                m_ResultFile = resultFile;
                 foreach (var check in checkerSet.Checks)
                 {
-                    ResultFile.Results.Add(check, new CheckResult
+                    m_ResultFile.Results.Add(check, new CheckResult
                     {
                         Errors = new List<string>(),
                         SkipReason = null,
@@ -610,12 +610,69 @@ namespace PvpXray
                         throw new InvalidOperationException($"batch tried to add error with undeclared check ID {checkId}: {error}");
                     }
 
-                    var result = ResultFile.Results[checkId];
+                    var result = m_ResultFile.Results[checkId];
                     if (result.SkipReason == null)
                     {
                         result.Errors.Add(error);
                     }
                 }
+            }
+
+            static bool CanFetchProductionRegistryVersions(string packageName)
+            {
+                // Modules are only ever built-in, don't attempt queries for those.
+                // Also refuse to look up dependencies with invalid package names, as this could
+                // lead to HTTP requests for undesirable URLs.
+                return !packageName.StartsWithOrdinal(PackageId.UnityModuleNamePrefix) && PackageId.ValidName.IsMatch(packageName);
+            }
+
+            /// Look up NPM metadata for package name, which caller must ensure satisfies CanFetchProductionRegistryVersions.
+            /// Returns null on 404.
+            Dictionary<string, object> FetchProductionRegistryVersions(string packageName)
+            {
+                if (m_ProductionRegistryVersions.TryGetValue(packageName, out var versions)) return versions;
+
+                var url = "https://packages.unity.com/" + packageName;
+                var metadataJson = HttpClient.GetString(url, out var status);
+                if (status != 404)
+                {
+                    PvpHttpException.CheckHttpStatus(url, status, 200);
+
+                    try
+                    {
+                        var json = new Json(metadataJson, null);
+                        versions = json["versions"].RawObject;
+                    }
+                    catch (SimpleJsonException)
+                    {
+                        throw new SkipAllException("invalid_baseline");
+                    }
+                }
+
+                m_ProductionRegistryVersions[packageName] = versions;
+                return versions;
+            }
+
+            public void QuerySemVerProduction(string packageName, ref SemVerQuery query)
+            {
+                if (!CanFetchProductionRegistryVersions(packageName)) return;
+
+                var sb = new StringBuilder(100);
+                sb.Append("semver:production:");
+                sb.Append(packageName);
+                sb.Append(SemVerQuery.OperatorNames[(int)query.Operator]);
+                query.RefVersion.AppendTo(sb);
+                var baselineKey = sb.ToString();
+
+                var versions = FetchProductionRegistryVersions(packageName);
+                if (versions != null)
+                {
+                    foreach (var kv in versions) query.Consider(kv.Key);
+                }
+
+                foreach (var kv in m_VerificationSetBaselines) query.Consider(kv.Key.Version);
+
+                m_ResultFile.Baselines[baselineKey] = query.BestVersion == null ? "null" : $"\"{query.BestVersion}\"";
             }
 
             public void Skip(string checkId, string reason)
@@ -625,7 +682,7 @@ namespace PvpXray
                     throw new InvalidOperationException($"batch tried to skip undeclared check ID {checkId}: {reason}");
                 }
 
-                var result = ResultFile.Results[checkId];
+                var result = m_ResultFile.Results[checkId];
                 if (result.SkipReason == null)
                 {
                     result.Errors.Clear();
@@ -635,32 +692,29 @@ namespace PvpXray
 
             void SetBaseline(string id, string json)
             {
-                if (ResultFile.Baselines.TryGetValue(id, out var existing))
+                if (m_ResultFile.Baselines.TryGetValue(id, out var existing))
                 {
                     if (existing != json)
                         throw new InvalidOperationException($"multiple baseline values with same ID '{id}': {existing}, {json}");
                 }
                 else
                 {
-                    ResultFile.Baselines[id] = json;
+                    m_ResultFile.Baselines[id] = json;
                 }
             }
 
-            public void SetBlobBaseline(string id, string hash)
+            public void SetBlobBaseline(string id, byte[] buffer, int length)
             {
-                if (hash.Length != 64) throw new ArgumentException("invalid blob hash");
+                var hash = XrayUtils.Sha256(buffer, length);
                 SetBaseline($"blob:{id}", $"\"{hash}\"");
             }
 
             public bool TryFetchPackageBaseline(PackageId package, out PackageBaseline baseline)
             {
-                baseline.Manifest = null;
-                baseline.Sha1 = null;
+                baseline = default;
 
-                // Modules are only ever built-in, don't even emit a "null" baseline for those.
-                // Also refuse to look up dependencies with invalid package names, as this could
-                // lead to HTTP requests for undesirable URLs.
-                if (package.IsUnityModule || !PackageId.ValidName.IsMatch(package.Name)) return false;
+                // Don't even emit a "null" baseline for modules and other ineligible package names.
+                if (!CanFetchProductionRegistryVersions(package.Name)) return false;
 
                 if (m_VerificationSetBaselines == null) throw new SkipAllException("invalid_baseline");
                 if (m_VerificationSetBaselines.TryGetValue(package, out baseline))
@@ -669,28 +723,7 @@ namespace PvpXray
                     return true;
                 }
 
-                if (!m_ProductionRegistryVersions.TryGetValue(package.Name, out var versions))
-                {
-                    var url = "https://packages.unity.com/" + package.Name;
-                    var metadataJson = HttpClient.GetString(url, out var status);
-                    if (status != 404)
-                    {
-                        PvpHttpException.CheckHttpStatus(url, status, 200);
-
-                        try
-                        {
-                            var json = new Json(metadataJson, null);
-                            versions = m_ProductionRegistryVersions[package.Name] = json["versions"].RawObject;
-                        }
-                        catch (SimpleJsonException)
-                        {
-                            throw new SkipAllException("invalid_baseline");
-                        }
-                    }
-
-                    m_ProductionRegistryVersions[package.Name] = versions;
-                }
-
+                var versions = FetchProductionRegistryVersions(package.Name);
                 if (versions != null && versions.TryGetValue(package.Version, out var registryManifest))
                 {
                     baseline.Manifest = new Json(registryManifest, null);
@@ -712,6 +745,60 @@ namespace PvpXray
 
                 SetBaseline($"pkg:{package}", "null");
                 return false;
+            }
+
+            public bool TryFetchEditorManifestBaseline(string editorVersion, out IReadOnlyCollection<PackageId> editorManifestPackages)
+            {
+                if (!m_EditorManifestPackages.TryGetValue(editorVersion, out var packages))
+                {
+                    var url = "https://pkgprom-api.ds.unity3d.com/internal-api/editor-manifest/"
+                        + WebUtility.UrlEncode(editorVersion);
+                    var stream = HttpClient.GetStream(url, out var status);
+                    if (status == 404)
+                    {
+                        SetBaseline($"blob:editor_manifest:{editorVersion}", "null");
+                    }
+                    else
+                    {
+                        PvpHttpException.CheckHttpStatus(url, status, 200);
+
+                        XrayUtils.GetStreamArray(stream, out var editorManifestArray, out var editorManifestLength);
+                        SetBlobBaseline($"editor_manifest:{editorVersion}", editorManifestArray, editorManifestLength);
+
+                        string editorManifestJson;
+                        try
+                        {
+                            editorManifestJson = XrayUtils.Utf8Strict.GetString(editorManifestArray, 0, editorManifestLength);
+                        }
+                        catch (DecoderFallbackException)
+                        {
+                            throw new SkipAllException("invalid_baseline");
+                        }
+
+                        try
+                        {
+                            var json = new Json(editorManifestJson, null);
+                            packages = new HashSet<PackageId>();
+                            foreach (var pkg in json["packages"].Members)
+                            {
+                                var version = pkg["version"];
+                                if (version.IsPresent)
+                                {
+                                    packages.Add(new PackageId(pkg.Key, version.String));
+                                }
+                            }
+                        }
+                        catch (SimpleJsonException)
+                        {
+                            throw new SkipAllException("invalid_baseline");
+                        }
+                    }
+
+                    m_EditorManifestPackages[editorVersion] = packages;
+                }
+
+                editorManifestPackages = packages;
+                return packages != null;
             }
 
             /// Determine if the specified path exists in package and is a directory. Note that
@@ -781,18 +868,20 @@ namespace PvpXray
 
         readonly Context m_Context;
         readonly List<(IChecker, CheckerMeta)> m_Checkers;
+        readonly ResultFileStub m_ResultFile;
 
         internal Verifier(VerifierContext verifierContext, CheckerSet checkerSet)
         {
-            m_Context = new Context(verifierContext, checkerSet);
+            m_ResultFile = new ResultFileStub();
+            m_Context = new Context(verifierContext, checkerSet, m_ResultFile);
             m_Checkers = new List<(IChecker, CheckerMeta)>();
 
-            var parameterTypes = new[] { typeof(IContext) };
+            var parameterTypes = new[] { typeof(Context) };
             var parameterValues = new object[] { m_Context };
             foreach (var meta in checkerSet.Checkers)
             {
                 var constructor = meta.Type.GetConstructor(BindingFlags.Instance | BindingFlags.Public, null, parameterTypes, null)
-                    ?? throw new NotImplementedException($"{meta.Type} is missing required public constructor with Verifier.IContext parameter");
+                    ?? throw new NotImplementedException($"{meta.Type} is missing required public constructor with Verifier.Context parameter");
                 IChecker checker = null;
 
                 void CreateChecker()
@@ -840,16 +929,8 @@ namespace PvpXray
                 m_Context.RunBatch(meta.Checks, checker.Finish);
             }
 
-            return m_Context.ResultFile;
+            return m_ResultFile;
         }
-
-        // To be removed once upm-pvp is updated.
-        internal static ResultFileStub OneShot(IEnumerable<IPackageFile> files, IPvpHttpClient httpClient, CheckerSet checkerSet, Func<string, string> getXrayEnv = null)
-            => OneShot(new VerifierContext(files)
-            {
-                GetXrayEnv = getXrayEnv,
-                HttpClient = httpClient,
-            }, checkerSet, files);
 
         internal static ResultFileStub OneShot(VerifierContext context, CheckerSet checkerSet, IEnumerable<IPackageFile> files)
         {

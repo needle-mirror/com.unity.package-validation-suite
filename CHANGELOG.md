@@ -4,6 +4,14 @@ All notable changes to this package will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## [0.61.0-preview] - 2023-10-30
+- PVP: Performance improvements. (PETS-1424)
+- PVP: Remove PVP-26-{1,2} which were obsoleted in 0.50.0-preview and performed poorly. (PETS-1424)
+- PVP: Add x-ray check `PVP-160-1` to catch unavailable direct package dependencies. (PVS-171)
+- PVP: Cache HTTP requests made by x-ray checkers.
+- PVP: Add x-ray checks `PVP-{171,173,181}-1, catching incompatible changes to the package Unity min-version and dependencies. (PVS-189)
+- PVP: Add x-ray check iteration `PVP-106-2` that additionally disallows version 0.0.0 and missing version field. (PETS-1420)
+
 ## [0.60.0-preview] - 2023-10-13
 - PVP: Add x-ray checks `PVP-{161,162}-1` to catch certain package dependency errors. (PVS-188)
 - PVP: Now supports Unity 2018.4 or later (previously only supported 2019.2+).

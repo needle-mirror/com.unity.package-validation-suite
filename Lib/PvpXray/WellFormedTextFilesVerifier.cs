@@ -14,9 +14,9 @@ namespace PvpXray
         const byte k_UTF8ByteOrderMark2 = 0xbb;
         const byte k_UTF8ByteOrderMark3 = 0xbf;
 
-        readonly Verifier.IContext m_Context;
+        readonly Verifier.Context m_Context;
 
-        public WellFormedTextFilesVerifier(Verifier.IContext context)
+        public WellFormedTextFilesVerifier(Verifier.Context context)
         {
             m_Context = context;
         }

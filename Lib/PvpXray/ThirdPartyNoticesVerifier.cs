@@ -12,9 +12,9 @@ namespace PvpXray
         public static string[] Checks => new[] { "PVP-32-1" }; // Third-Party Notices.md file (US-0065)
         public static int PassCount => 1;
 
-        readonly Verifier.IContext m_Context;
+        readonly Verifier.Context m_Context;
 
-        public ThirdPartyNoticesVerifier(Verifier.IContext context)
+        public ThirdPartyNoticesVerifier(Verifier.Context context)
         {
             m_Context = context;
         }

@@ -8,16 +8,20 @@ namespace PvpXray
     /// In particular, Version does not need to be valid Semver.
     public struct PackageId
     {
+        public const string UnityModuleNamePrefix = "com.unity.modules.";
+
         /// Regex matching valid package names, based on the (ill-defined) NPM rules.
         /// Per NPM rules, such package names can be used in URLs without escaping.
         /// (The PackageId struct does not require conformance with this.)
         public static readonly Regex ValidName = new Regex("^[a-z0-9][-._a-z0-9]{0,213}$");
 
+        /// Regex matching valid SemVer (2.0.0) version string.
+        /// (The PackageId struct does not require conformance with this.)
+        public static readonly Regex ValidSemVer = new Regex(@"^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)(?:-((?:0|[1-9][0-9]*|[0-9]*[a-zA-Z-][0-9a-zA-Z-]*)(?:\.(?:0|[1-9][0-9]*|[0-9]*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\+([0-9a-zA-Z-]+(?:\.[0-9a-zA-Z-]+)*))?$");
+
         public string Id { get; }
         public string Name { get; }
         public string Version { get; }
-
-        public bool IsUnityModule => Name.StartsWithOrdinal("com.unity.modules.");
 
         public PackageId(string id)
         {

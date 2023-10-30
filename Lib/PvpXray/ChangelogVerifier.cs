@@ -22,9 +22,9 @@ namespace PvpXray
 
         public static int PassCount => 1;
 
-        readonly Verifier.IContext m_Context;
+        readonly Verifier.Context m_Context;
 
-        public ChangelogVerifier(Verifier.IContext context)
+        public ChangelogVerifier(Verifier.Context context)
         {
             m_Context = context;
 
@@ -96,7 +96,7 @@ namespace PvpXray
                 }
                 else
                 {
-                    if (!ManifestVerifier.SemVer.IsMatch(version))
+                    if (!PackageId.ValidSemVer.IsMatch(version))
                     {
                         AddErrorWithLocation("PVP-40-1", "version must be a valid SemVer version");
                     }

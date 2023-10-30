@@ -6,7 +6,7 @@ namespace PvpXray
 {
     class LifecycleVerifier : Verifier.IChecker
     {
-        public static string[] Checks => new[] { "PVP-106-1" };
+        public static string[] Checks => new[] { "PVP-106-1", "PVP-106-2" };
 
         public static int PassCount => 0;
 
@@ -14,13 +14,25 @@ namespace PvpXray
 
         readonly string m_Version;
 
-        public LifecycleVerifier(Verifier.IContext context)
+        public LifecycleVerifier(Verifier.Context context)
         {
-            m_Version = context.Manifest["version"].IfPresent?.String;
+            var versionJson = context.Manifest["version"];
+
+            try
+            {
+                m_Version = versionJson.String;
+            }
+            catch (SimpleJsonException e)
+            {
+                context.AddError("PVP-106-2", e.FullMessage);
+                m_Version = versionJson.IfPresent?.String;
+            }
 
             // if there is no version, no Lifecycle Tests can be run
             if (m_Version == null)
                 return;
+
+            if (m_Version == "0.0.0") context.AddError("PVP-106-2", "Version 0.0.0 is not allowed");
 
             var versionOptionalLabels = GetOptionalLabels();
 
@@ -40,29 +52,39 @@ namespace PvpXray
                 if (m_VersionOptionalLabels.EndsWithOrdinal("preview"))
                     return;
                 if (iteration == 0 || iteration > 999999)
-                    context.AddError("PVP-106-1", "Package Lifecycle v1 iteration must be number between 1 and 999999 (or absent)");
+                    AddErrorsForAll("Package Lifecycle v1 iteration must be number between 1 and 999999 (or absent)");
                 return;
             }
 
             if (tag != "pre" && tag != "exp")
             {
-                context.AddError("PVP-106-1", "Valid pre-release tags are \"exp[-feature].N\" and \"pre.N\"");
+                AddErrorsForAll("Valid pre-release tags are \"exp[-feature].N\" and \"pre.N\"");
                 return;
             }
 
             if (iteration < 1)
             {
-                context.AddError("PVP-106-1", "Iteration must be positive number");
+                AddErrorsForAll("Iteration must be positive number");
             }
 
             switch (tag)
             {
                 case "pre" when m_Version.StartsWithOrdinal("0"):
-                    context.AddError("PVP-106-1", "Major version 0 cannot have a pre-release tag");
+                    AddErrorsForAll("Major version 0 cannot have a pre-release tag");
                     break;
                 case "exp" when feature != null && feature.Length > 10:
-                    context.AddError("PVP-106-1", "Feature string must not exceed 10 characters");
+                    AddErrorsForAll("Feature string must not exceed 10 characters");
                     break;
+            }
+
+            return;
+
+            void AddErrorsForAll(string message)
+            {
+                foreach (var check in Checks)
+                {
+                    context.AddError(check, message);
+                }
             }
         }
 

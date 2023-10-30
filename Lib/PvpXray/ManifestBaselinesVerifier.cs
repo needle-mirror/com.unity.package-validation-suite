@@ -8,6 +8,7 @@ namespace PvpXray
     {
         public static string[] Checks => new[]
         {
+            "PVP-160-1", // Direct dependencies must have been promoted, if not built-in (and listed the editor manifest for the package's declared Unity min-version), or in the verification set.
             "PVP-161-1", // The editor min-version of recursive dependencies may not be higher than package's own min-version (ignoring built-in or missing packages).
             "PVP-162-1", // The recursive dependency chain of the package may not contain cycles (ignoring built-in or missing packages).
         };
@@ -19,6 +20,7 @@ namespace PvpXray
             public readonly string Minor;
 
             public bool IsAny => Major == null;
+            public string RequiresSuchAndSuch => IsAny ? "does not specify a minimum Unity version" : $"requires Unity {Expand(null)}";
 
             public UnityVersionRequirement(Json manifest)
             {
@@ -37,6 +39,34 @@ namespace PvpXray
             }
 
             public string Expand(string appendIfNoMinor) => Major == null ? null : Minor == null ? Major + appendIfNoMinor : $"{Major}.{Minor}";
+
+            public bool Equals(UnityVersionRequirement other) => Major == other.Major && Minor == other.Minor;
+            public override bool Equals(object obj) => obj is UnityVersionRequirement other && Equals(other);
+            public override int GetHashCode() => unchecked(((Major?.GetHashCode() ?? 0) * 397) ^ (Minor?.GetHashCode() ?? 0));
+            public static bool operator ==(UnityVersionRequirement left, UnityVersionRequirement right) => left.Equals(right);
+            public static bool operator !=(UnityVersionRequirement left, UnityVersionRequirement right) => !left.Equals(right);
+
+            public bool IsHigherThan(UnityVersionRequirement other, PackageId thisPackage, PackageId otherPackage, out string error, bool useLegacyMessageFormat = false)
+            {
+                error = null;
+                if (this.IsAny) return false;
+
+                if (other.IsAny)
+                {
+                    error = $"{thisPackage} {RequiresSuchAndSuch}, but {otherPackage} {other.RequiresSuchAndSuch}";
+                    return true;
+                }
+
+                if (NaturalCompare(this.Expand(".0f1"), other.Expand(".0f1")) > 0)
+                {
+                    error = useLegacyMessageFormat
+                        ? $"{thisPackage} {RequiresSuchAndSuch}, but {otherPackage} only requires {other.Expand(null)}"
+                        : $"{thisPackage} {RequiresSuchAndSuch}, but {otherPackage} {other.RequiresSuchAndSuch}";
+                    return true;
+                }
+
+                return false;
+            }
         }
 
         // .NET 7 built-in
@@ -84,7 +114,7 @@ namespace PvpXray
             return aRemaining - bRemaining;
         }
 
-        public ManifestBaselinesVerifier(Verifier.IContext context)
+        public ManifestBaselinesVerifier(Verifier.Context context)
         {
             _ = context.HttpClient; // Bail early if running offline.
 
@@ -93,12 +123,26 @@ namespace PvpXray
             var packageUnderTestMinUnity = new UnityVersionRequirement(context.Manifest);
             var path = new List<PackageId>();
 
-            void AddErrorsForAll(string message)
+            WalkDependencies(packageUnderTest);
+            return;
+
+            void CheckThatDirectDependencyIsBuiltIn(PackageId package)
             {
-                foreach (var check in Checks)
+                if (!packageUnderTestMinUnity.IsAny)
                 {
-                    context.AddError(check, message);
+                    var editorVersion = packageUnderTestMinUnity.Expand(".0f1");
+                    if (context.TryFetchEditorManifestBaseline(editorVersion, out var editorManifestPackages))
+                    {
+                        // Package found in editor manifest.
+                        if (editorManifestPackages.Contains(package)) return;
+                    }
+                    else
+                    {
+                        context.AddError("PVP-160-1", $"Editor manifest for Unity {editorVersion} is unavailable; built-in packages cannot be determined");
+                    }
                 }
+
+                context.AddError("PVP-160-1", package.ToString());
             }
 
             void WalkDependencies(PackageId package)
@@ -120,19 +164,16 @@ namespace PvpXray
                     Json manifest;
                     if (package == packageUnderTest) manifest = context.Manifest;
                     else if (context.TryFetchPackageBaseline(package, out var baseline)) manifest = baseline.Manifest;
-                    else return;
+                    else
+                    {
+                        if (path.Count == 2) CheckThatDirectDependencyIsBuiltIn(package);
+                        return;
+                    }
 
                     var minUnity = new UnityVersionRequirement(manifest);
-                    if (!minUnity.IsAny)
+                    if (minUnity.IsHigherThan(packageUnderTestMinUnity, package, packageUnderTest, out var error, useLegacyMessageFormat: true))
                     {
-                        if (packageUnderTestMinUnity.IsAny)
-                        {
-                            context.AddError("PVP-161-1", $"{package} requires Unity {minUnity.Expand(null)}, but {packageUnderTest} does not specify a minimum Unity version");
-                        }
-                        else if (NaturalCompare(minUnity.Expand(".0f1"), packageUnderTestMinUnity.Expand(".0f1")) > 0)
-                        {
-                            context.AddError("PVP-161-1", $"{package} requires Unity {minUnity.Expand(null)}, but {packageUnderTest} only requires {packageUnderTestMinUnity.Expand(null)}");
-                        }
+                        context.AddError("PVP-161-1", error);
                     }
 
                     foreach (var m in manifest["dependencies"].MembersIfPresent)
@@ -153,15 +194,16 @@ namespace PvpXray
                 }
                 catch (SimpleJsonException e)
                 {
-                    AddErrorsForAll($"{package}: {e.Message}");
+                    var message = $"{package}: {e.Message}";
+                    if (path.Count == 1) context.AddError("PVP-160-1", message);
+                    context.AddError("PVP-161-1", message);
+                    context.AddError("PVP-162-1", message);
                 }
                 finally
                 {
                     path.RemoveAt(path.Count - 1);
                 }
             }
-
-            WalkDependencies(packageUnderTest);
         }
 
         public void CheckItem(Verifier.PackageFile file, int passIndex) => throw new NotImplementedException();

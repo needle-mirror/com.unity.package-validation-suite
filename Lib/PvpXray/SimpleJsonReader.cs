@@ -303,7 +303,7 @@ namespace PvpXray
 
             if (('0' <= c && c <= '9') || c == '-')
             {
-                var num = json.Substring(idx, endV - idx);
+                var num = json.SpanOrSubstring(idx, endV - idx);
                 if (double.TryParse(num, NumberStyles.Float, CultureInfo.InvariantCulture, out var result))
                 {
                     value = result;

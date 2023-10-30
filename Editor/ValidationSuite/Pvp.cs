@@ -72,7 +72,7 @@ namespace UnityEditor.PackageManager.ValidationSuite
             var package = new FileSystemPackage(input.Package.path, input.Manifest);
             var resultFileStub = Verifier.OneShot(new VerifierContext(package)
             {
-                HttpClient = Utilities.k_HttpClient,
+                HttpClient = new PvpHttpClient(Utilities.VSuiteName, cache: true),
                 VerificationSet = input.VerificationSet,
             }, Verifier.CheckerSet.PvsCheckers, package);
 
@@ -305,11 +305,10 @@ namespace UnityEditor.PackageManager.ValidationSuite
                 }
 
                 verificationSetIds.Add(new PackageId(pkg.packageId));
-                m_VerificationSet.Add(new VerifierContext.VerificationSetPackage
-                {
-                    Manifest = ReadTarFile(tarballPath, "package/package.json"),
-                    Sha1 = XrayUtils.Sha1(File.Open(tarballPath, FileMode.Open, FileAccess.Read)),
-                });
+                m_VerificationSet.Add(new VerifierContext.VerificationSetPackage(
+                    manifest: ReadTarFile(tarballPath, "package/package.json"),
+                    sha1: XrayUtils.Sha1(File.Open(tarballPath, FileMode.Open, FileAccess.Read))
+                ));
             }
         }
 

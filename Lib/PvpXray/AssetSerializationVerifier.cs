@@ -7,9 +7,9 @@ namespace PvpXray
         public static string[] Checks => new[] { "PVP-37-1" }; // No Unity assets using binary serialization
         public static int PassCount => 1;
 
-        readonly Verifier.IContext m_Context;
+        readonly Verifier.Context m_Context;
 
-        public AssetSerializationVerifier(Verifier.IContext context)
+        public AssetSerializationVerifier(Verifier.Context context)
         {
             m_Context = context;
         }

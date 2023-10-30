@@ -75,7 +75,7 @@ namespace PvpXray
             (new[] { "version" }, IsString),
         };
 
-        public ManifestTypeVerifier(Verifier.IContext context)
+        public ManifestTypeVerifier(Verifier.Context context)
         {
             var manifest = context.Manifest;
 
@@ -89,7 +89,7 @@ namespace PvpXray
             }
         }
 
-        static void ValidateAllowedProperties(IEnumerable<Json> members, List<string> location, Verifier.IContext context)
+        static void ValidateAllowedProperties(IEnumerable<Json> members, List<string> location, Verifier.Context context)
         {
             foreach (var member in members)
             {

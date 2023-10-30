@@ -1,5 +1,3 @@
-using System.Security.Cryptography;
-
 namespace PvpXray
 {
     class PackageStarterKitVerifier : Verifier.IChecker
@@ -7,19 +5,11 @@ namespace PvpXray
         public static string[] Checks => new[] { "PVP-35-1" }; // No unmodified Package Starter Kit files
         public static int PassCount => 1;
 
-        readonly Verifier.IContext m_Context;
+        readonly Verifier.Context m_Context;
 
-        public PackageStarterKitVerifier(Verifier.IContext context)
+        public PackageStarterKitVerifier(Verifier.Context context)
         {
             m_Context = context;
-        }
-
-        static string Sha1Hash(byte[] buffer)
-        {
-            using (var hasher = SHA1.Create())
-            {
-                return XrayUtils.Hex(hasher.ComputeHash(buffer));
-            }
         }
 
         bool IsUnmodifiedPackageStarterKitFile(Verifier.PackageFile file)
@@ -49,7 +39,7 @@ namespace PvpXray
             // https://github.cds.internal.unity3d.com/unity/com.unity.package-starter-kit/blob/e72985bcd7d88ffd61e50e3b31af5426e83833c0/Documentation%7E/images/example.png
             if (entry.Filename == "example.png")
             {
-                if (file.Size == 52261 && Sha1Hash(file.Content) == "071942eeb2ef55620e2514d0377d640f7c966a96") return true;
+                if (file.Size == 52261 && XrayUtils.Sha1(file.Content) == "071942eeb2ef55620e2514d0377d640f7c966a96") return true;
                 // https://github.cds.internal.unity3d.com/unity/com.unity.package-starter-kit/commit/5ac36739360d4ec396726f40c5ba64f6465efe01
                 if (file.Size == 1) return true;
             }

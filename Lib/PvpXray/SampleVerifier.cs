@@ -11,7 +11,7 @@ namespace PvpXray
 
         const string k_Manifest = "package.json";
 
-        readonly Verifier.IContext m_Context;
+        readonly Verifier.Context m_Context;
         bool m_HasSamplesDir;
         bool m_HasSamplesTildeDir;
         readonly Dictionary<string, SampleEntry> m_SamplesByDir;
@@ -24,7 +24,7 @@ namespace PvpXray
             public string Definition => JsonFilePath ?? $"{k_Manifest}: {Json.Path}";
         }
 
-        public SampleVerifier(Verifier.IContext context)
+        public SampleVerifier(Verifier.Context context)
         {
             m_Context = context;
 
