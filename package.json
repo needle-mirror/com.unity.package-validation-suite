@@ -1,25 +1,25 @@
 {
   "name": "com.unity.package-validation-suite",
   "displayName": "Package Validation Suite",
-  "version": "0.61.0-preview",
+  "version": "0.62.0-preview",
   "unity": "2018.4",
   "description": "Unity Package Manager validation suite, used to evaluate a package's integrity before it's considered for publishing.  This is a Unity internal tool at the moment, no support will be provided for this package.",
   "dependencies": {
     "com.unity.nuget.mono-cecil": "0.1.6-preview.2"
   },
   "relatedPackages": {
-    "com.unity.package-validation-suite.tests": "0.61.0-preview"
+    "com.unity.package-validation-suite.tests": "0.62.0-preview"
   },
   "_upm": {
-    "changelog": "- PVP: Performance improvements. (PETS-1424)\n- PVP: Remove PVP-26-{1,2} which were obsoleted in 0.50.0-preview and performed poorly. (PETS-1424)\n- PVP: Add x-ray check `PVP-160-1` to catch unavailable direct package dependencies. (PVS-171)\n- PVP: Cache HTTP requests made by x-ray checkers.\n- PVP: Add x-ray checks `PVP-{171,173,181}-1, catching incompatible changes to the package Unity min-version and dependencies. (PVS-189)\n- PVP: Add x-ray check iteration `PVP-106-2` that additionally disallows version 0.0.0 and missing version field. (PETS-1420)"
+    "changelog": "- PVP: Remove old `PVP-{90,91,92}-1` NDA checks in favor of new NDA checks in upm-pvp. (PETS-1412)"
   },
   "upmCi": {
-    "footprint": "edf02ee6454b6b8b69fc19b94f69fb4daf0091be"
+    "footprint": "43a0c80ae8be901a620a4392286a0d25e7e87b89"
   },
-  "documentationUrl": "https://docs.unity3d.com/Packages/com.unity.package-validation-suite@0.61/manual/index.html",
+  "documentationUrl": "https://docs.unity3d.com/Packages/com.unity.package-validation-suite@0.62/manual/index.html",
   "repository": {
     "url": "https://github.cds.internal.unity3d.com/unity/com.unity.package-validation-suite.git",
     "type": "git",
-    "revision": "4d7af156a8ddd21d2e05220f4797ba3ba1b3d2d4"
+    "revision": "3bdb993286d96c0823d4ae17b22cde87ef2a5018"
   }
 }

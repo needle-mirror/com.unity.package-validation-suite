@@ -618,6 +618,11 @@ namespace PvpXray
                 }
             }
 
+            public void AddErrorForAll(string error)
+            {
+                foreach (var checkId in m_CurrentBatchChecks) AddError(checkId, error);
+            }
+
             static bool CanFetchProductionRegistryVersions(string packageName)
             {
                 // Modules are only ever built-in, don't attempt queries for those.
@@ -823,10 +828,7 @@ namespace PvpXray
                 }
                 catch (FailAllException e)
                 {
-                    foreach (var check in checks)
-                    {
-                        AddError(check, e.Message);
-                    }
+                    AddErrorForAll(e.Message);
                 }
                 catch (PvpHttpException)
                 {
@@ -837,24 +839,15 @@ namespace PvpXray
                 }
                 catch (SimpleJsonException e) when (e.PackageFilePath != null)
                 {
-                    foreach (var check in checks)
-                    {
-                        AddError(check, e.FullMessage);
-                    }
+                    AddErrorForAll(e.FullMessage);
                 }
                 catch (YamlParseException e) when (e.PackageFilePath != null)
                 {
-                    foreach (var check in checks)
-                    {
-                        AddError(check, e.FullMessage);
-                    }
+                    AddErrorForAll(e.FullMessage);
                 }
                 catch (YamlAccessException e) when (e.PackageFilePath != null)
                 {
-                    foreach (var check in checks)
-                    {
-                        AddError(check, e.FullMessage);
-                    }
+                    AddErrorForAll(e.FullMessage);
                 }
                 catch (SkipAllException e)
                 {

@@ -39,7 +39,7 @@ namespace PvpXray
 
                 if (isIndexOperation && !m_Parent.IsArray) // complex object key
                 {
-                    EncodeJsonString(Key, sb);
+                    Encode(Key, sb);
                 }
                 else
                 {
@@ -130,6 +130,6 @@ namespace PvpXray
 
         public Json this[string key] => new Json(RawObject.TryGetValue(key, out var result) ? result : Undefined.Undefined, this, key, PackageFilePath);
 
-        static void EncodeJsonString(string str, StringBuilder sb) => Yaml.Encode(str, sb);
+        internal static void Encode(string str, StringBuilder sb) => Yaml.Encode(str, sb);
     }
 }

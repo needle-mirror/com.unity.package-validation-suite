@@ -52,40 +52,32 @@ namespace PvpXray
                 if (m_VersionOptionalLabels.EndsWithOrdinal("preview"))
                     return;
                 if (iteration == 0 || iteration > 999999)
-                    AddErrorsForAll("Package Lifecycle v1 iteration must be number between 1 and 999999 (or absent)");
+                    context.AddErrorForAll("Package Lifecycle v1 iteration must be number between 1 and 999999 (or absent)");
                 return;
             }
 
             if (tag != "pre" && tag != "exp")
             {
-                AddErrorsForAll("Valid pre-release tags are \"exp[-feature].N\" and \"pre.N\"");
+                context.AddErrorForAll("Valid pre-release tags are \"exp[-feature].N\" and \"pre.N\"");
                 return;
             }
 
             if (iteration < 1)
             {
-                AddErrorsForAll("Iteration must be positive number");
+                context.AddErrorForAll("Iteration must be positive number");
             }
 
             switch (tag)
             {
                 case "pre" when m_Version.StartsWithOrdinal("0"):
-                    AddErrorsForAll("Major version 0 cannot have a pre-release tag");
+                    context.AddErrorForAll("Major version 0 cannot have a pre-release tag");
                     break;
                 case "exp" when feature != null && feature.Length > 10:
-                    AddErrorsForAll("Feature string must not exceed 10 characters");
+                    context.AddErrorForAll("Feature string must not exceed 10 characters");
                     break;
             }
 
             return;
-
-            void AddErrorsForAll(string message)
-            {
-                foreach (var check in Checks)
-                {
-                    context.AddError(check, message);
-                }
-            }
         }
 
         string GetOptionalLabels()
