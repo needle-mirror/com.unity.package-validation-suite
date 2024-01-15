@@ -73,6 +73,9 @@ namespace PvpXray
             // PVP-34-1: No file paths matching `*.zip*` glob
             ("PVP-34-1", e => !e.Path.Contains(".zip")),
 
+            // PVP-38-1: No assets in Resources system directory (US-0111)
+            ("PVP-38-1", e => e.IsHidden || !e.HasDirectoryComponent("resources")),
+
             // PVP-62-1: index.md filename must be spelled in lowercase
             ("PVP-62-1", e => e.Filename != "index.md" || e.Components[0] != "documentation~" || e.PathWithCase.EndsWithOrdinal("index.md")),
         };
