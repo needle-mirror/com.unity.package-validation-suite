@@ -4,6 +4,9 @@ All notable changes to this package will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## [0.64.0-preview] - 2024-01-25
+- PvpXray: Fix partially read HTTP response body on Windows when body is gzip/deflate compressed. (PETS-1462)
+
 ## [0.63.0-preview] - 2024-01-15
 - PVP: Add x-ray check `PVP-38-1` to catch use of Resources system directory. (PVS-194)
 

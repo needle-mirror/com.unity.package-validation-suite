@@ -176,6 +176,8 @@ namespace PvpXray
                 // around in the future, as was already done in Stevedore.)
                 var client = new HttpClient(new HttpClientHandler
                 {
+                    // Note that the fast path in the CacheEntry constructor is not taken when the
+                    // response body is decompressed since we don't know its size up front.
                     AutomaticDecompression = DecompressionMethods.GZip | DecompressionMethods.Deflate,
                 });
                 try
@@ -196,6 +198,14 @@ namespace PvpXray
                                 // ReSharper disable AccessToDisposedClosure -- Task.Run blocks until we're done
                                 // ReSharper disable AccessToModifiedClosure
                                 var response = await client.SendAsync(request, HttpCompletionOption.ResponseHeadersRead);
+
+#if UNITY_EDITOR_WIN
+                                // The automatic decompression implementation in Unity on Windows removes the
+                                // Content-Encoding header but retains the original Content-Length header. A potentially
+                                // decompressed response body will likely be larger than the reported content length.
+                                // Set content length to null to avoid partial read of response body. (PETS-1462)
+                                response.Content.Headers.ContentLength = null;
+#endif
 
                                 return (
                                     (int)response.StatusCode,
