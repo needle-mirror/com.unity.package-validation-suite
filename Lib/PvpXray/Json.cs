@@ -127,6 +127,7 @@ namespace PvpXray
 
         public bool Boolean => CheckKind<bool>();
         public string String => CheckKind<string>();
+        public double Number => CheckKind<double>();
 
         public Json this[string key] => new Json(RawObject.TryGetValue(key, out var result) ? result : Undefined.Undefined, this, key, PackageFilePath);
 
