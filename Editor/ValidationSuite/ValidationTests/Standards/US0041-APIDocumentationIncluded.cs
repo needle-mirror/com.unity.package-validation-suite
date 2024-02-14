@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using UnityEditor;
 using UnityEditor.Compilation;
 
 namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests.Standards
@@ -40,7 +41,12 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests.Standards
         static string[] CheckV1Impl(string packagePath, string filterYamlParameter, AssemblyInfo[] assemblyInfo, ValidationAssemblyInformation vai)
         {
             var monopath = Utilities.GetMonoPath();
-            var exePath = Path.GetFullPath("packages/com.unity.package-validation-suite/Bin~/FindMissingDocs/FindMissingDocs.exe");
+            var exePath = "packages/com.unity.package-validation-suite/Bin~/FindMissingDocs/FindMissingDocs.exe";
+#if UNITY_2021_2_OR_NEWER
+            exePath = FileUtil.GetPhysicalPath(exePath);
+#else
+            exePath = Path.GetFullPath(exePath);
+#endif
 
             List<string> excludePaths = new List<string>();
             excludePaths.AddRange(Directory.GetDirectories(packagePath, "*~", SearchOption.AllDirectories));
