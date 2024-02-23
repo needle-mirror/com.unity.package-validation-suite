@@ -199,8 +199,8 @@ namespace PvpXray
                                 // ReSharper disable AccessToModifiedClosure
                                 var response = await client.SendAsync(request, HttpCompletionOption.ResponseHeadersRead);
 
-#if UNITY_EDITOR_WIN
-                                // The automatic decompression implementation in Unity on Windows removes the
+#if UNITY_EDITOR
+                                // The automatic decompression implementation in some versions of Unity removes the
                                 // Content-Encoding header but retains the original Content-Length header. A potentially
                                 // decompressed response body will likely be larger than the reported content length.
                                 // Set content length to null to avoid partial read of response body. (PETS-1462)
