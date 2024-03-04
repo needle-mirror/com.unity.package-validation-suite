@@ -101,7 +101,7 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests.Standards
 
         private readonly string[] internalExceptionRegexFileList =
         {
-            @"^burst-lld-\d+-hostwin\.exe$" // required for com.unity.burst, valid examples are "burst-lld-14-hostwin.exe" or "burst-lld-15-hostwin.exe"
+            @"^burst-lld-\d+-hostwin(-arm64)?\.exe$", // required for com.unity.burst, valid examples are "burst-lld-14-hostwin.exe" or "burst-lld-15-hostwin-arm64.exe"
         };
 
         private readonly string[] restrictedFileList =

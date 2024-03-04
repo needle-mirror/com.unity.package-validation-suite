@@ -1,25 +1,25 @@
 {
   "name": "com.unity.package-validation-suite",
   "displayName": "Package Validation Suite",
-  "version": "0.68.0-preview",
+  "version": "0.69.0-preview",
   "unity": "2018.4",
   "description": "Unity Package Manager validation suite, used to evaluate a package's integrity before it's considered for publishing.  This is a Unity internal tool at the moment, no support will be provided for this package.",
   "dependencies": {
     "com.unity.nuget.mono-cecil": "0.1.6-preview.2"
   },
   "relatedPackages": {
-    "com.unity.package-validation-suite.tests": "0.68.0-preview"
+    "com.unity.package-validation-suite.tests": "0.69.0-preview"
   },
   "_upm": {
-    "changelog": "- PvpXray: Fix partially read HTTP response body when body is gzip/deflate compressed in some version of Unity (all platforms)."
+    "changelog": "- Allow Burst lld binaries for Windows Arm64, e.g. burst-lld-16-hostwin-arm64.exe."
   },
   "upmCi": {
-    "footprint": "4606dcb665fefe8e2b7f5a5d01f3d8d693db5f52"
+    "footprint": "4a18402abe39608525da79a97038e5fab573b9e8"
   },
-  "documentationUrl": "https://docs.unity3d.com/Packages/com.unity.package-validation-suite@0.68/manual/index.html",
+  "documentationUrl": "https://docs.unity3d.com/Packages/com.unity.package-validation-suite@0.69/manual/index.html",
   "repository": {
     "url": "https://github.cds.internal.unity3d.com/unity/com.unity.package-validation-suite.git",
     "type": "git",
-    "revision": "e087fdd2bc7d9280791ccffbd60e574f60f041dc"
+    "revision": "297746ea44f76a94b9c5a7a7e9d8fc2c1b7fd123"
   }
 }

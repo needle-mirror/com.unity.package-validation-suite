@@ -861,6 +861,8 @@ namespace PvpXray
 
         readonly Context m_Context;
         readonly List<(IChecker, CheckerMeta)> m_Checkers;
+        readonly int m_PassCount;
+        int m_PassIndex;
         readonly ResultFileStub m_ResultFile;
 
         internal Verifier(VerifierContext verifierContext, CheckerSet checkerSet)
@@ -868,6 +870,7 @@ namespace PvpXray
             m_ResultFile = new ResultFileStub();
             m_Context = new Context(verifierContext, checkerSet, m_ResultFile);
             m_Checkers = new List<(IChecker, CheckerMeta)>();
+            m_PassCount = checkerSet.PassCount;
 
             var parameterTypes = new[] { typeof(Context) };
             var parameterValues = new object[] { m_Context };
@@ -895,34 +898,65 @@ namespace PvpXray
                 // calling CheckItem or Finish on the checker.
                 if (checker != null)
                 {
-                    m_Checkers.Add((checker, meta));
+                    // Finish checker immediately if it requires no passes so
+                    // it can be garbage collected.
+                    if (meta.PassCount == 0)
+                    {
+                        m_Context.RunBatch(meta.Checks, checker.Finish);
+                    }
+                    else
+                    {
+                        m_Checkers.Add((checker, meta));
+                    }
                 }
             }
         }
 
         /// file.Content must be disposed by the caller and is assumed to be a read-only
         /// non-seekable stream that is only valid for the duration of this method call.
-        internal void CheckItem(IPackageFile file, int passIndex)
+        internal void CheckItem(IPackageFile file)
         {
+            if (m_PassIndex == m_PassCount)
+            {
+                throw new InvalidOperationException("All passes already finished");
+            }
+
             var checkerFile = new PackageFile(file);
 
             foreach (var (checker, meta) in m_Checkers)
             {
-                if (passIndex < meta.PassCount)
+                m_Context.RunBatch(meta.Checks, () => checker.CheckItem(checkerFile, m_PassIndex));
+            }
+        }
+
+        internal void FinishPass()
+        {
+            m_PassIndex++;
+
+            // Finish checkers that have completed all their passes, and clear
+            // their references so they can be garbage collected.
+            for (var i = m_Checkers.Count - 1; i >= 0; i--)
+            {
+                var (checker, meta) = m_Checkers[i];
+                if (meta.PassCount <= m_PassIndex)
                 {
-                    m_Context.RunBatch(meta.Checks, () => checker.CheckItem(checkerFile, passIndex));
+                    m_Context.RunBatch(meta.Checks, checker.Finish);
+                    m_Checkers.RemoveAt(i);
                 }
             }
         }
 
-        internal ResultFileStub Finish()
+        internal ResultFileStub Result
         {
-            foreach (var (checker, meta) in m_Checkers)
+            get
             {
-                m_Context.RunBatch(meta.Checks, checker.Finish);
-            }
+                if (m_Checkers.Count != 0)
+                {
+                    throw new InvalidOperationException("Unfinished checkers remain");
+                }
 
-            return m_ResultFile;
+                return m_ResultFile;
+            }
         }
 
         internal static ResultFileStub OneShot(VerifierContext context, CheckerSet checkerSet, IEnumerable<IPackageFile> files)
@@ -933,11 +967,13 @@ namespace PvpXray
             {
                 foreach (var file in files)
                 {
-                    verifier.CheckItem(file, passIndex);
+                    verifier.CheckItem(file);
                 }
+
+                verifier.FinishPass();
             }
 
-            return verifier.Finish();
+            return verifier.Result;
         }
     }
 }
