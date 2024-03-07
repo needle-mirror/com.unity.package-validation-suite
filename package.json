@@ -1,25 +1,25 @@
 {
   "name": "com.unity.package-validation-suite",
   "displayName": "Package Validation Suite",
-  "version": "0.69.0-preview",
+  "version": "0.70.0-preview",
   "unity": "2018.4",
   "description": "Unity Package Manager validation suite, used to evaluate a package's integrity before it's considered for publishing.  This is a Unity internal tool at the moment, no support will be provided for this package.",
   "dependencies": {
     "com.unity.nuget.mono-cecil": "0.1.6-preview.2"
   },
   "relatedPackages": {
-    "com.unity.package-validation-suite.tests": "0.69.0-preview"
+    "com.unity.package-validation-suite.tests": "0.70.0-preview"
   },
   "_upm": {
-    "changelog": "- Allow Burst lld binaries for Windows Arm64, e.g. burst-lld-16-hostwin-arm64.exe."
+    "changelog": "- Add PVP-102-3, relaxing \".unity\" manifest property validation for Unity 6.\n- Fix bugs around handling Unity 6 version number."
   },
   "upmCi": {
-    "footprint": "4a18402abe39608525da79a97038e5fab573b9e8"
+    "footprint": "3438b0a11662eecdbe07709d368184075f2d0fb4"
   },
-  "documentationUrl": "https://docs.unity3d.com/Packages/com.unity.package-validation-suite@0.69/manual/index.html",
+  "documentationUrl": "https://docs.unity3d.com/Packages/com.unity.package-validation-suite@0.70/manual/index.html",
   "repository": {
     "url": "https://github.cds.internal.unity3d.com/unity/com.unity.package-validation-suite.git",
     "type": "git",
-    "revision": "297746ea44f76a94b9c5a7a7e9d8fc2c1b7fd123"
+    "revision": "6cbad3a76e17ee1ca76a5c7157eea2196e5e6431"
   }
 }

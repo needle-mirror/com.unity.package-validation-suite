@@ -4,6 +4,10 @@ All notable changes to this package will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## [0.70.0-preview] - 2024-03-07
+- Add PVP-102-3, relaxing ".unity" manifest property validation for Unity 6.
+- Fix bugs around handling Unity 6 version number.
+
 ## [0.69.0-preview] - 2024-03-04
 - Allow Burst lld binaries for Windows Arm64, e.g. burst-lld-16-hostwin-arm64.exe.
 

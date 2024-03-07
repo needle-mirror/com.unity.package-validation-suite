@@ -7,7 +7,7 @@ namespace UnityEditor.PackageManager.ValidationSuite
     static class UnityVersion
     {
         const string k_Major = @"(?<major>\d{1,4})";
-        const string k_Minor = @"(?<minor>[1-9])";
+        const string k_Minor = @"(?<minor>[0-9])";
         const string k_Patch = @"(?<update>\d|[1-9]\d*)";
         const string k_Build = @"(?<buildtype>[abfp])(?<buildnumber>[1-9]\d*)(-.*)?";
         static readonly string k_UnityVersionPattern = $@"^{k_Major}\.{k_Minor}(\.{k_Patch}({k_Build})?)?$";

@@ -197,7 +197,7 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests.Standards
             //      - ApiUpdater~/{Editor Version Without Alpha/Beta/RC/Final info} (ex: 2019.3)
             //      - ApiUpdater~/
             // first one found will be used.
-            var probingFolders = new[] {$"{UnityEngine.Application.unityVersion}", $"{Regex.Replace(UnityEngine.Application.unityVersion, @"(?<=20[1-5][0-9]\.\d{1,3})\.[0-9]{1,4}.*", string.Empty)}", "."};
+            var probingFolders = new[] {$"{UnityEngine.Application.unityVersion}", $"{Regex.Replace(UnityEngine.Application.unityVersion, @"(?<=[0-9]{4}\.\d{1,3})\.[0-9]{1,4}.*", string.Empty)}", "."};
             foreach (var path in probingFolders)
             {
                 var whitelistPath = Path.Combine(packagePath, $"ApiUpdater~/{path}/ValidationWhiteList.txt");
