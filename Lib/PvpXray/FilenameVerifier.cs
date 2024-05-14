@@ -83,7 +83,7 @@ namespace PvpXray
             if (HasSegmentsWithForbiddenName(file.Entry))
                 m_Context.AddError("PVP-71-1", $"{path}: reserved device filename");
 
-            if (file.Extension.HasFlags(FileExt.V1 | FileExt.V2) && !file.Extension.IsCanonical)
+            if (file.Extension.HasFlags(FileExt.V2) && !file.Extension.IsCanonical)
             {
                 var i = path.LastIndexOf('/');
                 var filename = path.Substring(i + 1, path.Length - file.Extension.Raw.Length - i - 1);
@@ -121,8 +121,8 @@ namespace PvpXray
                 if (i == -1) i = segment.Length;
                 if (i < 3 || i > 6) continue;
 
-                var name = segment.Substring(0, i);
-                if (k_ForbiddenFileNames.Contains(name)) return true;
+                var name = segment.Slice(0, i);
+                if (k_ForbiddenFileNames.TryIndexOf(name, out _)) return true;
             }
             return false;
         }

@@ -1,25 +1,25 @@
 {
   "name": "com.unity.package-validation-suite",
   "displayName": "Package Validation Suite",
-  "version": "0.70.0-preview",
+  "version": "0.71.0-preview",
   "unity": "2018.4",
   "description": "Unity Package Manager validation suite, used to evaluate a package's integrity before it's considered for publishing.  This is a Unity internal tool at the moment, no support will be provided for this package.",
   "dependencies": {
     "com.unity.nuget.mono-cecil": "0.1.6-preview.2"
   },
   "relatedPackages": {
-    "com.unity.package-validation-suite.tests": "0.70.0-preview"
+    "com.unity.package-validation-suite.tests": "0.71.0-preview"
   },
   "_upm": {
-    "changelog": "- Add PVP-102-3, relaxing \".unity\" manifest property validation for Unity 6.\n- Fix bugs around handling Unity 6 version number."
+    "changelog": "- PVP: Remove x-ray checks `PVP-{120,121,122,123,124,125}-1`, obsolete since v0.56.0-preview.\n- PVP: Fix `PVP-26-3` crash in packages with case collisions in paths.\n- PVP: Add x-ray check `PVP-26-4`, addressing several bugs in `PVP-26-3`.\n- PVP: Add x-ray check `PVP-39-1` to catch Git conflict markers in text files. (PETS-1484)\n- PVP: Add x-ray check `PVP-111-2` with stricter .repository.url validation. (PVS-196)\n- PVP: Add x-ray check `PVP-114-1` checking package .name and .type consistency. (PVS-204)\n- PVP: Add x-ray check `PVP-200-1` flagging unit tests in a non-test package. (PVS-201)\n- PVP: Determine _publish set_ (formerly _verification set_) from `pvpPublishSet` property in project manifest, if specified. (PETS-1481)\n- PVP: Only run PVP checks for _packages under test_, given by `pvpUnderTest` property in project manifest, if specified. (PETS-1481)"
   },
   "upmCi": {
-    "footprint": "3438b0a11662eecdbe07709d368184075f2d0fb4"
+    "footprint": "b43e5ef0a7f323468aa281320554e5a8d8221870"
   },
-  "documentationUrl": "https://docs.unity3d.com/Packages/com.unity.package-validation-suite@0.70/manual/index.html",
+  "documentationUrl": "https://docs.unity3d.com/Packages/com.unity.package-validation-suite@0.71/manual/index.html",
   "repository": {
     "url": "https://github.cds.internal.unity3d.com/unity/com.unity.package-validation-suite.git",
     "type": "git",
-    "revision": "6cbad3a76e17ee1ca76a5c7157eea2196e5e6431"
+    "revision": "54206c1bfa25ee9e5b7f4f75af3f0ad82cd180c0"
   }
 }

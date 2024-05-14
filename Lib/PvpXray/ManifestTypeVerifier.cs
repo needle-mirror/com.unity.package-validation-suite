@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 
 using Requirement = PvpXray.ManifestVerifier.Requirement;
 
@@ -11,28 +12,18 @@ namespace PvpXray
         public static string[] Checks => new[] { "PVP-107-2" };
         public static int PassCount => 0;
 
-        static Requirement IsBoolean => new Requirement() { Message = "must be a boolean", Func = json => json.IsBoolean };
-        static Requirement IsNumber => new Requirement() { Message = "must be a number", Func = json => json.IsNumber };
-        static Requirement IsString => new Requirement() { Message = "must be a string", Func = json => json.IsString };
-        static Requirement IsArrayOfString => new Requirement()
-        {
-            Message = "must be an array of string",
-            Func = json => json.IsArray && json.Elements.All(element => element.IsString)
-        };
-        static Requirement IsObjectOfString => new Requirement()
-        {
-            Message = "must be an object with string values",
-            Func = json => json.IsObject && json.Members.All(element => element.IsString)
-        };
-        static Requirement SamplesRequirement => new Requirement()
-        {
-            Message = "must be an array of objects with allowed string entries \"description\", \"displayName\", and \"path\" and allowed boolean entry \"interactiveImport\"",
-            Func = json =>
-                json.IsArray && json.Elements.All(element =>
-                    element.IsObject && element.Members.All(member =>
-                        new[] { "description", "displayName", "interactiveImport", "path" }.Contains(member.Key)
-                        && (member.Key == "interactiveImport" ? member.IsBoolean : member.IsString)))
-        };
+        static readonly Requirement IsBoolean = new Requirement("must be a boolean", json => json.IsBoolean);
+        static readonly Requirement IsNumber = new Requirement("must be a number", json => json.IsNumber);
+        static readonly Requirement IsString = new Requirement("must be a string", json => json.IsString);
+        static readonly Requirement IsArrayOfString = new Requirement("must be an array of string", json => json.IsArray && json.Elements.All(element => element.IsString));
+        static readonly Requirement IsObjectOfString = new Requirement("must be an object with string values", json => json.IsObject && json.Members.All(element => element.IsString));
+        static readonly Requirement SamplesRequirement = new Requirement(
+            "must be an array of objects with allowed string entries \"description\", \"displayName\", and \"path\" and allowed boolean entry \"interactiveImport\"",
+            json => json.IsArray && json.Elements.All(element =>
+                element.IsObject && element.Members.All(member =>
+                    new[] { "description", "displayName", "interactiveImport", "path" }.Contains(member.Key)
+                    && (member.Key == "interactiveImport" ? member.IsBoolean : member.IsString)))
+        );
 
         static readonly (string[], Requirement)[] k_AllowedProperties =
         {
@@ -91,6 +82,7 @@ namespace PvpXray
 
         static void ValidateAllowedProperties(IEnumerable<Json> members, List<string> location, Verifier.Context context)
         {
+            var scratch = new StringBuilder();
             foreach (var member in members)
             {
                 location.Add(member.Key);
@@ -121,10 +113,9 @@ namespace PvpXray
 
                 if (fullMatch.HasValue)
                 {
-                    var requirement = fullMatch.Value;
-                    if (!requirement.Func(member))
+                    if (fullMatch.Value.TryGetError(member, scratch, out var error))
                     {
-                        context.AddError("PVP-107-2", $"{member.Path}: {requirement.Message}");
+                        context.AddError("PVP-107-2", error);
                     }
                 }
                 else if (partialMatch)

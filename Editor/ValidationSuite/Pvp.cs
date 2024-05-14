@@ -26,7 +26,7 @@ static class Pvp
             Utilities.EnsureDirectoryExists("Library/pvp");
 
             var pvp = new PvpRunner();
-            foreach (var packageId in pvp.VerificationSetIds)
+            foreach (var packageId in pvp.UnderTestIds)
             {
                 var path = $"Library/pvp/{packageId.Name}.result.json";
                 Debug.Log($"Running PVP checks for {packageId}; results will be saved to {path}.");
@@ -73,7 +73,7 @@ namespace UnityEditor.PackageManager.ValidationSuite
             var resultFileStub = Verifier.OneShot(new VerifierContext(package)
             {
                 HttpClient = new PvpHttpClient(Utilities.VSuiteName, cache: true),
-                VerificationSet = input.VerificationSet,
+                PublishSet = input.PublishSet,
             }, Verifier.CheckerSet.PvsCheckers, package);
 
             foreach (var entry in resultFileStub.Results)
@@ -107,7 +107,7 @@ namespace UnityEditor.PackageManager.ValidationSuite
             public AssemblyInfo[] AssemblyInfo;
             public byte[] Manifest;
             public ManifestData Package;
-            public List<VerifierContext.VerificationSetPackage> VerificationSet;
+            public List<VerifierContext.PublishSetPackage> PublishSet;
         }
 
         public readonly struct Output
@@ -268,8 +268,9 @@ namespace UnityEditor.PackageManager.ValidationSuite
         readonly PackageInfo[] m_PackageInfos;
         readonly PackageInfo m_PvsPackageInfo;
         readonly List<IPvpChecker> m_Validations;
-        readonly List<VerifierContext.VerificationSetPackage> m_VerificationSet;
-        internal readonly IReadOnlyList<PackageId> VerificationSetIds;
+        readonly List<VerifierContext.PublishSetPackage> m_PublishSet;
+        readonly IReadOnlyList<PackageId> m_PublishSetIds;
+        internal readonly IReadOnlyList<PackageId> UnderTestIds;
 
         public PvpRunner()
         {
@@ -286,29 +287,52 @@ namespace UnityEditor.PackageManager.ValidationSuite
                 );
             }
 
-            var verificationSetIds = new List<PackageId>(m_PackageInfos.Length);
-            VerificationSetIds = verificationSetIds;
-            m_VerificationSet = new List<VerifierContext.VerificationSetPackage>();
+            var tarballPathsById = new Dictionary<PackageId, string>();
+            var tarballs = new HashSet<string>();
+            var tarballsExceptPvs = new HashSet<string>();
             foreach (var pkg in m_PackageInfos)
             {
                 var tarballPath = GetLocalTarballPath(pkg);
                 if (tarballPath == null) continue;
                 if (!File.Exists(tarballPath)) throw new InternalTestErrorException("Cannot locate package tarball: " + pkg.packageId);
+                tarballPathsById.Add(new PackageId(pkg.packageId), tarballPath);
+                tarballs.Add(pkg.name);
+                if (pkg.name != Utilities.VSuiteName) tarballsExceptPvs.Add(pkg.name);
+            }
 
-                // Don't check PVS unless PVS is the only local tarball package here.
-                if (VerificationSetIds.Count != 0 && pkg.name == Utilities.VSuiteName) continue;
-                if (VerificationSetIds.Count == 1 && VerificationSetIds[0].Name == Utilities.VSuiteName)
+            var projectManifest = new Json(XrayUtils.DecodeUtf8Lax(File.ReadAllBytes("Packages/manifest.json")), null);
+            var publishSet = projectManifest["pvpPublishSet"].IfPresent?.Elements.Select(e => e.String).ToHashSet()
+                ?? (tarballsExceptPvs.Count == 0 ? tarballs : tarballsExceptPvs);
+            if (!publishSet.IsSubsetOf(tarballs))
+            {
+                throw new InternalTestErrorException("Publish set packages are not tarball project dependencies: " + string.Join(", ", publishSet.Except(tarballs)));
+            }
+
+            var underTest = projectManifest["pvpUnderTest"].IfPresent?.Elements.Select(e => e.String).ToHashSet()
+                ?? publishSet;
+            if (!underTest.IsSubsetOf(publishSet))
+            {
+                throw new InternalTestErrorException("Packages under test are not in publish set: " + string.Join(", ", underTest.Except(publishSet)));
+            }
+
+            var publishSetIds = new List<PackageId>(publishSet.Count);
+            m_PublishSetIds = publishSetIds;
+            m_PublishSet = new List<VerifierContext.PublishSetPackage>();
+            var underTestIds = new List<PackageId>(underTest.Count);
+            UnderTestIds = underTestIds;
+            foreach (var entry in tarballPathsById.OrderBy(e => e.Key.Id, StringComparer.Ordinal))
+            {
+                var (id, tarballPath) = (entry.Key, entry.Value);
+                if (publishSet.Contains(id.Name))
                 {
-                    // Remove PVS again now we've found another package.
-                    verificationSetIds.RemoveAt(0);
-                    m_VerificationSet.RemoveAt(0);
-                }
+                    publishSetIds.Add(id);
+                    m_PublishSet.Add(new VerifierContext.PublishSetPackage(
+                        manifest: ReadTarFile(tarballPath, "package/package.json"),
+                        sha1: XrayUtils.Sha1(File.Open(tarballPath, FileMode.Open, FileAccess.Read))
+                    ));
 
-                verificationSetIds.Add(new PackageId(pkg.packageId));
-                m_VerificationSet.Add(new VerifierContext.VerificationSetPackage(
-                    manifest: ReadTarFile(tarballPath, "package/package.json"),
-                    sha1: XrayUtils.Sha1(File.Open(tarballPath, FileMode.Open, FileAccess.Read))
-                ));
+                    if (underTest.Contains(id.Name)) underTestIds.Add(id);
+                }
             }
         }
 
@@ -416,16 +440,20 @@ namespace UnityEditor.PackageManager.ValidationSuite
             onProgress?.Invoke(progressNow, progressMax);
 
             var checks = new Dictionary<string, CheckResult>();
-            var baselines = new Dictionary<string, string>();
             var package = VettingContext.GetManifest(GetPackageInfo(packageName).resolvedPath);
+
+            // Emit package baselines for all publish set packages, except the package under test.
+            var baselines = m_PublishSet
+                .Where(p => p.Id.Name != packageName)
+                .ToDictionary(p => $"pkg:{p.Id}", pkg => $"\"{pkg.Baseline.Sha1}\"");
 
             // Workaround for Packman rewriting the package manifest on disk in Unity 2023.2+.
             byte[] manifest = null;
-            for (var i = 0; i < VerificationSetIds.Count; i++)
+            for (var i = 0; i < m_PublishSetIds.Count; i++)
             {
-                if (VerificationSetIds[i].Name == packageName)
+                if (m_PublishSetIds[i].Name == packageName)
                 {
-                    manifest = m_VerificationSet[i].Manifest;
+                    manifest = m_PublishSet[i].Manifest;
                     break;
                 }
             }
@@ -435,7 +463,7 @@ namespace UnityEditor.PackageManager.ValidationSuite
                 AssemblyInfo = GetRelevantAssemblyInfo(package.path),
                 Manifest = manifest,
                 Package = package,
-                VerificationSet = m_VerificationSet,
+                PublishSet = m_PublishSet,
             };
             var output = new Output(checks, baselines);
 

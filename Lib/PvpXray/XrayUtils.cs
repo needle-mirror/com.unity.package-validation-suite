@@ -1,8 +1,15 @@
 using System;
+using System.Globalization;
 using System.IO;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.RegularExpressions;
+
+#if NET5_0_OR_GREATER
+using SpanOrString = System.ReadOnlySpan<char>;
+#else
+using SpanOrString = System.String;
+#endif
 
 namespace PvpXray
 {
@@ -15,6 +22,12 @@ namespace PvpXray
                 : base("A situation that should never occur nevertheless occurred.", innerException)
             {
             }
+        }
+
+        public static StringBuilder AppendAsJson(this StringBuilder sb, string str)
+        {
+            Yaml.Encode(str, sb);
+            return sb;
         }
 
         /// Return sub-span or substring, depending on .NET version, to avoid needless allocations.
@@ -82,6 +95,11 @@ namespace PvpXray
 
         public static string Sha256(byte[] buffer) => Sha256(buffer, buffer.Length);
         public static string Sha256(string text) => Sha256(Utf8Strict.GetBytes(text));
+
+        /// Strict parsing of non-negative integers (consisting of ASCII digits only, no leading zeros).
+        public static bool TryParseUint(SpanOrString text, out uint result)
+            => uint.TryParse(text, NumberStyles.None, CultureInfo.InvariantCulture, out result)
+                && (text.Length < 2 || text[0] != '0');
 
         /// Version of Encoding.UTF8 that throws on encoding errors instead of
         /// letting them pass silently with a replacement character.

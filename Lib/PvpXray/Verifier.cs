@@ -54,13 +54,13 @@ namespace PvpXray
 
     class VerifierContext
     {
-        public class VerificationSetPackage
+        public class PublishSetPackage
         {
             internal Verifier.PackageBaseline Baseline;
             internal readonly PackageId Id;
             public byte[] Manifest { get; }
 
-            public VerificationSetPackage(string sha1, byte[] manifest)
+            public PublishSetPackage(string sha1, byte[] manifest)
             {
                 if (!XrayUtils.Sha1Regex.IsMatch(sha1)) throw new ArgumentException(nameof(sha1));
 
@@ -92,7 +92,7 @@ namespace PvpXray
         // Optional context
         public Func<string, string> GetXrayEnv { get; set; }
         public IPvpHttpClient HttpClient { get; set; }
-        public List<VerificationSetPackage> VerificationSet { get; set; }
+        public List<PublishSetPackage> PublishSet { get; set; }
 
         public VerifierContext()
         {
@@ -135,8 +135,7 @@ namespace PvpXray
         // by hand, and which should therefore be checked for well-formedness.
         public const byte TextFile = 0x01;
         public const byte UnityYaml = 0x02; // Unity assets serialized as YAML with "%YAML " prefix in text mode.
-        public const byte V1 = 0x04;
-        public const byte V2 = 0x08;
+        public const byte V2 = 0x04;
 
         static readonly Dictionary<string, int> k_IndexByLowerExtension;
         static readonly string[] k_Canonical;
@@ -148,26 +147,26 @@ namespace PvpXray
                 ( "", 0 ),
                 ( ".asmdef", V2 | TextFile ),
                 ( ".asmref", V2 | TextFile ),
-                ( ".cginc", V1 | TextFile ),
-                ( ".compute", V1 | TextFile ),
-                ( ".cpp", V1 | TextFile ),
-                ( ".cs", V1 | TextFile ),
-                ( ".h", V1 | TextFile ),
-                ( ".hlsl", V1 | TextFile ),
+                ( ".cginc", V2 | TextFile ),
+                ( ".compute", V2 | TextFile ),
+                ( ".cpp", V2 | TextFile ),
+                ( ".cs", V2 | TextFile ),
+                ( ".h", V2 | TextFile ),
+                ( ".hlsl", V2 | TextFile ),
                 ( ".java", V2 | TextFile ),
-                ( ".js", V1 | TextFile ),
-                ( ".json", V1 | TextFile ),
+                ( ".js", V2 | TextFile ),
+                ( ".json", V2 | TextFile ),
                 ( ".m", V2 | TextFile ),
-                ( ".md", V1 | TextFile ),
+                ( ".md", V2 | TextFile ),
                 ( ".mm", V2 | TextFile ),
                 ( ".plist", V2 | TextFile ),
-                ( ".py", V1 | TextFile ),
-                ( ".shader", V1 | TextFile ),
-                ( ".txt", V1 | TextFile ),
-                ( ".uss", V1 | TextFile ),
-                ( ".uxml", V1 | TextFile ),
-                ( ".yaml", V1 | TextFile ),
-                ( ".yml", V1 | TextFile ),
+                ( ".py", V2 | TextFile ),
+                ( ".shader", V2 | TextFile ),
+                ( ".txt", V2 | TextFile ),
+                ( ".uss", V2 | TextFile ),
+                ( ".uxml", V2 | TextFile ),
+                ( ".yaml", V2 | TextFile ),
+                ( ".yml", V2 | TextFile ),
 
                 // Various common file extensions (20+ occurrences across a large sample of packages).
                 ( ".aar", V2 ),
@@ -318,8 +317,9 @@ namespace PvpXray
         public string Filename { get; }
         public bool IsDirectory { get; } // usually false, as by default, directories are not enumerated
         public bool IsHidden { get; }
-        /// <summary>Do not use (except for backwards compatibility). Incorrectly treats .tmp directories as hidden.</summary>
+        /// <summary>Do not use (except for backwards compatibility). Incorrectly treats plugin directories directories as importable.</summary>
         public bool IsHiddenLegacy { get; }
+        /// <summary>For specialized use only; prefer simply using <see cref="IsHidden"/>.</summary>
         public bool IsInsidePluginDirectory { get; }
         public string Path { get; }
         public string PathWithCase { get; }
@@ -327,7 +327,7 @@ namespace PvpXray
         public string DirectoryWithCase => Components.Length == 1 ? "" : PathWithCase.Substring(0, PathWithCase.Length - Filename.Length - 1);
         public string FilenameWithCase => PathWithCase.Substring(PathWithCase.Length - Filename.Length);
 
-        public PathEntry(string path, bool isDirectory = false)
+        public PathEntry(string path, bool targetUnityImportsPluginDirs, bool isDirectory = false)
         {
             // Note: avoid .NET Path APIs here; they are poorly documented and may have platform-specific quirks.
 
@@ -345,8 +345,7 @@ namespace PvpXray
             // to the patterns given here: https://docs.unity3d.com/Manual/SpecialFolders.html
             // (Implementation appears to be in Runtime/VirtualFileSystem/LocalFileSystem.h)
             var hasHiddenComponent = Components.Any(name => name[0] == '.' || name[name.Length - 1] == '~' || name == "cvs");
-            IsHiddenLegacy = hasHiddenComponent || m_Extension == ".tmp"; // bug: .tmp directories should not be considered hidden, only .tmp files
-            IsHidden = hasHiddenComponent || (!IsDirectory && m_Extension == ".tmp");
+            IsHiddenLegacy = hasHiddenComponent || (!IsDirectory && m_Extension == ".tmp");
 
             // As of 2023.1.0a24 and corresponding backports (UUM-9421), Unity will ignore
             // files inside directories with certain file extensions IF a plugin has been
@@ -361,6 +360,7 @@ namespace PvpXray
                     name.EndsWith(".bundle", StringComparison.OrdinalIgnoreCase) ||
                     name.EndsWith(".framework", StringComparison.OrdinalIgnoreCase) ||
                     name.EndsWith(".plugin", StringComparison.OrdinalIgnoreCase));
+            IsHidden = IsHiddenLegacy || (IsInsidePluginDirectory && !targetUnityImportsPluginDirs);
         }
 
         public bool HasComponent(params string[] components) => Components.Any(components.Contains);
@@ -378,10 +378,10 @@ namespace PvpXray
             readonly IPackageFile m_File;
             byte[] m_Content;
 
-            public PackageFile(IPackageFile file)
+            public PackageFile(IPackageFile file, bool targetUnityImportsPluginDirs)
             {
                 m_File = file;
-                Entry = new PathEntry(file.Path, isDirectory: false);
+                Entry = new PathEntry(file.Path, targetUnityImportsPluginDirs, isDirectory: false);
                 Path = file.Path;
                 Size = file.Size;
 
@@ -511,9 +511,11 @@ namespace PvpXray
         {
             public Func<string, string> GetXrayEnv { get; }
             public IReadOnlyList<string> Files { get; }
+            public IReadOnlyList<PathEntry> PathEntries { get; }
             public IPvpHttpClient HttpClient => m_HttpClient ?? throw new SkipAllException("offline_requested");
             public Json Manifest => m_Manifest ?? throw new FailAllException(m_ManifestError);
             public List<(string, string)> ManifestContextErrors { get; } = new List<(string, string)>();
+            public readonly bool TargetUnityImportsPluginDirs;
 
             readonly HashSet<string> m_CurrentBatchChecks;
             readonly IPvpHttpClient m_HttpClient;
@@ -522,27 +524,27 @@ namespace PvpXray
             readonly HashSet<string> m_PreviousErrors;
             readonly Dictionary<string, Dictionary<string, object>> m_ProductionRegistryVersions = new Dictionary<string, Dictionary<string, object>>();
             readonly ResultFileStub m_ResultFile;
-            readonly Dictionary<PackageId, PackageBaseline> m_VerificationSetBaselines = new Dictionary<PackageId, PackageBaseline>();
+            readonly Dictionary<PackageId, PackageBaseline> m_PublishSetBaselines = new Dictionary<PackageId, PackageBaseline>();
             readonly Dictionary<string, HashSet<PackageId>> m_EditorManifestPackages = new Dictionary<string, HashSet<PackageId>>();
 
             public Context(VerifierContext verifierContext, CheckerSet checkerSet, ResultFileStub resultFile)
             {
-                foreach (var pkg in verifierContext.VerificationSet ?? Enumerable.Empty<VerifierContext.VerificationSetPackage>())
+                foreach (var pkg in verifierContext.PublishSet ?? Enumerable.Empty<VerifierContext.PublishSetPackage>())
                 {
                     if (pkg.Baseline.Manifest == null)
                     {
-                        // Ignore entries in the verification set with invalid JSON in their manifests.
+                        // Ignore entries in the publish set with invalid JSON in their manifests.
                         continue;
                     }
 
                     try
                     {
-                        m_VerificationSetBaselines.Add(pkg.Id, pkg.Baseline);
+                        m_PublishSetBaselines.Add(pkg.Id, pkg.Baseline);
                     }
                     catch (ArgumentException)
                     {
-                        // Collision in package ID = ambiguous verification set. Give up on doing anything with it.
-                        m_VerificationSetBaselines = null;
+                        // Collision in package ID = ambiguous publish set. Give up on doing anything with it.
+                        m_PublishSetBaselines = null;
                         break;
                     }
                 }
@@ -590,6 +592,24 @@ namespace PvpXray
 
                     m_Manifest = new Json(text, "package.json");
                     m_ManifestError = null;
+
+                    try
+                    {
+                        var minVersion = m_Manifest["unity"].IfPresent?.String;
+                        int i;
+                        // The asset pipeline in Unity 2019.*, 2020.1, 2020.2, 2021.1, 2021.2, 2022.1
+                        // doesn't ignore Loadable Plugin Directories. Cf. PathEntry.IsHidden.
+                        TargetUnityImportsPluginDirs = minVersion == null || (
+                            (i = minVersion.IndexOf('.')) != -1 &&
+                            XrayUtils.TryParseUint(minVersion.SpanOrSubstring(0, i), out var major) &&
+                            XrayUtils.TryParseUint(minVersion.SpanOrSubstring(i + 1), out var minor) &&
+                            (major < 2020 || (major <= 2021 && minor < 3) || (major == 2022 && minor < 2))
+                        );
+                    }
+                    catch (SimpleJsonException)
+                    {
+                        TargetUnityImportsPluginDirs = false;
+                    }
                 }
                 catch (Exception e)
                 {
@@ -598,6 +618,8 @@ namespace PvpXray
                     ManifestContextErrors.Add(("PVP-100-1", m_ManifestError));
                     ManifestContextErrors.Add(("PVP-100-2", e is SimpleJsonException sje ? sje.FullMessage : "package.json: could not be read"));
                 }
+
+                PathEntries = Files.Select(p => new PathEntry(p, TargetUnityImportsPluginDirs)).ToList();
             }
 
             public void AddError(string checkId, string error)
@@ -675,7 +697,7 @@ namespace PvpXray
                     foreach (var kv in versions) query.Consider(kv.Key);
                 }
 
-                foreach (var kv in m_VerificationSetBaselines) query.Consider(kv.Key.Version);
+                foreach (var kv in m_PublishSetBaselines) query.Consider(kv.Key.Version);
 
                 m_ResultFile.Baselines[baselineKey] = query.BestVersion == null ? "null" : $"\"{query.BestVersion}\"";
             }
@@ -721,8 +743,8 @@ namespace PvpXray
                 // Don't even emit a "null" baseline for modules and other ineligible package names.
                 if (!CanFetchProductionRegistryVersions(package.Name)) return false;
 
-                if (m_VerificationSetBaselines == null) throw new SkipAllException("invalid_baseline");
-                if (m_VerificationSetBaselines.TryGetValue(package, out baseline))
+                if (m_PublishSetBaselines == null) throw new SkipAllException("invalid_baseline");
+                if (m_PublishSetBaselines.TryGetValue(package, out baseline))
                 {
                     SetBaseline($"pkg:{package}", $"\"{baseline.Sha1}\"");
                     return true;
@@ -921,7 +943,7 @@ namespace PvpXray
                 throw new InvalidOperationException("All passes already finished");
             }
 
-            var checkerFile = new PackageFile(file);
+            var checkerFile = new PackageFile(file, m_Context.TargetUnityImportsPluginDirs);
 
             foreach (var (checker, meta) in m_Checkers)
             {

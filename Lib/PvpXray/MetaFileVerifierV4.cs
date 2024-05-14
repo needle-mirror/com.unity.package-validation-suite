@@ -1,26 +1,25 @@
 using System;
 using System.Collections.Generic;
-using System.Globalization;
 using System.Linq;
 using System.Text;
 
 namespace PvpXray
 {
-    class MetaFileVerifierV3 : Verifier.IChecker
+    class MetaFileVerifierV4 : Verifier.IChecker
     {
-        const string k_Check = "PVP-26-3";
+        const string k_Check = "PVP-26-4";
         const string k_MetaExtension = ".meta";
 
         public static string[] Checks => new[] { k_Check };
         public static int PassCount => 0;
 
         // Derive directories from file paths. This assumes that there are no empty directories.
-        internal static List<PathEntry> GetFileAndDirectoryEntries(IReadOnlyList<PathEntry> fileEntries)
+        internal static List<PathEntry> GetFileAndDirectoryEntries(Verifier.Context context)
         {
-            var entries = fileEntries.ToList();
+            var entries = context.PathEntries.ToList();
             var seenDirectories = new HashSet<string>();
             var pathBuilder = new StringBuilder();
-            foreach (var fileEntry in fileEntries)
+            foreach (var fileEntry in context.PathEntries)
             {
                 if (fileEntry.Components.Length > 1)
                 {
@@ -37,7 +36,7 @@ namespace PvpXray
                         var directoryPath = pathBuilder.ToString();
                         if (seenDirectories.Add(directoryPath))
                         {
-                            entries.Add(new PathEntry(directoryPath, false, isDirectory: true));
+                            entries.Add(new PathEntry(directoryPath, context.TargetUnityImportsPluginDirs, isDirectory: true));
                         }
                     }
                 }
@@ -45,39 +44,23 @@ namespace PvpXray
             return entries;
         }
 
-        public MetaFileVerifierV3(Verifier.Context context)
+        public MetaFileVerifierV4(Verifier.Context context)
         {
             // We need to know about directories since folder assets also have corresponding meta files.
-            var entries = GetFileAndDirectoryEntries(context.PathEntries);
+            var entries = GetFileAndDirectoryEntries(context);
 
-            var minVersion = context.Manifest["unity"].IfPresent?.String;
-            int i;
-            var targetUnityRequiresMetaFilesInPluginDirs = minVersion == null || (
-                (i = minVersion.IndexOf('.')) != -1 &&
-                int.TryParse(minVersion.SpanOrSubstring(0, i), NumberStyles.Integer, CultureInfo.InvariantCulture, out var major) &&
-                int.TryParse(minVersion.SpanOrSubstring(i + 1), NumberStyles.Integer, CultureInfo.InvariantCulture, out var minor) &&
-                (major < 2020 || (major <= 2021 && minor < 3) || (major == 2022 && minor < 2))
-            );
-
-            Dictionary<string, PathEntry> entriesByPath;
-            try
-            {
-                entriesByPath = entries.ToDictionary(e => e.Path);
-            }
-            catch (ArgumentException)
-            {
-                throw new Verifier.FailAllException("case collision in package paths");
-            }
-
+            var entriesByPath = entries.ToDictionary(e => e.PathWithCase);
             foreach (var entry in entries)
             {
                 // ignore all files inside plugin directories, unless targeting old Unity version
-                if (!targetUnityRequiresMetaFilesInPluginDirs && entry.IsInsidePluginDirectory) continue;
+                // (This enables packages to bridge the gap between Unity versions requiring
+                // .meta files to be present inside plugin directories, and versions that don't.)
+                if (!context.TargetUnityImportsPluginDirs && entry.IsInsidePluginDirectory) continue;
 
                 if (entry.HasExtension(k_MetaExtension))
                 {
                     // ignore .meta files inside hidden directories (like Samples~)
-                    if (entry.Components.Length > 1 && new PathEntry(entry.DirectoryWithCase, false, isDirectory: true).IsHiddenLegacy) continue;
+                    if (entry.Components.Length > 1 && new PathEntry(entry.DirectoryWithCase, context.TargetUnityImportsPluginDirs, isDirectory: true).IsHidden) continue;
 
                     if (entry.IsDirectory)
                     {
@@ -85,12 +68,12 @@ namespace PvpXray
                     }
                     else
                     {
-                        var assetPath = entry.Path.Substring(0, entry.Path.Length - k_MetaExtension.Length);
+                        var assetPath = entry.PathWithCase.Substring(0, entry.PathWithCase.Length - k_MetaExtension.Length);
                         if (!entriesByPath.TryGetValue(assetPath, out var assetEntry))
                         {
                             context.AddError(k_Check, $"{entry.PathWithCase}: Meta file without corresponding asset");
                         }
-                        else if (assetEntry.IsHiddenLegacy)
+                        else if (assetEntry.IsHidden)
                         {
                             context.AddError(k_Check, $"{entry.PathWithCase}: Meta file for hidden asset");
                         }
@@ -100,9 +83,9 @@ namespace PvpXray
                         }
                     }
                 }
-                else if (!entry.IsHiddenLegacy)
+                else if (!entry.IsHidden)
                 {
-                    var metaPath = entry.Path + k_MetaExtension;
+                    var metaPath = entry.PathWithCase + k_MetaExtension;
                     if (!entriesByPath.ContainsKey(metaPath))
                     {
                         context.AddError(k_Check, $"{entry.PathWithCase}: Asset without corresponding meta file");

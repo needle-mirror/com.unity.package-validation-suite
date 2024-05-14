@@ -1,5 +1,3 @@
-using System;
-using System.Globalization;
 using System.Text;
 
 namespace PvpXray
@@ -55,16 +53,13 @@ namespace PvpXray
             var i = version.IndexOf('.');
             var j = version.IndexOf('.', i + 1);
             if (j == -1 || j >= len - 1) return false;
-            if ((i != 1 && version[0] == '0') ||
-                (j != i + 2 && version[i + 1] == '0') ||
-                (len != j + 2 && version[j + 1] == '0')) return false;
 
             var majorText = version.SpanOrSubstring(0, i);
             var minorText = version.SpanOrSubstring(i + 1, j - i - 1);
             var patchText = version.SpanOrSubstring(j + 1, len - j - 1);
-            return uint.TryParse(majorText, NumberStyles.None, CultureInfo.InvariantCulture, out triple.Major) &&
-                uint.TryParse(minorText, NumberStyles.None, CultureInfo.InvariantCulture, out triple.Minor) &&
-                uint.TryParse(patchText, NumberStyles.None, CultureInfo.InvariantCulture, out triple.Patch);
+            return XrayUtils.TryParseUint(majorText, out triple.Major) &&
+                XrayUtils.TryParseUint(minorText, out triple.Minor) &&
+                XrayUtils.TryParseUint(patchText, out triple.Patch);
         }
 
         public void AppendTo(StringBuilder sb)

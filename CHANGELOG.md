@@ -4,6 +4,17 @@ All notable changes to this package will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## [0.71.0-preview] - 2024-05-14
+- PVP: Remove x-ray checks `PVP-{120,121,122,123,124,125}-1`, obsolete since v0.56.0-preview.
+- PVP: Fix `PVP-26-3` crash in packages with case collisions in paths.
+- PVP: Add x-ray check `PVP-26-4`, addressing several bugs in `PVP-26-3`.
+- PVP: Add x-ray check `PVP-39-1` to catch Git conflict markers in text files. (PETS-1484)
+- PVP: Add x-ray check `PVP-111-2` with stricter .repository.url validation. (PVS-196)
+- PVP: Add x-ray check `PVP-114-1` checking package .name and .type consistency. (PVS-204)
+- PVP: Add x-ray check `PVP-200-1` flagging unit tests in a non-test package. (PVS-201)
+- PVP: Determine _publish set_ (formerly _verification set_) from `pvpPublishSet` property in project manifest, if specified. (PETS-1481)
+- PVP: Only run PVP checks for _packages under test_, given by `pvpUnderTest` property in project manifest, if specified. (PETS-1481)
+
 ## [0.70.0-preview] - 2024-03-07
 - Add PVP-102-3, relaxing ".unity" manifest property validation for Unity 6.
 - Fix bugs around handling Unity 6 version number.
@@ -12,7 +23,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Allow Burst lld binaries for Windows Arm64, e.g. burst-lld-16-hostwin-arm64.exe.
 
 ## [0.68.0-preview] - 2024-02-23
-- PvpXray: Fix partially read HTTP response body when body is gzip/deflate compressed in some version of Unity (all platforms).
+- PvpXray: Fix partially read HTTP response body when body is gzip/deflate compressed in some versions of Unity (all platforms).
 
 ## [0.67.0-preview] - 2024-02-20
 - Remove dependency on log4net.

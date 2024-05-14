@@ -39,7 +39,7 @@ namespace PvpXray
 
                 if (isIndexOperation && !m_Parent.IsArray) // complex object key
                 {
-                    Encode(Key, sb);
+                    sb.AppendAsJson(Key);
                 }
                 else
                 {
@@ -118,9 +118,16 @@ namespace PvpXray
             get
             {
                 var sb = new StringBuilder();
-                BuildPath(sb);
-                return sb.Length == 0 ? "." : sb.ToString();
+                AppendPathTo(sb);
+                return sb.ToString();
             }
+        }
+
+        internal void AppendPathTo(StringBuilder sb)
+        {
+            var i = sb.Length;
+            BuildPath(sb);
+            if (sb.Length == i) sb.Append('.');
         }
 
         public JsonObject RawObject => CheckKind<JsonObject>();
@@ -130,7 +137,5 @@ namespace PvpXray
         public double Number => CheckKind<double>();
 
         public Json this[string key] => new Json(RawObject.TryGetValue(key, out var result) ? result : Undefined.Undefined, this, key, PackageFilePath);
-
-        internal static void Encode(string str, StringBuilder sb) => Yaml.Encode(str, sb);
     }
 }

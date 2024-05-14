@@ -20,11 +20,8 @@ namespace PvpXray
         public static string[] Checks => new[] { "PVP-60-1", "PVP-61-1" };
         public static int PassCount => 1;
 
-        static List<PathEntry> PathEntries(IReadOnlyList<string> paths) =>
-            paths.Select(p => new PathEntry(p)).ToList();
-
-        static List<string> GetTopLevelDirectories(IReadOnlyList<string> paths) =>
-            PathEntries(paths).Select(e => e.DirectoryWithCase.Split('/')[0])
+        static List<string> GetTopLevelDirectories(IReadOnlyList<PathEntry> paths) =>
+            paths.Select(e => e.DirectoryWithCase.Split('/')[0])
                 .Where(p => !string.IsNullOrEmpty(p))
                 .Distinct().ToList();
 
@@ -38,7 +35,7 @@ namespace PvpXray
         {
             m_Context = context;
 
-            var topLevelDirectories = GetTopLevelDirectories(context.Files);
+            var topLevelDirectories = GetTopLevelDirectories(context.PathEntries);
 
             if (topLevelDirectories.HasMultipleDocumentationDirs()) context.AddError("PVP-60-1", "Only one documentation directory is permitted per package");
             if (topLevelDirectories.MissingRootUnityDocumentationDir()) context.AddError("PVP-60-1", "A folder named \"Documentation~\" is required to be present at the root of the package");

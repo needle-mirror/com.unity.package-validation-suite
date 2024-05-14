@@ -17,11 +17,11 @@ namespace PvpXray
         public void CheckItem(Verifier.PackageFile file, int passIndex)
         {
             // Ignore files without known Unity YAML filename extensions.
-            var isEligible = file.Extension.HasFlags(FileExt.V1 | FileExt.V2, FileExt.UnityYaml);
+            var isEligible = file.Extension.HasFlags(FileExt.V2, FileExt.UnityYaml);
             if (!isEligible) return;
 
             // Ignore hidden assets.
-            if (file.Entry.IsHidden) return;
+            if (file.Entry.IsHiddenLegacy) return;
 
             if (file.Size >= k_UnityYamlPrefix.Length)
             {

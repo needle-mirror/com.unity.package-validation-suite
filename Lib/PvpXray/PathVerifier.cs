@@ -74,7 +74,7 @@ namespace PvpXray
             ("PVP-34-1", e => !e.Path.Contains(".zip")),
 
             // PVP-38-1: No assets in Resources system directory (US-0111)
-            ("PVP-38-1", e => e.IsHidden || !e.HasDirectoryComponent("resources")),
+            ("PVP-38-1", e => e.IsHiddenLegacy || !e.HasDirectoryComponent("resources")),
 
             // PVP-62-1: index.md filename must be spelled in lowercase
             ("PVP-62-1", e => e.Filename != "index.md" || e.Components[0] != "documentation~" || e.PathWithCase.EndsWithOrdinal("index.md")),
@@ -100,14 +100,13 @@ namespace PvpXray
 
         public PathVerifier(Verifier.Context context)
         {
-            foreach (var path in context.Files)
+            foreach (var entry in context.PathEntries)
             {
-                var entry = new PathEntry(path);
                 foreach (var (check, isValid) in k_SinglePathValidations)
                 {
                     if (!isValid(entry))
                     {
-                        context.AddError(check, path);
+                        context.AddError(check, entry.PathWithCase);
                     }
                 }
             }

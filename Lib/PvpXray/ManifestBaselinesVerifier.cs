@@ -8,7 +8,7 @@ namespace PvpXray
     {
         public static string[] Checks => new[]
         {
-            "PVP-160-1", // Direct dependencies must have been promoted, if not built-in (and listed the editor manifest for the package's declared Unity min-version), or in the verification set.
+            "PVP-160-1", // Direct dependencies must have been promoted, if not built-in (and listed the editor manifest for the package's declared Unity min-version), or in the publish set.
             "PVP-161-1", // The editor min-version of recursive dependencies may not be higher than package's own min-version (ignoring built-in or missing packages).
             "PVP-162-1", // The recursive dependency chain of the package may not contain cycles (ignoring built-in or missing packages).
         };
