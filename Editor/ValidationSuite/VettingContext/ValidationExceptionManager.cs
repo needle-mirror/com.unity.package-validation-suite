@@ -64,13 +64,17 @@ namespace UnityEditor.PackageManager.ValidationSuite
 
                 // If there is an exception error specified, let's use it.
                 // If there isn't one specified, this is a test level exception, all errors for that test should be flagged as exceptions.
-                if (exceptions.ErrorExceptions != null)
-                    errorExceptionDictionary = exceptions.ErrorExceptions.ToDictionary(ex => string.IsNullOrWhiteSpace(ex.ExceptionMessage) ? (TestExceptionPrefix + ex.ValidationTest) : ex.ExceptionMessage);
+                foreach (var errorException in exceptions.ErrorExceptions ?? Enumerable.Empty<ValidationException>())
+                {
+                    AddValidationException(errorException, errorExceptionDictionary, filePath, topLevelKey: "ErrorExceptions");
+                }
 
                 // If there is an exception warning specified, let's use it.
                 // If there isn't one specified, this is a test level exception, all warning for that test should be flagged as exceptions.
-                if (exceptions.WarningExceptions != null)
-                    warningExceptionDictionary = exceptions.WarningExceptions.ToDictionary(ex => string.IsNullOrWhiteSpace(ex.ExceptionMessage) ? (TestExceptionPrefix + ex.ValidationTest) : ex.ExceptionMessage);
+                foreach (var warningException in exceptions.WarningExceptions ?? Enumerable.Empty<ValidationException>())
+                {
+                    AddValidationException(warningException, warningExceptionDictionary, filePath, topLevelKey: "WarningExceptions");
+                }
 
                 // Handle backwards compatibility for old format (renamed fields)
                 // Sadly JsonUtility.FromJson doesn't support the FormerlySerializedAs attribute (case 1119033)
@@ -92,9 +96,26 @@ namespace UnityEditor.PackageManager.ValidationSuite
                         PackageVersion = oldException.PackageVersion,
                     };
 
-                    var key = string.IsNullOrWhiteSpace(errorException.ExceptionMessage) ? (TestExceptionPrefix + errorException.ValidationTest) : errorException.ExceptionMessage;
-                    errorExceptionDictionary.Add(key, errorException);
+                    AddValidationException(errorException, errorExceptionDictionary, filePath, topLevelKey: "ErrorExceptions/Exceptions", exceptionMessageKey: "ExceptionMessage/ExceptionError");
                 }
+            }
+        }
+
+        static void AddValidationException(ValidationException validationException, Dictionary<string, ValidationException> exceptionDictionary, string filePath, string topLevelKey, string exceptionMessageKey = "ExceptionMessage")
+        {
+            var testLevel = string.IsNullOrWhiteSpace(validationException.ExceptionMessage);
+            var key = testLevel ? TestExceptionPrefix + validationException.ValidationTest : validationException.ExceptionMessage;
+
+            try
+            {
+                exceptionDictionary.Add(key, validationException);
+            }
+            catch (ArgumentException)
+            {
+                var message = testLevel
+                    ? $"Two entries with same .ValidationTest value not allowed: {validationException.ValidationTest}"
+                    : $"Two entries with same .{exceptionMessageKey} value not allowed: {validationException.ExceptionMessage}";
+                throw new InvalidOperationException($"{filePath}: .{topLevelKey}: {message}");
             }
         }
 

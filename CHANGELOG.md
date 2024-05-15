@@ -4,6 +4,9 @@ All notable changes to this package will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## [0.72.0-preview] - 2024-05-15
+- Improved error message when ValidationExceptions.json contains unsupported mutually exclusive validation exception entries. (PVS-198)
+
 ## [0.71.0-preview] - 2024-05-14
 - PVP: Remove x-ray checks `PVP-{120,121,122,123,124,125}-1`, obsolete since v0.56.0-preview.
 - PVP: Fix `PVP-26-3` crash in packages with case collisions in paths.
