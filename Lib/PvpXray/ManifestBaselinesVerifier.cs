@@ -11,6 +11,7 @@ namespace PvpXray
             "PVP-160-1", // Direct dependencies must have been promoted, if not built-in (and listed the editor manifest for the package's declared Unity min-version), or in the publish set.
             "PVP-161-1", // The editor min-version of recursive dependencies may not be higher than package's own min-version (ignoring built-in or missing packages).
             "PVP-162-1", // The recursive dependency chain of the package may not contain cycles (ignoring built-in or missing packages).
+            "PVP-164-1", // Manifest's Unity min-version must exist
         };
         public static int PassCount => 0;
 
@@ -121,7 +122,20 @@ namespace PvpXray
             var alreadyProcessed = new HashSet<PackageId>();
             var packageUnderTest = new PackageId(context.Manifest);
             var packageUnderTestMinUnity = new UnityVersionRequirement(context.Manifest);
+            var packageUnderTestMinUnityExpanded = packageUnderTestMinUnity.Expand(".0f1");
             var path = new List<PackageId>();
+
+            IReadOnlyCollection<PackageId> editorManifestPackages = null;
+            if (!packageUnderTestMinUnity.IsAny && !context.TryFetchEditorManifestBaseline(packageUnderTestMinUnityExpanded, out editorManifestPackages))
+            {
+                var major = packageUnderTestMinUnity.Major;
+                var i = major.IndexOf('.');
+                context.AddError("PVP-164-1",
+                    XrayUtils.TryParseUint(i == -1 ? major : major.SpanOrSubstring(0, i), out var number) &&
+                    (number <= 5 || (number >= 2000 && number < 2018) || (number == 2018 && major != "2018.4"))
+                        ? $"Unity Editor min-version {major} is too old; please require 2019.4 or later"
+                        : $"Unity Editor min-version {packageUnderTestMinUnityExpanded} does not (yet?) exist");
+            }
 
             WalkDependencies(packageUnderTest);
             return;
@@ -130,16 +144,11 @@ namespace PvpXray
             {
                 if (!packageUnderTestMinUnity.IsAny)
                 {
-                    var editorVersion = packageUnderTestMinUnity.Expand(".0f1");
-                    if (context.TryFetchEditorManifestBaseline(editorVersion, out var editorManifestPackages))
+                    if (editorManifestPackages == null)
                     {
-                        // Package found in editor manifest.
-                        if (editorManifestPackages.Contains(package)) return;
+                        context.AddError("PVP-160-1", $"Editor manifest for Unity {packageUnderTestMinUnityExpanded} is unavailable; built-in packages cannot be determined");
                     }
-                    else
-                    {
-                        context.AddError("PVP-160-1", $"Editor manifest for Unity {editorVersion} is unavailable; built-in packages cannot be determined");
-                    }
+                    else if (editorManifestPackages.Contains(package)) return;
                 }
 
                 context.AddError("PVP-160-1", package.ToString());

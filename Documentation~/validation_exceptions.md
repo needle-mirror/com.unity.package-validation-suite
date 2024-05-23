@@ -1,10 +1,6 @@
-Unity is a complex and highly customizable engine, and in some cases, the validation suite will flag errors incorrectly.
-While the Package Manager Infrastructure team fixes these issues, a mechanism exists to temporarily get your package validated.
+Validation errors and warnings can be exempted with a ValidationExceptions.json file inside the package such that they don't affect the validation result. Note that such validation exceptions might be flagged later on in the release process and require approval.
 
-## Current Conditions for using error exceptions:
-
-* The Package Manager Infrastructure team has been notified about the failure.
-* The Exception file is shipped with the package, for tracking purposes.
+Only validation errors have an impact on the overall validation result. Validation warnings are only shown in UI.
 
 
 ## Steps to include a validation error exception:
