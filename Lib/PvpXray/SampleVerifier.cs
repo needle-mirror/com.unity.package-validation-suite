@@ -6,7 +6,7 @@ namespace PvpXray
 {
     class SampleVerifier : Verifier.IChecker
     {
-        public static string[] Checks => new[] { "PVP-80-1", "PVP-81-1", "PVP-82-1" };
+        public static string[] Checks { get; } = { "PVP-80-1", "PVP-81-1", "PVP-82-1" };
         public static int PassCount => 1;
 
         const string k_Manifest = "package.json";
@@ -26,6 +26,7 @@ namespace PvpXray
 
         public SampleVerifier(Verifier.Context context)
         {
+            context.IsLegacyCheckerEmittingLegacyJsonErrors = true;
             m_Context = context;
 
             m_HasSamplesDir = false;
@@ -89,7 +90,11 @@ namespace PvpXray
                         m_Context.AddError("PVP-80-1", $"{entry.PathWithCase}: .sample.json file should not contain \"path\" key");
                     }
                 }
-                catch (Exception e) when (e is SimpleJsonException || e is Verifier.FailAllException)
+                catch (SimpleJsonException e)
+                {
+                    m_Context.AddError("PVP-80-1", e.LegacyMessage);
+                }
+                catch (Verifier.FailAllException e)
                 {
                     m_Context.AddError("PVP-80-1", e.Message);
                 }
@@ -147,7 +152,7 @@ namespace PvpXray
                     }
                     catch (SimpleJsonException e)
                     {
-                        m_Context.AddError("PVP-80-1", e.FullMessage);
+                        m_Context.AddError("PVP-80-1", e.LegacyFullMessage);
                     }
 
                     // Catch unmodified sample description from Package Starter Kit.
@@ -166,7 +171,7 @@ namespace PvpXray
                     }
                     catch (SimpleJsonException e)
                     {
-                        m_Context.AddError("PVP-82-1", e.FullMessage);
+                        m_Context.AddError("PVP-82-1", e.LegacyFullMessage);
                     }
                 }
             }
@@ -187,7 +192,7 @@ namespace PvpXray
                 }
                 catch (SimpleJsonException e)
                 {
-                    m_Context.AddError("PVP-80-1", $"{entry.Definition}: {e.Message}");
+                    m_Context.AddError("PVP-80-1", $"{entry.Definition}: {e.LegacyMessage}");
                 }
 
                 var rootDirLower = sampleDirComponents[0].ToLowerInvariant();

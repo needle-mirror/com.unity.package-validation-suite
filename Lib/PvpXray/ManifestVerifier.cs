@@ -17,7 +17,7 @@ namespace PvpXray
     // main ManifestVerifier checker throws FailAll.
     class ManifestContextVerifier : Verifier.IChecker
     {
-        public static string[] Checks => new[] { "PVP-100-1", "PVP-100-2" };
+        public static string[] Checks { get; } = { "PVP-100-1", "PVP-100-2" };
         public static int PassCount => 0;
 
         public ManifestContextVerifier(Verifier.Context context)
@@ -97,13 +97,13 @@ namespace PvpXray
             if (i > 0 && i + 2 < url.Length && url[i + 1] == '/' && url[i + 2] == '/') // URL syntax (proto://user@host/path)
             {
                 validUrlPrefixes = k_ValidRepositoryUrlPrefixes;
-                origin = url.Slice(i + 3, url.Length);
+                origin = url.Slice(i + 3);
                 if (origin.TryIndexOf('/', out i)) origin.Length = i;
                 if (origin.TryIndexOf('@', out i)) origin.Start += i + 1;
 
                 prefix = url.Slice(0, origin.Start);
 
-                organization = url.Slice(origin.End, url.Length);
+                organization = url.Slice(origin.End);
                 if (organization.Length != 0) organization.Start += 1; // skip '/'
                 if (organization.TryIndexOf('/', out i)) organization.Length = i + 1;
             }
@@ -115,7 +115,7 @@ namespace PvpXray
 
                 prefix = url.Slice(0, origin.Start);
 
-                organization = url.Slice(origin.End + 1, url.Length);
+                organization = url.Slice(origin.End + 1);
                 if (organization.TryIndexOf('/', out i)) organization.Length = i + 1;
             }
             else
@@ -237,11 +237,12 @@ namespace PvpXray
             ("PVP-114-1", m => m, k_ValidTypeForName),
         };
 
-        public static string[] Checks => k_LocationChecks.Select(v => v.Item1).Distinct().ToArray();
+        public static string[] Checks { get; } = k_LocationChecks.Select(v => v.Item1).Distinct().ToArray();
         public static int PassCount => 0;
 
         public ManifestVerifier(Verifier.Context context)
         {
+            context.IsLegacyCheckerEmittingLegacyJsonErrors = true;
             var manifest = context.Manifest;
             var scratch = new StringBuilder();
 
@@ -271,7 +272,7 @@ namespace PvpXray
                 }
                 catch (SimpleJsonException e)
                 {
-                    context.AddError(checkId, e.Message);
+                    context.AddError(checkId, e.LegacyMessage);
                 }
             }
         }

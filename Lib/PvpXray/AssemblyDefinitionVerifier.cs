@@ -8,8 +8,7 @@ namespace PvpXray
         const string k_Extension = ".asmdef";
         static readonly Regex k_AssemblyNamePattern = new Regex(@"^[A-Z][0-9A-Za-z]*(\.[A-Z][0-9A-Za-z]*)*$");
 
-        public static string[] Checks => new[]
-        {
+        public static string[] Checks { get; } = {
             "PVP-130-1", // .asmdef file name should match the assembly name (US-0038)
             "PVP-131-1", // Assembly names must start with 'Unity.' for ApiUpdater coverage
             "PVP-132-1", // Assembly names must follow naming convention (US-0038)
@@ -22,6 +21,7 @@ namespace PvpXray
 
         public AssemblyDefinitionVerifier(Verifier.Context context)
         {
+            context.IsLegacyCheckerEmittingLegacyJsonErrors = true;
             m_Context = context;
         }
 

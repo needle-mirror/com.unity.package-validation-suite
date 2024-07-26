@@ -4,13 +4,14 @@ namespace PvpXray
     {
         static readonly byte[] k_UnityYamlPrefix = XrayUtils.Utf8Strict.GetBytes("%YAML ");
 
-        public static string[] Checks => new[] { "PVP-37-1" }; // No Unity assets using binary serialization
+        public static string[] Checks { get; } = { "PVP-37-1" }; // No Unity assets using binary serialization
         public static int PassCount => 1;
 
         readonly Verifier.Context m_Context;
 
         public AssetSerializationVerifier(Verifier.Context context)
         {
+            context.IsLegacyCheckerEmittingLegacyJsonErrors = true;
             m_Context = context;
         }
 

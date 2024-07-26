@@ -23,6 +23,7 @@ namespace PvpXray
 
         public WellFormedTextFilesVerifier(Verifier.Context context)
         {
+            context.IsLegacyCheckerEmittingLegacyJsonErrors = true;
             m_Context = context;
         }
 

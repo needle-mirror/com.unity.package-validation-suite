@@ -9,13 +9,14 @@ namespace PvpXray
         const string k_Value = "License Type";
         static readonly Regex k_KeyOrValuePattern = new Regex($"^(?:(?<key>{k_Key})|{k_Value}):", RegexOptions.Multiline);
 
-        public static string[] Checks => new[] { "PVP-32-1" }; // Third-Party Notices.md file (US-0065)
+        public static string[] Checks { get; } = { "PVP-32-1" }; // Third-Party Notices.md file (US-0065)
         public static int PassCount => 1;
 
         readonly Verifier.Context m_Context;
 
         public ThirdPartyNoticesVerifier(Verifier.Context context)
         {
+            context.IsLegacyCheckerEmittingLegacyJsonErrors = true;
             m_Context = context;
         }
 

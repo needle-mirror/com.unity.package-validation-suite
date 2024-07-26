@@ -7,9 +7,9 @@ using Requirement = PvpXray.ManifestVerifier.Requirement;
 
 namespace PvpXray
 {
-    class ManifestTypeVerifier : Verifier.IChecker
+    class ManifestTypeVerifierV2 : Verifier.IChecker
     {
-        public static string[] Checks => new[] { "PVP-107-2" };
+        public static string[] Checks { get; } = { "PVP-107-2" };
         public static int PassCount => 0;
 
         static readonly Requirement IsBoolean = new Requirement("must be a boolean", json => json.IsBoolean);
@@ -66,8 +66,9 @@ namespace PvpXray
             (new[] { "version" }, IsString),
         };
 
-        public ManifestTypeVerifier(Verifier.Context context)
+        public ManifestTypeVerifierV2(Verifier.Context context)
         {
+            context.IsLegacyCheckerEmittingLegacyJsonErrors = true;
             var manifest = context.Manifest;
 
             try
@@ -76,7 +77,7 @@ namespace PvpXray
             }
             catch (SimpleJsonException e)
             {
-                context.AddError("PVP-107-2", e.Message);
+                context.AddError("PVP-107-2", e.LegacyMessage);
             }
         }
 

@@ -6,6 +6,7 @@ using System.Net;
 using System.Reflection;
 using System.Runtime.ExceptionServices;
 using System.Text;
+using System.Text.RegularExpressions;
 
 namespace PvpXray
 {
@@ -111,7 +112,7 @@ namespace PvpXray
                 if (file.Path == "package.json")
                 {
                     Manifest = new byte[file.Size];
-                    XrayUtils.ReadExactly(file.Content, Manifest);
+                    file.Content.ReadExactly(Manifest);
                 }
             }
         }
@@ -369,6 +370,42 @@ namespace PvpXray
         public bool HasFilename(params string[] filenames) => filenames.Contains(Filename);
     }
 
+    struct UnityMajor : IComparable<UnityMajor>, IEquatable<UnityMajor>
+    {
+        static readonly Regex k_ValidMajor = new Regex(@"^(0|[1-9][0-9]{0,8})\.(0|[1-9][0-9]{0,8})$");
+        public static readonly UnityMajor Any = new UnityMajor { X = -1, Y = 0, Version = "" };
+
+        public string Version { get; private set; }
+        public int X { get; private set; }
+        public int Y { get; private set; }
+
+        public UnityMajor(string version)
+        {
+            Version = version ?? throw new ArgumentNullException();
+            var m = k_ValidMajor.Match(version);
+            if (!m.Success) throw new ArgumentException();
+            X = int.Parse(m.Groups[1].Value);
+            Y = int.Parse(m.Groups[2].Value);
+        }
+
+        public int CompareTo(UnityMajor other) => X != other.X ? X - other.X : Y - other.Y;
+        public bool Equals(UnityMajor other) => X == other.X && Y == other.Y;
+        public override bool Equals(object obj) => obj is UnityMajor other && Equals(other);
+        public override int GetHashCode() => X ^ (Y << 16);
+        public override string ToString() => Version;
+
+        public static UnityMajor FromFull(string version)
+        {
+            var i = version.IndexOf('.', version.IndexOf('.') + 1);
+            if (i <= 0) throw new ArgumentException();
+            return new UnityMajor(version.Substring(0, i));
+        }
+
+        /// Note this can construct minors larger than what's possible
+        /// from a string input, i.e. "X.1000000000" and later.
+        public UnityMajor Next => new UnityMajor { X = X, Y = Y + 1, Version = $"{X}.{Y + 1}" };
+    }
+
     public class Verifier
     {
         // Wrapper around public IPackageFile interface that reads file content into a buffer on demand
@@ -412,7 +449,7 @@ namespace PvpXray
                         }
 
                         m_Content = new byte[Size];
-                        XrayUtils.ReadExactly(m_File.Content, m_Content);
+                        m_File.Content.ReadExactly(m_Content);
                     }
 
                     return m_Content;
@@ -438,6 +475,7 @@ namespace PvpXray
         internal class SkipAllException : Exception
         {
             public SkipAllException(string reason) : base(reason) { }
+            public static SkipAllException InvalidBaseline => new SkipAllException("invalid_baseline");
         }
 
         internal struct PackageBaseline
@@ -511,6 +549,7 @@ namespace PvpXray
         {
             public Func<string, string> GetXrayEnv { get; }
             public IReadOnlyList<string> Files { get; }
+            public bool IsLegacyCheckerEmittingLegacyJsonErrors { get; set; }
             public IReadOnlyList<PathEntry> PathEntries { get; }
             public IPvpHttpClient HttpClient => m_HttpClient ?? throw new SkipAllException("offline_requested");
             public Json Manifest => m_Manifest ?? throw new FailAllException(m_ManifestError);
@@ -526,6 +565,8 @@ namespace PvpXray
             readonly ResultFileStub m_ResultFile;
             readonly Dictionary<PackageId, PackageBaseline> m_PublishSetBaselines = new Dictionary<PackageId, PackageBaseline>();
             readonly Dictionary<string, HashSet<PackageId>> m_EditorManifestPackages = new Dictionary<string, HashSet<PackageId>>();
+            List<UnityMajor> m_SupportedEditorsBaseline;
+            string m_SupportedEditorsBaselineSkipReason;
 
             public Context(VerifierContext verifierContext, CheckerSet checkerSet, ResultFileStub resultFile)
             {
@@ -616,7 +657,7 @@ namespace PvpXray
                     m_Manifest = null;
                     m_ManifestError = e is SimpleJsonException ? "package.json manifest is not valid JSON" : "package.json manifest could not be read";
                     ManifestContextErrors.Add(("PVP-100-1", m_ManifestError));
-                    ManifestContextErrors.Add(("PVP-100-2", e is SimpleJsonException sje ? sje.FullMessage : "package.json: could not be read"));
+                    ManifestContextErrors.Add(("PVP-100-2", e is SimpleJsonException sje ? sje.LegacyFullMessage : "package.json: could not be read"));
                 }
 
                 PathEntries = Files.Select(p => new PathEntry(p, TargetUnityImportsPluginDirs)).ToList();
@@ -640,7 +681,12 @@ namespace PvpXray
                 }
             }
 
-            public void AddErrorForAll(string error)
+            public void AddError(string[] checkIds, string error)
+            {
+                foreach (var checkId in checkIds) AddError(checkId, error);
+            }
+
+            public void AddErrorForAll(string error) // TODO: remove
             {
                 foreach (var checkId in m_CurrentBatchChecks) AddError(checkId, error);
             }
@@ -672,7 +718,7 @@ namespace PvpXray
                     }
                     catch (SimpleJsonException)
                     {
-                        throw new SkipAllException("invalid_baseline");
+                        throw SkipAllException.InvalidBaseline;
                     }
                 }
 
@@ -717,6 +763,11 @@ namespace PvpXray
                 }
             }
 
+            public void Skip(string[] checkIds, string reason)
+            {
+                foreach (var checkId in checkIds) Skip(checkId, reason);
+            }
+
             void SetBaseline(string id, string json)
             {
                 if (m_ResultFile.Baselines.TryGetValue(id, out var existing))
@@ -743,7 +794,7 @@ namespace PvpXray
                 // Don't even emit a "null" baseline for modules and other ineligible package names.
                 if (!CanFetchProductionRegistryVersions(package.Name)) return false;
 
-                if (m_PublishSetBaselines == null) throw new SkipAllException("invalid_baseline");
+                if (m_PublishSetBaselines == null) throw SkipAllException.InvalidBaseline;
                 if (m_PublishSetBaselines.TryGetValue(package, out baseline))
                 {
                     SetBaseline($"pkg:{package}", $"\"{baseline.Sha1}\"");
@@ -760,11 +811,11 @@ namespace PvpXray
                     }
                     catch (SimpleJsonException)
                     {
-                        throw new SkipAllException("invalid_baseline");
+                        throw SkipAllException.InvalidBaseline;
                     }
 
                     if (!XrayUtils.Sha1Regex.IsMatch(baseline.Sha1))
-                        throw new SkipAllException("invalid_baseline");
+                        throw SkipAllException.InvalidBaseline;
 
                     SetBaseline($"pkg:{package}", $"\"{baseline.Sha1}\"");
                     return true;
@@ -799,7 +850,7 @@ namespace PvpXray
                         }
                         catch (DecoderFallbackException)
                         {
-                            throw new SkipAllException("invalid_baseline");
+                            throw SkipAllException.InvalidBaseline;
                         }
 
                         try
@@ -817,7 +868,7 @@ namespace PvpXray
                         }
                         catch (SimpleJsonException)
                         {
-                            throw new SkipAllException("invalid_baseline");
+                            throw SkipAllException.InvalidBaseline;
                         }
                     }
 
@@ -828,6 +879,68 @@ namespace PvpXray
                 return packages != null;
             }
 
+            public bool HasSupportedEditorsInRange(UnityMajor startInclusive, UnityMajor endExclusive)
+            {
+                if (m_SupportedEditorsBaselineSkipReason != null)
+                    throw new SkipAllException(m_SupportedEditorsBaselineSkipReason);
+
+                if (m_SupportedEditorsBaseline == null)
+                {
+                    try
+                    {
+                        const string url = "https://pkgprom-api.ds.unity3d.com/internal-api/supported-editors";
+                        using (var stream = HttpClient.GetStream(url, out var status))
+                        {
+                            PvpHttpException.CheckHttpStatus(url, status, 200);
+                            try
+                            {
+                                var json = new Json(XrayUtils.ReadToString(stream), null);
+                                m_SupportedEditorsBaseline = new List<UnityMajor>(8);
+                                foreach (var e in json.Elements)
+                                {
+                                    m_SupportedEditorsBaseline.Add(UnityMajor.FromFull(e["latestUnityRelease"]["version"].String));
+                                }
+
+                                m_SupportedEditorsBaseline.Sort();
+                                for (var i = 1; i < m_SupportedEditorsBaseline.Count; i++)
+                                {
+                                    if (m_SupportedEditorsBaseline[i].Equals(m_SupportedEditorsBaseline[i - 1]))
+                                        m_SupportedEditorsBaseline.RemoveAt(i--);
+                                }
+                            }
+                            catch (ArgumentException) // invalid UTF-8 or invalid UnityMajor string
+                            {
+                                throw SkipAllException.InvalidBaseline;
+                            }
+                            catch (SimpleJsonException)
+                            {
+                                throw SkipAllException.InvalidBaseline;
+                            }
+                        }
+                    }
+                    catch (SkipAllException e)
+                    {
+                        m_SupportedEditorsBaselineSkipReason = e.Message;
+                        throw;
+                    }
+                }
+
+                // Now, determine if any supported majors are in range, and emit baseline.
+                StringBuilder inRange = null;
+                foreach (var major in m_SupportedEditorsBaseline)
+                {
+                    if (startInclusive.CompareTo(major) <= 0 && major.CompareTo(endExclusive) < 0)
+                    {
+                        if (inRange == null) inRange = new StringBuilder(m_SupportedEditorsBaseline.Count * 10).Append('[');
+                        else inRange.Append(',');
+                        inRange.AppendAsJson(major.Version);
+                    }
+                }
+
+                SetBaseline($"supported_editors:{startInclusive}:{endExclusive}", inRange?.Append(']').ToString() ?? "[]");
+                return inRange != null;
+            }
+
             /// Determine if the specified path exists in package and is a directory. Note that
             /// IPackage never tracks empty directories, so this will return false in that case.
             public bool DirectoryExists(string path)
@@ -836,8 +949,9 @@ namespace PvpXray
                 return Files.Any(p => p.StartsWithOrdinal(path));
             }
 
-            public void RunBatch(string[] checks, Action action)
+            public void RunBatch(string[] checks, Action action, bool isLegacyCheckerEmittingLegacyJsonErrors)
             {
+                IsLegacyCheckerEmittingLegacyJsonErrors = isLegacyCheckerEmittingLegacyJsonErrors;
                 m_CurrentBatchChecks.Clear();
                 m_CurrentBatchChecks.UnionWith(checks);
 
@@ -850,39 +964,40 @@ namespace PvpXray
                 }
                 catch (FailAllException e)
                 {
-                    AddErrorForAll(e.Message);
+                    AddError(checks, e.Message);
                 }
                 catch (PvpHttpException)
                 {
-                    foreach (var check in checks)
-                    {
-                        Skip(check, "network_error");
-                    }
+                    Skip(checks, "network_error");
                 }
                 catch (SimpleJsonException e) when (e.PackageFilePath != null)
                 {
-                    AddErrorForAll(e.FullMessage);
+                    AddError(checks, IsLegacyCheckerEmittingLegacyJsonErrors ? e.LegacyFullMessage : e.FullMessage);
                 }
                 catch (YamlParseException e) when (e.PackageFilePath != null)
                 {
-                    AddErrorForAll(e.FullMessage);
+                    AddError(checks, e.FullMessage);
                 }
                 catch (YamlAccessException e) when (e.PackageFilePath != null)
                 {
-                    AddErrorForAll(e.FullMessage);
+                    AddError(checks, e.FullMessage);
                 }
                 catch (SkipAllException e)
                 {
-                    foreach (var check in checks)
-                    {
-                        Skip(check, e.Message);
-                    }
+                    Skip(checks, e.Message);
                 }
             }
         }
 
+        struct CheckerEntry
+        {
+            public IChecker Instance;
+            public CheckerMeta Meta;
+            public bool IsLegacyCheckerEmittingLegacyJsonErrors;
+        }
+
         readonly Context m_Context;
-        readonly List<(IChecker, CheckerMeta)> m_Checkers;
+        readonly List<CheckerEntry> m_Checkers;
         readonly int m_PassCount;
         int m_PassIndex;
         readonly ResultFileStub m_ResultFile;
@@ -891,7 +1006,7 @@ namespace PvpXray
         {
             m_ResultFile = new ResultFileStub();
             m_Context = new Context(verifierContext, checkerSet, m_ResultFile);
-            m_Checkers = new List<(IChecker, CheckerMeta)>();
+            m_Checkers = new List<CheckerEntry>();
             m_PassCount = checkerSet.PassCount;
 
             var parameterTypes = new[] { typeof(Context) };
@@ -914,7 +1029,7 @@ namespace PvpXray
                     }
                 }
 
-                m_Context.RunBatch(meta.Checks, CreateChecker);
+                m_Context.RunBatch(meta.Checks, CreateChecker, false);
                 // If constructor threw PvpHttpException, SkipAllException or
                 // FailAllException, checker will be null here, and we won't be
                 // calling CheckItem or Finish on the checker.
@@ -924,11 +1039,16 @@ namespace PvpXray
                     // it can be garbage collected.
                     if (meta.PassCount == 0)
                     {
-                        m_Context.RunBatch(meta.Checks, checker.Finish);
+                        m_Context.RunBatch(meta.Checks, checker.Finish, m_Context.IsLegacyCheckerEmittingLegacyJsonErrors);
                     }
                     else
                     {
-                        m_Checkers.Add((checker, meta));
+                        m_Checkers.Add(new CheckerEntry
+                        {
+                            Instance = checker,
+                            Meta = meta,
+                            IsLegacyCheckerEmittingLegacyJsonErrors = m_Context.IsLegacyCheckerEmittingLegacyJsonErrors,
+                        });
                     }
                 }
             }
@@ -945,9 +1065,9 @@ namespace PvpXray
 
             var checkerFile = new PackageFile(file, m_Context.TargetUnityImportsPluginDirs);
 
-            foreach (var (checker, meta) in m_Checkers)
+            foreach (var entry in m_Checkers)
             {
-                m_Context.RunBatch(meta.Checks, () => checker.CheckItem(checkerFile, m_PassIndex));
+                m_Context.RunBatch(entry.Meta.Checks, () => entry.Instance.CheckItem(checkerFile, m_PassIndex), entry.IsLegacyCheckerEmittingLegacyJsonErrors);
             }
         }
 
@@ -959,10 +1079,10 @@ namespace PvpXray
             // their references so they can be garbage collected.
             for (var i = m_Checkers.Count - 1; i >= 0; i--)
             {
-                var (checker, meta) = m_Checkers[i];
-                if (meta.PassCount <= m_PassIndex)
+                var entry = m_Checkers[i];
+                if (entry.Meta.PassCount <= m_PassIndex)
                 {
-                    m_Context.RunBatch(meta.Checks, checker.Finish);
+                    m_Context.RunBatch(entry.Meta.Checks, entry.Instance.Finish, entry.IsLegacyCheckerEmittingLegacyJsonErrors);
                     m_Checkers.RemoveAt(i);
                 }
             }

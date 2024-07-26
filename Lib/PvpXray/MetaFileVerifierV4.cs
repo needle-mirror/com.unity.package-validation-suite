@@ -10,7 +10,7 @@ namespace PvpXray
         const string k_Check = "PVP-26-4";
         const string k_MetaExtension = ".meta";
 
-        public static string[] Checks => new[] { k_Check };
+        public static string[] Checks { get; } = { k_Check };
         public static int PassCount => 0;
 
         // Derive directories from file paths. This assumes that there are no empty directories.
@@ -18,7 +18,7 @@ namespace PvpXray
         {
             var entries = context.PathEntries.ToList();
             var seenDirectories = new HashSet<string>();
-            var pathBuilder = new StringBuilder();
+            var pathBuilder = new StringBuilder(PathVerifier.MaxPathLength);
             foreach (var fileEntry in context.PathEntries)
             {
                 if (fileEntry.Components.Length > 1)
@@ -26,14 +26,13 @@ namespace PvpXray
                     var componentsWithCase = fileEntry.PathWithCase.Split('/');
                     for (var length = 1; length < componentsWithCase.Length; length++)
                     {
-                        pathBuilder.Clear();
                         pathBuilder.Append(componentsWithCase[0]);
                         for (var index = 1; index < length; index++)
                         {
-                            pathBuilder.Append("/");
+                            pathBuilder.Append('/');
                             pathBuilder.Append(componentsWithCase[index]);
                         }
-                        var directoryPath = pathBuilder.ToString();
+                        var directoryPath = pathBuilder.ToStringAndReset();
                         if (seenDirectories.Add(directoryPath))
                         {
                             entries.Add(new PathEntry(directoryPath, context.TargetUnityImportsPluginDirs, isDirectory: true));
@@ -46,6 +45,7 @@ namespace PvpXray
 
         public MetaFileVerifierV4(Verifier.Context context)
         {
+            context.IsLegacyCheckerEmittingLegacyJsonErrors = true;
             // We need to know about directories since folder assets also have corresponding meta files.
             var entries = GetFileAndDirectoryEntries(context);
 

@@ -17,7 +17,7 @@ namespace PvpXray
 
     class DocumentationVerifier : Verifier.IChecker
     {
-        public static string[] Checks => new[] { "PVP-60-1", "PVP-61-1" };
+        public static string[] Checks { get; } = { "PVP-60-1", "PVP-61-1" };
         public static int PassCount => 1;
 
         static List<string> GetTopLevelDirectories(IReadOnlyList<PathEntry> paths) =>
@@ -33,6 +33,7 @@ namespace PvpXray
 
         public DocumentationVerifier(Verifier.Context context)
         {
+            context.IsLegacyCheckerEmittingLegacyJsonErrors = true;
             m_Context = context;
 
             var topLevelDirectories = GetTopLevelDirectories(context.PathEntries);

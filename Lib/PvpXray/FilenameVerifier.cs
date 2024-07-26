@@ -6,13 +6,14 @@ namespace PvpXray
 {
     class FilenameVerifier : Verifier.IChecker
     {
-        public static string[] Checks => new[] { "PVP-70-1", "PVP-71-1", "PVP-72-1", "PVP-73-1" };
+        public static string[] Checks { get; } = { "PVP-70-1", "PVP-71-1", "PVP-72-1", "PVP-73-1" };
         public static int PassCount => 1;
 
         readonly Verifier.Context m_Context;
 
         public FilenameVerifier(Verifier.Context context)
         {
+            context.IsLegacyCheckerEmittingLegacyJsonErrors = true;
             m_Context = context;
             CheckCollidingPaths(m_Context);
         }

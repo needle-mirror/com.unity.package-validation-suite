@@ -15,7 +15,7 @@ namespace PvpXray
         });
         static readonly Regex k_UnescapeUnquantifiedPeriod = new Regex(@"(?<![\\.(])\.(?![.)*+?{])");
 
-        public static string[] Checks => new[] { "PVP-155-1", "PVP-156-1", "PVP-157-1" };
+        public static string[] Checks { get; } = { "PVP-155-1", "PVP-156-1", "PVP-157-1" };
         public static int PassCount => 1;
 
         readonly Verifier.Context m_Context;
@@ -24,6 +24,7 @@ namespace PvpXray
 
         public DocfxFilterVerifier(Verifier.Context context)
         {
+            context.IsLegacyCheckerEmittingLegacyJsonErrors = true;
             m_Context = context;
         }
 

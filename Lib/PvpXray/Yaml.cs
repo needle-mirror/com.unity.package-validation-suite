@@ -150,7 +150,7 @@ namespace PvpXray
 
         public static string Encode(string str)
         {
-            var sb = new StringBuilder();
+            var sb = new StringBuilder(str.Length + 10);
             Encode(str, sb);
             return sb.ToString();
         }
@@ -445,8 +445,7 @@ namespace PvpXray
                 if (EndOfInput) throw invalidEscapeSequence();
                 var c = Next;
                 Index++;
-                var isHexDigit = (c >= '0' && c <= '9') || (c >= 'A' && c <= 'F') || (c >= 'a' && c <= 'f');
-                if (!isHexDigit) throw invalidEscapeSequence();
+                if (!Net7Compat.IsAsciiHexDigit(c)) throw invalidEscapeSequence();
             }
 
             var codePoint = Convert.ToUInt32(Input.Substring(start, Index - start), 16);

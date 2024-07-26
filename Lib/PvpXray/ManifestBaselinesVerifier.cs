@@ -6,8 +6,7 @@ namespace PvpXray
 {
     class ManifestBaselinesVerifier : Verifier.IChecker
     {
-        public static string[] Checks => new[]
-        {
+        public static string[] Checks { get; } = {
             "PVP-160-1", // Direct dependencies must have been promoted, if not built-in (and listed the editor manifest for the package's declared Unity min-version), or in the publish set.
             "PVP-161-1", // The editor min-version of recursive dependencies may not be higher than package's own min-version (ignoring built-in or missing packages).
             "PVP-162-1", // The recursive dependency chain of the package may not contain cycles (ignoring built-in or missing packages).
@@ -20,6 +19,7 @@ namespace PvpXray
             public readonly string Major;
             public readonly string Minor;
 
+            public bool IsAlphaBetaOr0F1 => Minor == null || Minor == "0f1" || Minor.StartsWithOrdinal("0a") || Minor.StartsWithOrdinal("0b");
             public bool IsAny => Major == null;
             public string RequiresSuchAndSuch => IsAny ? "does not specify a minimum Unity version" : $"requires Unity {Expand(null)}";
 
@@ -70,13 +70,10 @@ namespace PvpXray
             }
         }
 
-        // .NET 7 built-in
-        static bool IsAsciiDigit(char c) => c >= '0' && c <= '9';
-
         static void NaturalCompareReadComponent(string str, int startIndex, out int endIndex, out bool isNumber)
         {
-            isNumber = startIndex < str.Length && IsAsciiDigit(str[startIndex]);
-            for (endIndex = startIndex; endIndex < str.Length && IsAsciiDigit(str[endIndex]) == isNumber; ++endIndex)
+            isNumber = startIndex < str.Length && Net7Compat.IsAsciiDigit(str[startIndex]);
+            for (endIndex = startIndex; endIndex < str.Length && Net7Compat.IsAsciiDigit(str[endIndex]) == isNumber; ++endIndex)
             {
             }
         }
@@ -117,6 +114,7 @@ namespace PvpXray
 
         public ManifestBaselinesVerifier(Verifier.Context context)
         {
+            context.IsLegacyCheckerEmittingLegacyJsonErrors = true;
             _ = context.HttpClient; // Bail early if running offline.
 
             var alreadyProcessed = new HashSet<PackageId>();
@@ -203,7 +201,7 @@ namespace PvpXray
                 }
                 catch (SimpleJsonException e)
                 {
-                    var message = $"{package}: {e.Message}";
+                    var message = $"{package}: {e.LegacyMessage}";
                     if (path.Count == 1) context.AddError("PVP-160-1", message);
                     context.AddError("PVP-161-1", message);
                     context.AddError("PVP-162-1", message);

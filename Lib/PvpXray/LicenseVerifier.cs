@@ -10,8 +10,7 @@ namespace PvpXray
 
         static readonly Regex k_CopyrightNotice = new Regex(@"^(?<name>.*?) copyright \u00a9 \d+ \S(.*\S)?(?:\r?\n|$)", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
 
-        public static string[] Checks => new[]
-        {
+        public static string[] Checks { get; } = {
             "PVP-30-1", // LICENSE.md file (US-0032)
             "PVP-31-1", // LICENSE.md copyright notice (US-0032)
         };
@@ -22,6 +21,7 @@ namespace PvpXray
 
         public LicenseVerifier(Verifier.Context context)
         {
+            context.IsLegacyCheckerEmittingLegacyJsonErrors = true;
             m_Context = context;
 
             if (!context.Files.Contains(k_License))
@@ -56,7 +56,7 @@ namespace PvpXray
                 }
                 catch (SimpleJsonException e)
                 {
-                    m_Context.AddError("PVP-31-1", e.FullMessage);
+                    m_Context.AddError("PVP-31-1", e.LegacyFullMessage);
                 }
             }
             else

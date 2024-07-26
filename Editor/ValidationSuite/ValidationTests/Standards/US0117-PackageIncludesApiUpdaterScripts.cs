@@ -248,7 +248,7 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests.Standards
         static string GetNetStandardDir() => Path.Combine(EditorApplication.applicationContentsPath, "NetStandard");
 #endif
 
-        string[] IPvpChecker.Checks => new[] { "PVP-140-1" };
+        string[] IPvpChecker.Checks { get; } = { "PVP-140-1" };
 
         void IPvpChecker.Run(in PvpRunner.Input input, PvpRunner.Output output)
         {

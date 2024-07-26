@@ -13,10 +13,10 @@ using SpanOrString = System.String;
 
 namespace PvpXray
 {
-    static class XrayUtils
+    /// New in .NET 7, but until then.
+    static class Net7Compat
     {
-        // New in .NET 7, but until then.
-        class UnreachableException : Exception
+        public class UnreachableException : Exception
         {
             public UnreachableException(Exception innerException = null)
                 : base("A situation that should never occur nevertheless occurred.", innerException)
@@ -24,10 +24,41 @@ namespace PvpXray
             }
         }
 
+        public static bool IsAsciiDigit(char c) => c >= '0' && c <= '9';
+        public static bool IsAsciiHexDigit(char c) => IsAsciiDigit(c) || (c | 32) >= 'a' && (c | 32) <= 'f';
+        public static bool IsAsciiLetter(char c) => (uint)((c | 32) - 97) <= 25U;
+        public static bool IsAsciiLetterOrDigit(char c) => IsAsciiDigit(c) || IsAsciiLetter(c);
+
+        /// Read entire contents of buffer from stream with no intermediate
+        /// buffering (unlike Stream.CopyTo(MemoryStream)).
+        /// Throws IOException if stream ends before buffer is fully read.
+        // (In .NET 7, this is a native Stream method, taking precedence over extension methods.)
+        public static void ReadExactly(this Stream stream, byte[] buffer)
+        {
+            for (var offset = 0; offset < buffer.Length;)
+            {
+                var nRead = stream.Read(buffer, offset, buffer.Length - offset);
+                if (nRead < 1) throw new IOException($"Unexpected EOF at offset {offset} of {buffer.Length}");
+                offset += nRead;
+            }
+        }
+    }
+
+    static class XrayUtils
+    {
         public static StringBuilder AppendAsJson(this StringBuilder sb, string str)
         {
             Yaml.Encode(str, sb);
             return sb;
+        }
+
+        /// Creates string from StringBuilder (starting at given index, default 0),
+        /// then resets Length to the index (default: Clear entirely).
+        public static string ToStringAndReset(this StringBuilder sb, int index = 0)
+        {
+            var result = sb.ToString(index, sb.Length - index);
+            sb.Length = index;
+            return result;
         }
 
         /// Return sub-span or substring, depending on .NET version, to avoid needless allocations.
@@ -154,7 +185,7 @@ namespace PvpXray
             }
             catch (ArgumentException e)
             {
-                throw new UnreachableException(e);
+                throw new Net7Compat.UnreachableException(e);
             }
         }
 
@@ -172,20 +203,6 @@ namespace PvpXray
         /// consistency, just assume the worst case (1 byte per character,
         /// i.e. ASCII) and use a fixed limit of 1e9 bytes.
         public const int MaxUtf8BytesForString = 1_000_000_000;
-
-        // Stream.ReadExactly is a .NET Core 7 built-in, but until then...
-        /// Read entire contents of buffer from stream with no intermediate
-        /// buffering (unlike Stream.CopyTo(MemoryStream)).
-        /// Throws IOException if stream ends before buffer is fully read.
-        public static void ReadExactly(Stream stream, byte[] buffer)
-        {
-            for (var offset = 0; offset < buffer.Length;)
-            {
-                var nRead = stream.Read(buffer, offset, buffer.Length - offset);
-                if (nRead < 1) throw new IOException($"Unexpected EOF at offset {offset} of {buffer.Length}");
-                offset += nRead;
-            }
-        }
 
         /// Read stream as a UTF-8 string (in strict mode), and dispose stream.
         public static string ReadToString(Stream stream)
@@ -229,7 +246,7 @@ namespace PvpXray
 
                 length = (int)lengthLong;
                 array = new byte[length];
-                ReadExactly(stream, array);
+                stream.ReadExactly(array);
                 return;
             }
 

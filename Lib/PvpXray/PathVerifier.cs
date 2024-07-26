@@ -6,6 +6,8 @@ namespace PvpXray
 {
     class PathVerifier : Verifier.IChecker
     {
+        public const int MaxPathLength = 140;
+
         // REMEMBER: Checks must not be changed once added. Any modifications must be implemented as a NEW check.
         // Note: These path validations are all run on LOWERCASE paths (unless explicitly using "XxxWithCase").
         // Use only Ordinal string comparisons (and Invariant transforms); see StringExtensions.cs.
@@ -14,7 +16,7 @@ namespace PvpXray
             ("PVP-21-1", e => e.HasComponent("documentation~", "tests") || !e.HasExtension(".jpg", ".jpeg")),
 
             // PVP-22-1: File paths may not exceed 140 characters (US-0113)
-            ("PVP-22-1", e => e.Path.Length <= 140),
+            ("PVP-22-1", e => e.Path.Length <= MaxPathLength),
 
             // PVP-23-1: Restricted filename extensions (US-0115)
             ("PVP-23-1", e => !e.HasExtension(".bat", ".bin", ".com", ".csh", ".dom", ".exe", ".jse", ".msi", ".msp", ".mst", ".ps1", ".vb", ".vbe", ".vbs", ".vbscript", ".vs", ".vsd", ".vsh")),
@@ -91,15 +93,14 @@ namespace PvpXray
             ("PVP-50-1", paths => paths.Contains("README.md"), "Missing README.md file"),
         };
 
-        public static string[] Checks =>
-            k_SinglePathValidations.Select(v => v.Item1)
-            .Concat(k_AllPathsValidations.Select(v => v.Item1))
-            .ToArray();
+        internal static readonly string[] SinglePathChecks = k_SinglePathValidations.Select(v => v.Item1).ToArray();
 
+        public static string[] Checks { get; } = SinglePathChecks.Concat(k_AllPathsValidations.Select(v => v.Item1)).ToArray();
         public static int PassCount => 0;
 
         public PathVerifier(Verifier.Context context)
         {
+            context.IsLegacyCheckerEmittingLegacyJsonErrors = true;
             foreach (var entry in context.PathEntries)
             {
                 foreach (var (check, isValid) in k_SinglePathValidations)

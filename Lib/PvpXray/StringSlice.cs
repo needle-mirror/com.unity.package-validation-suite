@@ -17,6 +17,8 @@ namespace PvpXray
 
         public bool Equals(StringSlice other) => Length == other.Length && string.Compare(String, Start, other.String, other.Start, Length) == 0;
 
+        public StringSlice Slice(int start, int end) => new StringSlice { String = String, Start = Start + start, End = Start + end };
+
         public bool TryIndexOf(char c, out int i)
         {
             i = String.IndexOf(c, Start, Length);
@@ -27,12 +29,16 @@ namespace PvpXray
 
         public override string ToString() => String.Substring(Start, Length);
         public static implicit operator StringSlice(string str) => new StringSlice { String = str, End = str.Length };
+
+        public char this[int i] => String[i + Start];
     }
 
     static class StringSliceExtensions
     {
         public static StringBuilder Append(this StringBuilder sb, StringSlice ss) => sb.Append(ss.String, ss.Start, ss.Length);
 
+        public static StringSlice Slice(this string self, int start)
+            => new StringSlice { String = self, Start = start, End = self.Length };
         /// Note [start..end] to match new C# slice syntax, rather than traditional (start, length).
         public static StringSlice Slice(this string self, int start, int end)
             => new StringSlice { String = self, Start = start, End = end };

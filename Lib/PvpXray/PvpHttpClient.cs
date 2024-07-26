@@ -128,7 +128,7 @@ namespace PvpXray
                 {
                     Length = CheckLen(length.Value);
                     Data = new byte[Length];
-                    XrayUtils.ReadExactly(stream, Data);
+                    stream.ReadExactly(Data);
                 }
                 else
                 {

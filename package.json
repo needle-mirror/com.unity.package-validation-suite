@@ -1,25 +1,25 @@
 {
   "name": "com.unity.package-validation-suite",
   "displayName": "Package Validation Suite",
-  "version": "0.73.0-preview",
+  "version": "0.74.0-preview",
   "unity": "2018.4",
   "description": "Unity Package Manager validation suite, used to evaluate a package's integrity before it's considered for publishing.  This is a Unity internal tool at the moment, no support will be provided for this package.",
   "dependencies": {
     "com.unity.nuget.mono-cecil": "0.1.6-preview.2"
   },
   "relatedPackages": {
-    "com.unity.package-validation-suite.tests": "0.73.0-preview"
+    "com.unity.package-validation-suite.tests": "0.74.0-preview"
   },
   "_upm": {
-    "changelog": "- PVP: Add x-ray check `PVP-164-1` flagging nonexistent Unity min-versions. (PVS-202)"
+    "changelog": "- PVP: Add x-ray check `PVP-106-3`, reflecting the latest requirements for package versions. (PETS-1533)\n- PVP: Add x-ray checks `PVP-{171,181}-2`, which allow a package to increase its editor min-version at any time, as long as it only drops support for unsupported Editor releases. (PETS-1524)\n- PVP: Add x-ray check iteration `PVP-107-3` fixing `._upm`/`.samples` validation and with improved error messages. (PVS-206)"
   },
   "upmCi": {
-    "footprint": "3ce891b94f9d874b0397922d8a4e3efcaa0d025e"
+    "footprint": "7d737c2397f10299617d3a05e51bd231b8ac3976"
   },
-  "documentationUrl": "https://docs.unity3d.com/Packages/com.unity.package-validation-suite@0.73/manual/index.html",
+  "documentationUrl": "https://docs.unity3d.com/Packages/com.unity.package-validation-suite@0.74/manual/index.html",
   "repository": {
     "url": "https://github.cds.internal.unity3d.com/unity/com.unity.package-validation-suite.git",
     "type": "git",
-    "revision": "831cdb910e34585e6471e20ca21a4733a6a9955e"
+    "revision": "6d295476413191f8012dec9a7c655b7d83b37d16"
   }
 }

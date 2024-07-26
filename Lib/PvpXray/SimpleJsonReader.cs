@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Text;
+using System.Text.RegularExpressions;
 
 // This file has been copied from unity/trunk Tools/Bee/Bee.Tools/SimpleJsonReader.cs
 // Yes, a copy already exists in PVS; but due to code sharing/assembly boundaries,
@@ -20,9 +21,11 @@ namespace PvpXray
 {
     class SimpleJsonException : Exception
     {
-        public SimpleJsonException(string message) : base(message) { }
-        public string PackageFilePath { get; set; }
+        public SimpleJsonException(string messageV1, string messageV2) : base(messageV2 ?? messageV1) { LegacyMessage = messageV1; }
         public string FullMessage => PackageFilePath != null ? $"{PackageFilePath}: {Message}" : Message;
+        public string LegacyMessage { get; }
+        public string LegacyFullMessage => PackageFilePath != null ? $"{PackageFilePath}: {LegacyMessage}" : LegacyMessage;
+        public string PackageFilePath { get; set; }
     }
 
     static class SimpleJsonReader
@@ -57,12 +60,12 @@ namespace PvpXray
         {
             try
             {
-                var idx = ParseValue(json, 0, out var value);
+                var idx = ParseValue(json, 0, new List<object>(), out var value);
                 if (idx == -1)
-                    throw new SimpleJsonException("Invalid JSON document");
+                    throw new SimpleJsonException("Invalid JSON document", null);
                 SkipSpace(json, ref idx, json.Length);
                 if (idx != json.Length)
-                    throw new SimpleJsonException("Garbage following JSON document");
+                    throw new SimpleJsonException("Garbage following JSON document", null);
                 return value;
             }
             catch (SimpleJsonException e)
@@ -152,7 +155,7 @@ namespace PvpXray
             }
         }
 
-        static int ParseDict(string json, int idx, Dictionary<string, object> res)
+        static int ParseDict(string json, int idx, List<object> path, Dictionary<string, object> res)
         {
             var length = json.Length;
             SkipSpace(json, ref idx, length);
@@ -160,6 +163,7 @@ namespace PvpXray
             if (idx < length && json[idx] == '}')
                 return idx + 1;
 
+            path.Add(null);
             while (idx < length)
             {
                 // key name
@@ -187,12 +191,23 @@ namespace PvpXray
                 SkipSpace(json, ref idx, length);
 
                 // value
-                var endO = ParseValue(json, idx, out var val);
+                path[path.Count - 1] = name;
+                var endO = ParseValue(json, idx, path, out var val);
                 if (endO == -1)
                     return -1;
 
                 if (res.ContainsKey(name))
-                    throw new SimpleJsonException($"Duplicate JSON key: {name}");
+                {
+                    var sb = new StringBuilder(40);
+                    foreach (var p in path)
+                    {
+                        var isFirstElement = sb.Length == 0;
+                        if (p is ulong arrayIndex) AppendJsonPathElement(sb, arrayIndex.ToString(), true, isFirstElement);
+                        else AppendJsonPathElement(sb, (string)p, false, isFirstElement);
+                    }
+                    throw new SimpleJsonException($"Duplicate JSON key: {name}", sb.Append(": duplicate JSON key").ToString());
+                }
+
                 res.Add(name, val);
                 idx = endO;
 
@@ -201,7 +216,11 @@ namespace PvpXray
                 if (idx >= length)
                     return -1;
                 if (json[idx] == '}')
+                {
+                    path.RemoveAt(path.Count - 1);
                     return idx + 1;
+                }
+
                 if (json[idx] != ',')
                     return -1;
                 ++idx;
@@ -211,7 +230,7 @@ namespace PvpXray
             return -1;
         }
 
-        static int ParseList(string json, int idx, List<object> res)
+        static int ParseList(string json, int idx, List<object> path, List<object> res)
         {
             var length = json.Length;
             SkipSpace(json, ref idx, length);
@@ -219,10 +238,12 @@ namespace PvpXray
             if (idx < length && json[idx] == ']')
                 return idx + 1;
 
+            var elementIndex = 0ul;
+            path.Add(elementIndex);
             while (idx < length)
             {
                 // value
-                var endO = ParseValue(json, idx, out var val);
+                var endO = ParseValue(json, idx, path, out var val);
                 if (endO == -1)
                     return -1;
                 res.Add(val);
@@ -233,17 +254,22 @@ namespace PvpXray
                 if (idx >= length)
                     return -1;
                 if (json[idx] == ']')
+                {
+                    path.RemoveAt(path.Count - 1);
                     return idx + 1;
+                }
+
                 if (json[idx] != ',')
                     return -1;
                 ++idx;
 
                 SkipSpace(json, ref idx, length);
+                path[path.Count - 1] = ++elementIndex;
             }
             return -1;
         }
 
-        static int ParseValue(string json, int idx, out object value)
+        static int ParseValue(string json, int idx, List<object> path, out object value)
         {
             value = null;
 
@@ -258,7 +284,7 @@ namespace PvpXray
             if (c == '{')
             {
                 var dict = new Dictionary<string, object>();
-                idx = ParseDict(json, idx + 1, dict);
+                idx = ParseDict(json, idx + 1, path, dict);
                 if (idx == -1)
                     return -1;
                 value = dict;
@@ -269,7 +295,7 @@ namespace PvpXray
             if (c == '[')
             {
                 var list = new List<object>();
-                idx = ParseList(json, idx + 1, list);
+                idx = ParseList(json, idx + 1, path, list);
                 if (idx == -1)
                     return -1;
                 value = list;
@@ -329,6 +355,27 @@ namespace PvpXray
             }
 
             return -1;
+        }
+
+        /// Object property name simple enough to use in Path unquoted.
+        static readonly Regex k_SimpleKey = new Regex("^[_a-zA-Z][_a-zA-Z0-9]*$");
+
+        internal static void AppendJsonPathElement(StringBuilder sb, string key, bool isArrayIndex, bool isFirstElement)
+        {
+            var isIndexOperation = isArrayIndex || !k_SimpleKey.IsMatch(key);
+            if (!isIndexOperation || isFirstElement) sb.Append('.');
+            if (isIndexOperation) sb.Append('[');
+
+            if (isIndexOperation && !isArrayIndex) // complex object key
+            {
+                sb.AppendAsJson(key);
+            }
+            else
+            {
+                sb.Append(key);
+            }
+
+            if (isIndexOperation) sb.Append(']');
         }
     }
 }

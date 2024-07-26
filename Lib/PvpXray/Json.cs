@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using System.Text.RegularExpressions;
 using JsonObject = System.Collections.Generic.Dictionary<string, object>;
 
 namespace PvpXray
@@ -11,9 +10,6 @@ namespace PvpXray
 
     public class Json
     {
-        /// Object property name simple enough to use in Path unquoted.
-        static readonly Regex k_SimpleKey = new Regex("^[_a-zA-Z][_a-zA-Z0-9]*$");
-
         readonly object m_Value;
         readonly Json m_Parent;
 
@@ -27,29 +23,7 @@ namespace PvpXray
             if (m_Parent != null)
             {
                 m_Parent.BuildPath(sb);
-                var isIndexOperation = m_Parent.IsArray || !k_SimpleKey.IsMatch(Key);
-                if (!isIndexOperation || sb.Length == 0)
-                {
-                    sb.Append('.');
-                }
-                if (isIndexOperation)
-                {
-                    sb.Append('[');
-                }
-
-                if (isIndexOperation && !m_Parent.IsArray) // complex object key
-                {
-                    sb.AppendAsJson(Key);
-                }
-                else
-                {
-                    sb.Append(Key);
-                }
-
-                if (isIndexOperation)
-                {
-                    sb.Append(']');
-                }
+                SimpleJsonReader.AppendJsonPathElement(sb, Key, m_Parent.IsArray, isFirstElement: m_Parent.m_Parent == null);
             }
         }
 
@@ -70,7 +44,12 @@ namespace PvpXray
         {
             if (Kind != typeof(T))
             {
-                throw new SimpleJsonException($"{Path} was {k_JsonTypeNames[Kind]}, expected {k_JsonTypeNames[typeof(T)]}") { PackageFilePath = PackageFilePath };
+                var sb = new StringBuilder(80);
+                AppendPathTo(sb);
+                var i = sb.Length;
+                var messageV1 = sb.Append($" was {k_JsonTypeNames[Kind]}, expected {k_JsonTypeNames[typeof(T)]}").ToString();
+                var messageV2 = sb.Insert(i, ':').ToString();
+                throw new SimpleJsonException(messageV1, messageV2) { PackageFilePath = PackageFilePath };
             }
 
             return (T)m_Value;
@@ -88,7 +67,7 @@ namespace PvpXray
         internal Json(object root, string packageFilePath) : this(root, null, null, packageFilePath) { }
 
         internal SimpleJsonException GetException(string message)
-            => new SimpleJsonException($"{Path}: {message}") { PackageFilePath = PackageFilePath };
+            => new SimpleJsonException($"{Path}: {message}", null) { PackageFilePath = PackageFilePath };
 
         // Enumerate elements of a JSON array.
         public IEnumerable<Json> Elements

@@ -101,7 +101,7 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests.Standards
             return $@"The following APIs are missing documentation: {string.Join(Environment.NewLine, expectedMessages)}";
         }
 
-        string[] IPvpChecker.Checks => new[] { "PVP-20-1" };
+        string[] IPvpChecker.Checks { get; } = { "PVP-20-1" };
 
         void IPvpChecker.Run(in PvpRunner.Input input, PvpRunner.Output output)
         {

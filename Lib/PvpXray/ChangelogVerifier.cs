@@ -13,8 +13,7 @@ namespace PvpXray
         static readonly Regex k_HeaderPattern = new Regex(@"^\[(?<version>.*)\]( - (?<date>\d{4}-\d{2}-\d{2}))?$");
         const string k_DateFormat = "yyyy-MM-dd";
 
-        public static string[] Checks => new[]
-        {
+        public static string[] Checks { get; } = {
             "PVP-40-1", // Changelog sections are well-formed (US-0039)
             "PVP-41-1", // Changelog has no [Unreleased] section (US-0039)
             "PVP-43-1", // Changelog has entry for package version (US-0039)
@@ -26,6 +25,7 @@ namespace PvpXray
 
         public ChangelogVerifier(Verifier.Context context)
         {
+            context.IsLegacyCheckerEmittingLegacyJsonErrors = true;
             m_Context = context;
 
             if (!context.Files.Contains(k_Changelog))
@@ -125,7 +125,7 @@ namespace PvpXray
                         }
                         catch (SimpleJsonException e)
                         {
-                            m_Context.AddError("PVP-43-1", e.FullMessage);
+                            m_Context.AddError("PVP-43-1", e.LegacyFullMessage);
                         }
                     }
                 }

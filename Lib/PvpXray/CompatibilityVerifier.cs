@@ -6,12 +6,16 @@ namespace PvpXray
 {
     class CompatibilityVerifier : Verifier.IChecker
     {
-        public static string[] Checks => new[]
-        {
+        public static string[] Checks { get; } = {
             "PVP-171-1", // Unity min-version patch release compatibility
+            "PVP-171-2", // (ditto, permitting dropping support for unsupported releases)
             "PVP-173-1", // Dependency version patch release compatibility
             "PVP-181-1", // Unity min-version minor release compatibility
+            "PVP-181-2", // (ditto, permitting dropping support for unsupported releases)
         };
+        static readonly string[] k_171 = { "PVP-171-1", "PVP-171-2" };
+        static readonly string[] k_181 = { "PVP-181-1", "PVP-181-2" };
+        static readonly string[] k_181_2 = { null, "PVP-181-2" };
 
         public static int PassCount => 0;
 
@@ -21,7 +25,10 @@ namespace PvpXray
             readonly Dictionary<string, string> m_Dependencies;
             readonly string m_DependenciesError;
             readonly ManifestBaselinesVerifier.UnityVersionRequirement m_UnityMinVersion;
+            readonly UnityMajor m_UnityMinVersionMajor;
             readonly string m_UnityMinVersionError;
+            readonly string m_UnityMinVersionErrorLegacy;
+            public readonly string UnityMinVersionV2Error;
             public readonly PackageId PackageId;
 
             public ManifestData(Json manifest)
@@ -38,37 +45,85 @@ namespace PvpXray
                 }
                 catch (SimpleJsonException e)
                 {
-                    m_DependenciesError = $"{PackageId}: {e.Message}";
+                    m_DependenciesError = $"{PackageId}: {e.LegacyMessage}";
                 }
 
                 try
                 {
                     m_UnityMinVersion = new ManifestBaselinesVerifier.UnityVersionRequirement(manifest);
+                    try
+                    {
+                        m_UnityMinVersionMajor = m_UnityMinVersion.Major == null ? UnityMajor.Any : new UnityMajor(m_UnityMinVersion.Major);
+                    }
+                    catch (ArgumentException)
+                    {
+                        UnityMinVersionV2Error = $"{PackageId}: .unity: invalid Unity release string: {Yaml.Encode(m_UnityMinVersion.Major)}";
+                    }
                 }
                 catch (SimpleJsonException e)
                 {
                     m_UnityMinVersionError = $"{PackageId}: {e.Message}";
+                    m_UnityMinVersionErrorLegacy = $"{PackageId}: {e.LegacyMessage}";
                 }
             }
 
-            public void CheckUnityMinVersionUpwards(ManifestData next, Verifier.Context context, string checkId, bool allowDecrease)
+            public void CheckUnityMinVersionUpwards(ManifestData next, Verifier.Context context, string[] checkIds, bool allowDecrease)
             {
-                if (this.m_UnityMinVersionError != null) context.AddError(checkId, this.m_UnityMinVersionError);
-                if (next.m_UnityMinVersionError != null) context.AddError(checkId, next.m_UnityMinVersionError);
+                if (checkIds.Length != 2 || checkIds[1] == null) throw new Net7Compat.UnreachableException();
+                if (checkIds[0] != null)
+                {
+                    if (this.m_UnityMinVersionErrorLegacy != null) context.AddError(checkIds[0], this.m_UnityMinVersionErrorLegacy);
+                    if (next.m_UnityMinVersionErrorLegacy != null) context.AddError(checkIds[0], next.m_UnityMinVersionErrorLegacy);
+                }
+                if (this.m_UnityMinVersionError != null) context.AddError(checkIds[1], this.m_UnityMinVersionError);
+                if (next.m_UnityMinVersionError != null) context.AddError(checkIds[1], next.m_UnityMinVersionError);
+
+                // Don't emit the v2 errors if the min-version is malformed.
+                var emitV2 = this.UnityMinVersionV2Error == null && next.UnityMinVersionV2Error == null;
+
                 if (!m_Present || !next.m_Present || m_UnityMinVersionError != null || next.m_UnityMinVersionError != null) return;
 
                 if (m_UnityMinVersion == next.m_UnityMinVersion) return; // unchanged is always OK
 
-                if (!allowDecrease)
+                if (next.m_UnityMinVersion.IsHigherThan(m_UnityMinVersion, next.PackageId, PackageId, out var error))
                 {
-                    // In patch releases, the version must be unchanged.
-                    context.AddError(checkId, $"{next.PackageId} {next.m_UnityMinVersion.RequiresSuchAndSuch}, but {PackageId} {m_UnityMinVersion.RequiresSuchAndSuch}");
+                    // It is an error to raise the min-version in patch and minor versions both (PVP-171, PVP-181)
+                    // except PVP-*-2, which permits dropping support for unsupported editor releases and alphas/betas.
+
+                    if (emitV2)
+                    {
+                        var nextEffective = next.m_UnityMinVersionMajor;
+                        // If next minor is larger than .0f1, add 1 to the effective major. For example,
+                        // if prev is 2019.1 and next is 2019.1.8f, the next effective major is 2019.2,
+                        // causing a check for supported editors in the range 2019.1 <= V < 2019.2.
+                        if (!next.m_UnityMinVersion.IsAlphaBetaOr0F1) nextEffective = nextEffective.Next;
+
+                        try
+                        {
+                            // Don't emit the v2 errors if it's a permitted increase.
+                            emitV2 = !m_UnityMinVersionMajor.Equals(nextEffective)
+                                && context.HasSupportedEditorsInRange(m_UnityMinVersionMajor, nextEffective);
+                        }
+                        catch (Verifier.SkipAllException e)
+                        {
+                            emitV2 = false;
+                            context.Skip(checkIds[1], e.Message);
+                        }
+                    }
                 }
-                else
+                else if (!allowDecrease)
                 {
-                    // In minor releases, next min-version may be less than or equal to this min-version.
-                    if (next.m_UnityMinVersion.IsHigherThan(m_UnityMinVersion, next.PackageId, PackageId, out var error))
-                        context.AddError(checkId, error);
+                    // It is an error to lower the min-version in patch versions (PVP-171).
+                    error = $"{next.PackageId} {next.m_UnityMinVersion.RequiresSuchAndSuch}, but {PackageId} {m_UnityMinVersion.RequiresSuchAndSuch}";
+                }
+
+                if (error != null)
+                {
+                    foreach (var checkId in checkIds)
+                    {
+                        if (checkId != null) context.AddError(checkId, error);
+                        if (!emitV2) break; // Only add the PVP-*-1 error.
+                    }
                 }
             }
 
@@ -114,6 +169,7 @@ namespace PvpXray
 
         public CompatibilityVerifier(Verifier.Context context)
         {
+            context.IsLegacyCheckerEmittingLegacyJsonErrors = true;
             _ = context.HttpClient; // Bail early if running offline.
 
             var versionJson = context.Manifest["version"];
@@ -133,12 +189,24 @@ namespace PvpXray
             var nextPatchData = GetData(Query(SemVerQuery.Op.GreaterThanOrEqual, triple.NextPatch), requireSameMinor: true);
             var nextMinorData = GetData(Query(SemVerQuery.Op.GreaterThanOrEqual, triple.NextMinor));
 
-            // The Unity min-version checks are directional.
-            prevPatchData.CheckUnityMinVersionUpwards(underTestData, context, "PVP-171-1", allowDecrease: false);
-            underTestData.CheckUnityMinVersionUpwards(nextPatchData, context, "PVP-171-1", allowDecrease: false);
+            // If editor min-version of package under test is malformed, emit PVP-{171,181}-2 errors for that
+            // (and nothing else). If min-version of prev/next package is malformed, that package is ignored.
+            var underTestBadMinVersion = underTestData.UnityMinVersionV2Error != null;
+            if (underTestBadMinVersion)
+            {
+                context.AddError("PVP-171-2", underTestData.UnityMinVersionV2Error);
+                context.AddError("PVP-181-2", underTestData.UnityMinVersionV2Error);
+            }
 
-            prevMinorData.CheckUnityMinVersionUpwards(underTestData, context, "PVP-181-1", allowDecrease: true);
-            underTestData.CheckUnityMinVersionUpwards(nextMinorData, context, "PVP-181-1", allowDecrease: true);
+            // The Unity min-version checks are directional.
+            // Note that 'prevPatch' and 'prevMinor' may be the same version.
+            prevPatchData.CheckUnityMinVersionUpwards(underTestData, context, k_171, allowDecrease: false);
+            underTestData.CheckUnityMinVersionUpwards(nextPatchData, context, k_171, allowDecrease: false);
+
+            // For consistency with the backwards looking check, also check PVP-181-2 for nextPatchData.
+            prevMinorData.CheckUnityMinVersionUpwards(underTestData, context, k_181, allowDecrease: true);
+            underTestData.CheckUnityMinVersionUpwards(nextPatchData, context, k_181_2, allowDecrease: true);
+            underTestData.CheckUnityMinVersionUpwards(nextMinorData, context, k_181, allowDecrease: true);
 
             // The dependency version patch checks are symmetric.
             underTestData.CheckDependenciesPatchCompat(prevPatchData, context, "PVP-173-1");

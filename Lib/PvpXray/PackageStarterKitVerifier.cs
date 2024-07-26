@@ -2,13 +2,14 @@ namespace PvpXray
 {
     class PackageStarterKitVerifier : Verifier.IChecker
     {
-        public static string[] Checks => new[] { "PVP-35-1" }; // No unmodified Package Starter Kit files
+        public static string[] Checks { get; } = { "PVP-35-1" }; // No unmodified Package Starter Kit files
         public static int PassCount => 1;
 
         readonly Verifier.Context m_Context;
 
         public PackageStarterKitVerifier(Verifier.Context context)
         {
+            context.IsLegacyCheckerEmittingLegacyJsonErrors = true;
             m_Context = context;
         }
 

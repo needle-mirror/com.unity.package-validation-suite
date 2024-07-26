@@ -7,13 +7,14 @@ namespace PvpXray
         const int k_PointerMaxSize = 1024; // https://github.com/git-lfs/git-lfs/blob/v3.4.0/lfs/scanner.go#L10-L12
         static readonly byte[] k_PointerPrefix = XrayUtils.Utf8Strict.GetBytes("version https://git-lfs.github.com/spec/");
 
-        public static string[] Checks => new[] { "PVP-36-1" }; // No Git LFS pointer files
+        public static string[] Checks { get; } = { "PVP-36-1" }; // No Git LFS pointer files
         public static int PassCount => 1;
 
         readonly Verifier.Context m_Context;
 
         public GitLfsVerifier(Verifier.Context context)
         {
+            context.IsLegacyCheckerEmittingLegacyJsonErrors = true;
             m_Context = context;
         }
 

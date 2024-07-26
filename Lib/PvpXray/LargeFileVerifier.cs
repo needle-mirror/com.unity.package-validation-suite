@@ -2,7 +2,7 @@ namespace PvpXray
 {
     class LargeFileVerifier : Verifier.IChecker
     {
-        public static string[] Checks => new[] { "PVP-93-1" };
+        public static string[] Checks { get; } = { "PVP-93-1" };
         public static int PassCount => 1;
 
         readonly Verifier.Context m_Context;

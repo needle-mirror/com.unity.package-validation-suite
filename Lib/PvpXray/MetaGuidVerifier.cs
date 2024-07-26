@@ -9,7 +9,7 @@ namespace PvpXray
 
         static readonly Regex k_GuidLine = new Regex(@"^guid: ([0-9a-f]{32})$", RegexOptions.Multiline);
 
-        public static string[] Checks => new[] { "PVP-27-1" };
+        public static string[] Checks { get; } = { "PVP-27-1" };
         public static int PassCount => 1;
 
         readonly Verifier.Context m_Context;
@@ -17,6 +17,7 @@ namespace PvpXray
 
         public MetaGuidVerifier(Verifier.Context context)
         {
+            context.IsLegacyCheckerEmittingLegacyJsonErrors = true;
             m_Context = context;
             m_PathByGuid = new Dictionary<string, string>();
         }
