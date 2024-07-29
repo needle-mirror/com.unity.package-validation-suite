@@ -4,6 +4,10 @@ All notable changes to this package will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## [0.75.0-preview] - 2024-07-29
+- Fixed bug where test exceptions could not be exempted. (PVS-209)
+- Added env var to entirely bypass API validation, if need be. (PVS-209)
+
 ## [0.74.0-preview] - 2024-07-26
 - PVP: Add x-ray check `PVP-106-3`, reflecting the latest requirements for package versions. (PETS-1533)
 - PVP: Add x-ray checks `PVP-{171,181}-2`, which allow a package to increase its editor min-version at any time, as long as it only drops support for unsupported Editor releases. (PETS-1524)

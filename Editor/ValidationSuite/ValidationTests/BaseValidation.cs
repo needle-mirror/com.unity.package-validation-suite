@@ -137,23 +137,28 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
             AddInformation(string.Format(message, args));
         }
 
-        public void AddError(string message)
+        public void AddError(string message) => AddError(message, out _);
+
+        public void AddError(string message, out bool wasExempted)
         {
             // let's check for Validation Exceptions.
             // #1 - Specific error exception
             if (CanUseValidationExceptions && Context.ValidationExceptionManager.IsErrorException(TestName, message, Context.PublishPackageInfo.version))
             {
                 TestOutput.Add(new ValidationTestOutput() { Type = TestOutputType.ErrorMarkedWithException, Output = message });
+                wasExempted = true;
             }
             // #2 - All test errors excepted
             else if (AllTestErrorsExcepted())
             {
                 TestOutput.Add(new ValidationTestOutput() { Type = TestOutputType.ErrorMarkedWithException, Output = message });
+                wasExempted = true;
             }
             else
             {
                 TestOutput.Add(new ValidationTestOutput() { Type = TestOutputType.Error, Output = message });
                 TestState = TestState.Failed;
+                wasExempted = false;
             }
         }
 

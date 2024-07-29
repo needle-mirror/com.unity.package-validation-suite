@@ -90,6 +90,13 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
 
         protected override void Run(AssemblyInfo[] info)
         {
+            if (Environment.GetEnvironmentVariable("PVS_DISABLE_API_VALIDATION") == "1")
+            {
+                AddInformation("Skipping API Validation because PVS_DISABLE_API_VALIDATION is set.");
+                TestState = TestState.NotRun;
+                return;
+            }
+
             TestState = TestState.Succeeded;
 
             // SKIP_APIVALIDATION_PLATFORM_AND_VERSION_SANITY_CHECKS

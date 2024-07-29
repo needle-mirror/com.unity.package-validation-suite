@@ -378,11 +378,12 @@ namespace UnityEditor.PackageManager.ValidationSuite
                 }
                 catch (Exception ex)
                 {
-                    // if the test didn't behave, return an error.
-                    testSuiteState = TestState.Failed;
-
                     // Change the test outcome.
-                    test.AddError(ex.ToString());
+                    test.AddError(ex.ToString(), out var wasExempted);
+
+                    // if the test didn't behave, return an error.
+                    if (!wasExempted) testSuiteState = TestState.Failed;
+
                     singleTestCompletionDelegate(test);
                 }
             }
