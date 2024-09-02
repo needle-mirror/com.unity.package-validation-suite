@@ -118,8 +118,8 @@ namespace PvpXray
             _ = context.HttpClient; // Bail early if running offline.
 
             var alreadyProcessed = new HashSet<PackageId>();
-            var packageUnderTest = new PackageId(context.Manifest);
-            var packageUnderTestMinUnity = new UnityVersionRequirement(context.Manifest);
+            var packageUnderTest = new PackageId(context.ManifestPermitInvalidJson);
+            var packageUnderTestMinUnity = new UnityVersionRequirement(context.ManifestPermitInvalidJson);
             var packageUnderTestMinUnityExpanded = packageUnderTestMinUnity.Expand(".0f1");
             var path = new List<PackageId>();
 
@@ -169,7 +169,7 @@ namespace PvpXray
                     if (!alreadyProcessed.Add(package)) return;
 
                     Json manifest;
-                    if (package == packageUnderTest) manifest = context.Manifest;
+                    if (package == packageUnderTest) manifest = context.ManifestPermitInvalidJson;
                     else if (context.TryFetchPackageBaseline(package, out var baseline)) manifest = baseline.Manifest;
                     else
                     {

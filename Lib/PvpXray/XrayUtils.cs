@@ -13,6 +13,19 @@ using SpanOrString = System.String;
 
 namespace PvpXray
 {
+    /// New in .NET Standard 2.1, which is only partially available in Unity 2018.4.
+    static class NetStandard21Compat
+    {
+        // Avoid allocation for the sole single-char separator used in PvpXray (as of this writing).
+        static readonly char[] k_ArrayOfSlash = { '/' };
+
+        public static bool Contains(this string self, char value) => self.IndexOf(value) != -1;
+        public static bool EndsWith(this string self, char value) => self.Length != 0 && self[self.Length - 1] == value;
+        public static string[] Split(this string self, char separator, StringSplitOptions options = StringSplitOptions.None)
+            => self.Split(separator == '/' ? k_ArrayOfSlash : new[] { separator }, options);
+        public static bool StartsWith(this string self, char value) => self.Length != 0 && self[0] == value;
+    }
+
     /// New in .NET 7, but until then.
     static class Net7Compat
     {
@@ -52,6 +65,30 @@ namespace PvpXray
             return sb;
         }
 
+        internal static bool IsUnicodeCharacter(char c) => c < 0xD800 || (c > 0xDFFF && c < 0xFDD0) || (c > 0xFDEF && c < 0xFFFE);
+        public static bool IsValidUnicode(SpanOrString s)
+        {
+            // .NET strings are naive char[] wrappers and may be invalid UTF-16.
+            // The following codepoints are not valid Unicode (ranges inclusive):
+            // U+D800 - U+DFFF (when outside a valid surrogate pair)
+            // U+FDD0 - U+FDEF (non-characters)
+            // U+xFFFE - U+xFFFF for all planes 'x' 0x0 through 0x10 (non-characters)
+            for (var i = 0; i < s.Length; i++)
+            {
+                var c = s[i];
+                if (IsUnicodeCharacter(c)) continue;
+
+                var isHighSurrogate = c < 0xDC00;
+                if (isHighSurrogate && ++i < s.Length)
+                {
+                    var c2 = s[i];
+                    if (char.IsLowSurrogate(c2) && ((c & 0x3f) != 0x3f || c2 < 0xDC00 + 0x3fe)) continue;
+                }
+                return false;
+            }
+            return true;
+        }
+
         /// Creates string from StringBuilder (starting at given index, default 0),
         /// then resets Length to the index (default: Clear entirely).
         public static string ToStringAndReset(this StringBuilder sb, int index = 0)
@@ -71,6 +108,13 @@ namespace PvpXray
         public static string SpanOrSubstring(this string s, int start) => s.Substring(start);
         public static string SpanOrSubstring(this string s, int start, int length) => s.Substring(start, length);
 #endif
+
+        /// Search for 'separator'. If found, returns SpanOrString preceding it, and else return input as SpanOrString.
+        public static SpanOrString SplitLeft(this string self, char separator)
+        {
+            var i = self.IndexOf(separator);
+            return i == -1 ? self : self.SpanOrSubstring(0, i);
+        }
 
         public static readonly Regex Sha1Regex = new Regex("^[0-9a-f]{40}$");
 

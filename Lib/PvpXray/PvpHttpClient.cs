@@ -34,37 +34,68 @@ namespace PvpXray
 
     public interface IPvpHttpClient
     {
-        /// Perform a HTTP GET request to the given URL, returning the
-        /// HTTP status code and the response body as a stream.
-        Stream GetStream(string url, out int status);
+        /// <summary>Perform a HTTP GET request to the given URL. Does not check HTTP status.</summary>
+        /// <exception cref="PvpHttpException">
+        /// A network or protocol error occurred when sending the request or reading the response,
+        /// or the response body exceeded <see cref="XrayUtils.MaxByteArrayLength"/> bytes.
+        /// </exception>
+        PvpHttpResponse Get(string url);
     }
 
     public static class PvpHttpClientExtensions
     {
-        public static void GetArray(this IPvpHttpClient self, string url, out int status, out byte[] buffer, out int length)
+        public static PvpHttpResponse GetCheckStatus(this IPvpHttpClient self, string url, int expected = 200) => self.GetCheckStatus(url, expected, expected);
+        public static PvpHttpResponse GetCheckStatus(this IPvpHttpClient self, string url, int expected1, int expected2)
         {
+            var resp = self.Get(url);
+            if (resp.Status != expected1) PvpHttpException.CheckHttpStatus(url, resp.Status, expected2);
+            return resp;
+        }
+    }
+
+    public struct PvpHttpResponse
+    {
+        public readonly byte[] Buffer;
+        public readonly int Length;
+        public readonly int Status;
+
+        public ArraySegment<byte> Body => new ArraySegment<byte>(Buffer, 0, Length);
+
+        public PvpHttpResponse(int status, byte[] buffer) : this(status, buffer, buffer.Length) { }
+        public PvpHttpResponse(int status, byte[] buffer, int length)
+        {
+            Buffer = buffer;
+            Length = length;
+            Status = status;
+        }
+
+        /// <summary>Same as <see cref="GetString"/>, except throwing SkipAllException.InvalidBaseline on error.</summary>
+        /// <exception cref="Verifier.SkipAllException">If the body is not valid UTF-8, or exceeds <see cref="XrayUtils.MaxUtf8BytesForString"/> bytes.</exception>
+        public string GetBaselineString()
+        {
+            if (Length > XrayUtils.MaxUtf8BytesForString)
+                throw Verifier.SkipAllException.InvalidBaseline;
             try
             {
-                using (var stream = self.GetStream(url, out status))
-                {
-                    XrayUtils.GetStreamArray(stream, out buffer, out length);
-                }
+                return XrayUtils.Utf8Strict.GetString(Buffer, 0, Length);
             }
-            catch (Exception e) when (!(e is PvpHttpException))
+            catch (DecoderFallbackException)
             {
-                throw new PvpHttpException(url, e);
+                throw Verifier.SkipAllException.InvalidBaseline;
             }
         }
 
-        /// Perform a HTTP GET request to the given URL, returning the
-        /// HTTP status and response body (decoded as UTF-8) as a string.
-        public static string GetString(this IPvpHttpClient self, string url, out int status)
+        /// <summary>Returns Body as a string, using strict UTF-8 decoding.</summary>
+        /// <exception cref="PvpHttpException">If the body is not valid UTF-8, or exceeds <see cref="XrayUtils.MaxUtf8BytesForString"/> bytes.</exception>
+        public string GetString(string url)
         {
+            if (Length > XrayUtils.MaxUtf8BytesForString)
+                throw new PvpHttpException(url, $"HTTP response too big to decode as string at {Length} bytes");
             try
             {
-                return XrayUtils.ReadToString(self.GetStream(url, out status));
+                return XrayUtils.Utf8Strict.GetString(Buffer, 0, Length);
             }
-            catch (Exception e) when (!(e is PvpHttpException))
+            catch (DecoderFallbackException e)
             {
                 throw new PvpHttpException(url, e);
             }
@@ -74,97 +105,49 @@ namespace PvpXray
     /// Default IPvpHttpClient implementation, with automatic retry logic.
     public class PvpHttpClient : IPvpHttpClient
     {
-        // A wrapper Stream that disposes both its underlying Stream and the
-        // HttpClient. The ever decorative .NET type system has no distinct
-        // type for a read-only, non-seekable stream, so most methods here
-        // throw exceptions.
-        class HttpStream : Stream
+        static int CheckLen(string url, long length)
+            => length <= XrayUtils.MaxByteArrayLength ? (int)length
+                : throw new PvpHttpException(url, $"HTTP response too big at {length} bytes");
+
+        static void CheckLikelyResponseExceedingByteArrayLimit(string url, MemoryStream ms, IOException e)
         {
-            readonly HttpClient m_Client;
-            readonly Stream m_Stream;
-
-            public HttpStream(HttpClient client, Stream stream)
-            {
-                m_Client = client;
-                m_Stream = stream;
-            }
-
-            protected override void Dispose(bool disposing)
-            {
-                if (disposing)
-                {
-                    m_Stream.Dispose();
-                    m_Client.Dispose();
-                }
-            }
-
-            public override void Flush() { /* no-op */ }
-            public override int ReadByte() => m_Stream.ReadByte();
-            public override int Read(byte[] buffer, int offset, int count) => m_Stream.Read(buffer, offset, count);
-            public override long Seek(long offset, SeekOrigin origin) => throw new NotSupportedException();
-            public override void SetLength(long value) => throw new NotSupportedException();
-            public override void Write(byte[] buffer, int offset, int count) => throw new NotSupportedException();
-            public override bool CanRead => true;
-            public override bool CanSeek => false;
-            public override bool CanWrite => false;
-            public override long Length => throw new NotSupportedException();
-            public override long Position { get => throw new NotSupportedException(); set => throw new NotSupportedException(); }
-        }
-
-        struct CacheEntry
-        {
-            public readonly byte[] Data;
-            public readonly int Length;
-            public readonly int Status;
-
-            static int CheckLen(long length)
-                => length <= XrayUtils.MaxByteArrayLength ? (int)length
-                    : throw new IOException($"HTTP response too large to cache: {length} bytes");
-
-            public CacheEntry(int status, long? length, Stream stream)
-            {
-                Status = status;
-                if (length.HasValue) // Fast path for when we know exact size
-                {
-                    Length = CheckLen(length.Value);
-                    Data = new byte[Length];
-                    stream.ReadExactly(Data);
-                }
-                else
-                {
-                    var ms = new MemoryStream();
-                    stream.CopyTo(ms);
-
-                    // MemoryStream will usually have thrown by now, but on Mono, we might make it to this point.
-                    Length = CheckLen(ms.Length);
-                    Data = ms.GetBuffer();
-                }
-            }
-
-            public MemoryStream GetStream() => new MemoryStream(Data, index: 0, count: Length, writable: false, publiclyVisible: true);
+            // An IOException (Unity 2018.4) or HttpRequestException wrapping an
+            // IOException (.NET 8) may be caused by the response exceeding the
+            // max capacity of the MemoryStream's backing byte[]. But short of
+            // implementing our own MemoryStream, there's no reliable way to
+            // determine that this is the case: An IOException could be any one
+            // of a million things (most of which we just want to retry), the
+            // exception message may be localized, and ms.Position points to the
+            // position BEFORE the failing write, so that's not a reliable
+            // indicator either. However, it can be used as a reasonable hint.
+            // In .NET 8, HttpConnectionResponseContent.SerializeToStreamAsync
+            // uses a fixed block size of just 8 kiB (so downloading a 2 GB file
+            // involves up to 262144 virtual Stream.Read + Write calls…), while
+            // Unity 2018.4 seems to use a read size of 16 kiB. So if Position
+            // is close to the max array size, assume the likely error cause.
+            if (e.Message.Contains("Stream was too long") || ms.Position > XrayUtils.MaxByteArrayLength - 16 * 1024)
+                throw new PvpHttpException(url, "HTTP response too big");
         }
 
         readonly string m_UserAgent;
-        readonly Dictionary<string, CacheEntry> m_Cache;
-
-        public PvpHttpClient(string userAgent) : this(userAgent, false) { }
+        readonly Dictionary<string, PvpHttpResponse> m_Cache;
+        internal int InitialRetryDelayMs = 10;
+        internal int TimeoutMs = 60_000;
 
         public PvpHttpClient(string userAgent, bool cache)
         {
             m_UserAgent = userAgent;
-            m_Cache = cache ? new Dictionary<string, CacheEntry>() : null;
+            m_Cache = cache ? new Dictionary<string, PvpHttpResponse>() : null;
         }
 
-        public Stream GetStream(string url, out int status)
+        public PvpHttpResponse Get(string url)
         {
-            if (m_Cache != null && m_Cache.TryGetValue(url, out var entry))
-            {
-                status = entry.Status;
-                return entry.GetStream();
-            }
+            if (m_Cache != null && m_Cache.TryGetValue(url, out var entry)) return entry;
+
+            var ms = new MemoryStream();
 
             // Perform 4 retries (5 total attempts) with intervals 10ms, 100ms, 1s, 10s.
-            var retryDelayMs = 10;
+            var retryDelayMs = InitialRetryDelayMs;
             for (var nRetries = 4; ; --nRetries, retryDelayMs *= 10)
             {
                 // We create a new HttpClient for every request (thus getting
@@ -174,61 +157,68 @@ namespace PvpXray
                 // code might run on. (There are e.g. known bugs in its timeout
                 // logic in several .NET runtimes, which we may have to work
                 // around in the future, as was already done in Stevedore.)
-                var client = new HttpClient(new HttpClientHandler
+                using (var client = new HttpClient(new HttpClientHandler
                 {
-                    // Note that the fast path in the CacheEntry constructor is not taken when the
-                    // response body is decompressed since we don't know its size up front.
                     AutomaticDecompression = DecompressionMethods.GZip | DecompressionMethods.Deflate,
-                });
-                try
+                }))
                 {
                     client.DefaultRequestHeaders.ExpectContinue = false;
-                    client.Timeout = TimeSpan.FromMinutes(1);
+                    client.Timeout = TimeSpan.FromMilliseconds(TimeoutMs);
 
                     using (var request = new HttpRequestMessage(HttpMethod.Get, url))
                     {
                         request.Headers.Add("User-Agent", m_UserAgent);
 
-                        Stream body;
+                        PvpHttpResponse result;
                         try
                         {
-                            long? contentLength;
-                            (status, contentLength, body) = Task.Run(async () =>
+                            result = Task.Run(async () =>
                             {
                                 // ReSharper disable AccessToDisposedClosure -- Task.Run blocks until we're done
                                 // ReSharper disable AccessToModifiedClosure
-                                var response = await client.SendAsync(request, HttpCompletionOption.ResponseHeadersRead);
+                                using (var response = await client.SendAsync(request, HttpCompletionOption.ResponseHeadersRead))
+                                {
+
+                                    var size = CheckLen(url, response.Content.Headers.ContentLength.GetValueOrDefault(1024));
+
+                                    ms.SetLength(0); // Discard old data (to avoid copying it). Also sets Position = 0.
+                                    if (ms.Capacity < size) ms.Capacity = size;
 
 #if UNITY_EDITOR
-                                // The automatic decompression implementation in some versions of Unity removes the
-                                // Content-Encoding header but retains the original Content-Length header. A potentially
-                                // decompressed response body will likely be larger than the reported content length.
-                                // Set content length to null to avoid partial read of response body. (PETS-1462)
-                                response.Content.Headers.ContentLength = null;
+                                    // The automatic decompression implementation in some versions of Unity removes the
+                                    // Content-Encoding header but retains the original Content-Length header. A potentially
+                                    // decompressed response body will likely be larger than the reported content length.
+                                    // Set content length to null to avoid partial read of response body. (PETS-1462)
+                                    response.Content.Headers.ContentLength = null;
 #endif
 
-                                return (
-                                    (int)response.StatusCode,
-                                    response.Content.Headers.ContentLength,
-                                    await response.Content.ReadAsStreamAsync()
-                                );
+                                    try
+                                    {
+                                        await response.Content.CopyToAsync(ms);
+                                    }
+                                    catch (IOException e)
+                                    {
+                                        CheckLikelyResponseExceedingByteArrayLimit(url, ms, e);
+                                        throw;
+                                    }
+                                    catch (HttpRequestException e) when (e.InnerException is IOException inner)
+                                    {
+                                        CheckLikelyResponseExceedingByteArrayLimit(url, ms, inner);
+                                        throw;
+                                    }
+
+                                    return new PvpHttpResponse((int)response.StatusCode, ms.GetBuffer(), CheckLen(url, ms.Position));
+                                }
                             }).GetAwaiter().GetResult();
 
                             // Retry on HTTP server error.
-                            if (status >= 500 && status < 600 && nRetries > 0)
+                            if (result.Status >= 500 && result.Status < 600 && nRetries > 0)
                             {
                                 Thread.Sleep(retryDelayMs);
                                 continue;
                             }
-
-                            // If caching the response, read entire thing into memory now and return stream wrapping it.
-                            if (m_Cache != null)
-                            {
-                                var newEntry = m_Cache[url] = new CacheEntry(status, contentLength, body);
-                                return newEntry.GetStream();
-                            }
                         }
-                        catch (Exception e)
+                        catch (Exception e) when (!(e is PvpHttpException))
                         {
                             // Retry on network error.
                             if (nRetries > 0)
@@ -237,18 +227,13 @@ namespace PvpXray
                                 continue;
                             }
 
+                            if (e is TaskCanceledException) throw new PvpHttpException(url, "Request timed out");
                             throw new PvpHttpException(url, e);
                         }
 
-                        // If streaming response, pass responsibility for disposing HttpClient onto caller.
-                        var result = new HttpStream(client, body);
-                        client = null;
+                        if (m_Cache != null) m_Cache[url] = result;
                         return result;
                     }
-                }
-                finally
-                {
-                    client?.Dispose();
                 }
             }
         }
@@ -270,7 +255,7 @@ namespace PvpXray
         public void Add(string url, int status, byte[] response) => m_Expected.Add((url, status, response));
         public void Add(string url, int status, string response) => Add(url, status, Encoding.UTF8.GetBytes(response));
 
-        public Stream GetStream(string url, out int status)
+        public PvpHttpResponse Get(string url)
         {
             if (url == null) throw new ArgumentNullException(nameof(url));
 
@@ -278,13 +263,11 @@ namespace PvpXray
             if (url != expectedUrl)
             {
                 m_Assert($"Unexpected request for {url}; expected {expectedUrl ?? "no more requests"}.");
-                status = -1;
-                return null;
+                return new PvpHttpResponse(-1, Array.Empty<byte>());
             }
 
             var resp = m_Expected[m_ExpectedIndex++];
-            status = resp.Item2;
-            return new MemoryStream(resp.Item3, 0, resp.Item3.Length, writable: false, publiclyVisible: false);
+            return new PvpHttpResponse(status: resp.Item2, buffer: resp.Item3);
         }
 
         IEnumerator IEnumerable.GetEnumerator()

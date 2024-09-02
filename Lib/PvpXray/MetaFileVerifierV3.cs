@@ -36,7 +36,7 @@ namespace PvpXray
                         var directoryPath = pathBuilder.ToStringAndReset();
                         if (seenDirectories.Add(directoryPath))
                         {
-                            entries.Add(new PathEntry(directoryPath, false, isDirectory: true));
+                            entries.Add(new PathEntry(directoryPath, default, isDirectory: true));
                         }
                     }
                 }
@@ -50,7 +50,7 @@ namespace PvpXray
             // We need to know about directories since folder assets also have corresponding meta files.
             var entries = GetFileAndDirectoryEntries(context.PathEntries);
 
-            var minVersion = context.Manifest["unity"].IfPresent?.String;
+            var minVersion = context.ManifestPermitInvalidJson["unity"].IfPresent?.String;
             int i;
             var targetUnityRequiresMetaFilesInPluginDirs = minVersion == null || (
                 (i = minVersion.IndexOf('.')) != -1 &&
@@ -77,7 +77,7 @@ namespace PvpXray
                 if (entry.HasExtension(k_MetaExtension))
                 {
                     // ignore .meta files inside hidden directories (like Samples~)
-                    if (entry.Components.Length > 1 && new PathEntry(entry.DirectoryWithCase, false, isDirectory: true).IsHiddenLegacy) continue;
+                    if (entry.Components.Length > 1 && new PathEntry(entry.DirectoryWithCase, default, isDirectory: true).IsHiddenLegacy) continue;
 
                     if (entry.IsDirectory)
                     {

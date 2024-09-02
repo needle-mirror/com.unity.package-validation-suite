@@ -144,7 +144,7 @@ namespace PvpXray
             // https://github.cds.internal.unity3d.com/unity/com.unity.package-starter-kit/blob/e72985bcd7d88ffd61e50e3b31af5426e83833c0/package.json
             if (entry.Path == "package.json")
             {
-                var description = m_Context.Manifest["description"];
+                var description = m_Context.ManifestPermitInvalidJson["description"];
                 if (description.IsPresent)
                 {
                     var text = description.String;
@@ -157,7 +157,7 @@ namespace PvpXray
 
                 // https://github.cds.internal.unity3d.com/unity/com.unity.package-starter-kit/blob/79e620af0299b774996184fbfab942f385e69c59/package.json
                 // https://github.cds.internal.unity3d.com/unity/com.unity.package-starter-kit/blob/c6b39c2a8668fc16e544796bf498bf95a96ada6e/package.json
-                var keywords = m_Context.Manifest["keywords"];
+                var keywords = m_Context.ManifestPermitInvalidJson["keywords"];
                 var keyKeywordSeen = false;
                 foreach (var keyword in keywords.ElementsIfPresent)
                 {
@@ -171,7 +171,7 @@ namespace PvpXray
 
                 // https://github.cds.internal.unity3d.com/unity/com.unity.package-starter-kit/blob/8906fe818474921ceb4851bb478ff25cb79fb335/package.json
                 // https://github.cds.internal.unity3d.com/unity/com.unity.package-starter-kit/blob/c6b39c2a8668fc16e544796bf498bf95a96ada6e/package.json
-                var category = m_Context.Manifest["category"];
+                var category = m_Context.ManifestPermitInvalidJson["category"];
                 if (category.IsPresent)
                 {
                     var text = category.String;

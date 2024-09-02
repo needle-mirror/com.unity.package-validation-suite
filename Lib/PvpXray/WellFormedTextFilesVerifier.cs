@@ -58,7 +58,8 @@ namespace PvpXray
             var isV2Eligible = file.Extension.HasFlags(FileExt.V2, FileExt.TextFile);
             if (!isV2Eligible && isConsideredBinaryByGit) return;
 
-            var isCSharp = !file.Entry.IsHidden && file.Extension.Canonical == ".cs";
+            // note: Samples are allowed to contain tests.
+            var isCSharp = !file.Entry.IsHiddenLegacy2 && file.Extension.Canonical == ".cs";
 
             var failures = 0;
             const int pvp39 = 1 << 0; // Git conflict markers.

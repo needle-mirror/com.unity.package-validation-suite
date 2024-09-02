@@ -15,6 +15,8 @@ using System.Text.RegularExpressions;
 // - bugfix: now correctly rejects this invalid JSON: "{\"foo\":1,}"
 // - bugfix: now correctly rejects this invalid JSON: "[1,]"
 // - bugfix: now correctly rejects this invalid JSON: ""
+// - bugfix: now correctly rejects this invalid JSON: "\"\n\""
+// - bugfix: now correctly rejects this invalid JSON: "01"
 // - raises exception on invalid JSON or duplicate keys
 
 namespace PvpXray
@@ -45,6 +47,28 @@ namespace PvpXray
             Escapes['t'] = '\t';
         }
 
+        struct ParseContext
+        {
+            public List<object> Path;
+            public bool PermitInvalidJson;
+
+            public void PopPath() => Path.RemoveAt(Path.Count - 1);
+            public void SetPathLeaf(object value) => Path[Path.Count - 1] = value;
+
+            public string GetPathError(string error)
+            {
+                var sb = new StringBuilder(20 + error.Length);
+                foreach (var p in Path)
+                {
+                    var isFirstElement = sb.Length == 0;
+                    if (p is ulong arrayIndex) AppendJsonPathElement(sb, arrayIndex.ToString(), true, isFirstElement);
+                    else AppendJsonPathElement(sb, (string)p, false, isFirstElement);
+                }
+                if (sb.Length == 0) sb.Append('.');
+                return sb.Append(": ").Append(error).ToString();
+            }
+        }
+
         /// <summary>
         /// Reads an object from JSON:
         /// - Objects {...} are returned as Dictionary of string,object
@@ -55,12 +79,18 @@ namespace PvpXray
         /// </summary>
         /// <param name="json">JSON string</param>
         /// <param name="packageFilePath">Path to be passed to any raised <see cref="SimpleJsonException"/>.</param>
+        /// <param name="permitInvalidJson">Whether to allow invalid JSON that was accepted in the past.</param>
         /// <returns>Object read from JSON.</returns>
-        public static object Read(string json, string packageFilePath)
+        public static object Read(string json, string packageFilePath, bool permitInvalidJson = false)
         {
             try
             {
-                var idx = ParseValue(json, 0, new List<object>(), out var value);
+                var parseContext = new ParseContext
+                {
+                    Path = new List<object>(),
+                    PermitInvalidJson = permitInvalidJson,
+                };
+                var idx = ParseValue(json, 0, parseContext, out var value);
                 if (idx == -1)
                     throw new SimpleJsonException("Invalid JSON document", null);
                 SkipSpace(json, ref idx, json.Length);
@@ -79,11 +109,12 @@ namespace PvpXray
         {
             for (var i = beginIdx + 1; i < len; i++)
             {
-                if (json[i] == '\\')
+                var c = json[i];
+                if (c == '\\')
                 {
                     i++; // Skip next character as it is escaped
                 }
-                else if (json[i] == '"')
+                else if (c == '"')
                 {
                     return i + 1;
                 }
@@ -102,12 +133,14 @@ namespace PvpXray
             return -1;
         }
 
-        static string DecodeString(string json, int beginIdx, int endIdx)
+        static string DecodeString(string json, int beginIdx, int endIdx, ParseContext context)
         {
             StringBuilder sb = new StringBuilder(endIdx - beginIdx);
             for (var i = beginIdx + 1; i < endIdx - 1; ++i)
             {
                 var c = json[i];
+                if (c < 0x20 && !context.PermitInvalidJson)
+                    throw new SimpleJsonException(context.GetPathError("literal control character in string"), null);
                 if (c == '\\')
                 {
                     // handle JSON escapes
@@ -142,7 +175,10 @@ namespace PvpXray
 
                 sb.Append(c);
             }
-            return sb.ToString();
+            var result = sb.ToString();
+            if (!context.PermitInvalidJson && !XrayUtils.IsValidUnicode(result))
+                throw new SimpleJsonException(context.GetPathError("string is not valid Unicode"), null);
+            return result;
         }
 
         static void SkipSpace(string json, ref int idx, int len)
@@ -155,7 +191,7 @@ namespace PvpXray
             }
         }
 
-        static int ParseDict(string json, int idx, List<object> path, Dictionary<string, object> res)
+        static int ParseDict(string json, int idx, ParseContext context, Dictionary<string, object> res)
         {
             var length = json.Length;
             SkipSpace(json, ref idx, length);
@@ -163,18 +199,17 @@ namespace PvpXray
             if (idx < length && json[idx] == '}')
                 return idx + 1;
 
-            path.Add(null);
             while (idx < length)
             {
                 // key name
-                string name = null;
+                string name;
                 if (json[idx] == '"')
                 {
                     var endS = SkipUntilStringEnd(json, idx, length);
                     if (endS == length || endS == -1)
                         return -1;
                     {
-                        name = DecodeString(json, idx, endS);
+                        name = DecodeString(json, idx, endS, context);
                         if (name == null)
                             return -1;
                     }
@@ -191,22 +226,16 @@ namespace PvpXray
                 SkipSpace(json, ref idx, length);
 
                 // value
-                path[path.Count - 1] = name;
-                var endO = ParseValue(json, idx, path, out var val);
+                context.Path.Add(name);
+                var endO = ParseValue(json, idx, context, out var val);
                 if (endO == -1)
                     return -1;
 
                 if (res.ContainsKey(name))
                 {
-                    var sb = new StringBuilder(40);
-                    foreach (var p in path)
-                    {
-                        var isFirstElement = sb.Length == 0;
-                        if (p is ulong arrayIndex) AppendJsonPathElement(sb, arrayIndex.ToString(), true, isFirstElement);
-                        else AppendJsonPathElement(sb, (string)p, false, isFirstElement);
-                    }
-                    throw new SimpleJsonException($"Duplicate JSON key: {name}", sb.Append(": duplicate JSON key").ToString());
+                    throw new SimpleJsonException($"Duplicate JSON key: {name}", context.GetPathError("duplicate JSON key"));
                 }
+                context.PopPath();
 
                 res.Add(name, val);
                 idx = endO;
@@ -216,10 +245,7 @@ namespace PvpXray
                 if (idx >= length)
                     return -1;
                 if (json[idx] == '}')
-                {
-                    path.RemoveAt(path.Count - 1);
                     return idx + 1;
-                }
 
                 if (json[idx] != ',')
                     return -1;
@@ -230,7 +256,7 @@ namespace PvpXray
             return -1;
         }
 
-        static int ParseList(string json, int idx, List<object> path, List<object> res)
+        static int ParseList(string json, int idx, ParseContext context, List<object> res)
         {
             var length = json.Length;
             SkipSpace(json, ref idx, length);
@@ -239,11 +265,11 @@ namespace PvpXray
                 return idx + 1;
 
             var elementIndex = 0ul;
-            path.Add(elementIndex);
+            context.Path.Add(elementIndex);
             while (idx < length)
             {
                 // value
-                var endO = ParseValue(json, idx, path, out var val);
+                var endO = ParseValue(json, idx, context, out var val);
                 if (endO == -1)
                     return -1;
                 res.Add(val);
@@ -255,7 +281,7 @@ namespace PvpXray
                     return -1;
                 if (json[idx] == ']')
                 {
-                    path.RemoveAt(path.Count - 1);
+                    context.PopPath();
                     return idx + 1;
                 }
 
@@ -264,12 +290,12 @@ namespace PvpXray
                 ++idx;
 
                 SkipSpace(json, ref idx, length);
-                path[path.Count - 1] = ++elementIndex;
+                context.SetPathLeaf(++elementIndex);
             }
             return -1;
         }
 
-        static int ParseValue(string json, int idx, List<object> path, out object value)
+        static int ParseValue(string json, int idx, ParseContext context, out object value)
         {
             value = null;
 
@@ -284,7 +310,7 @@ namespace PvpXray
             if (c == '{')
             {
                 var dict = new Dictionary<string, object>();
-                idx = ParseDict(json, idx + 1, path, dict);
+                idx = ParseDict(json, idx + 1, context, dict);
                 if (idx == -1)
                     return -1;
                 value = dict;
@@ -295,7 +321,7 @@ namespace PvpXray
             if (c == '[')
             {
                 var list = new List<object>();
-                idx = ParseList(json, idx + 1, path, list);
+                idx = ParseList(json, idx + 1, context, list);
                 if (idx == -1)
                     return -1;
                 value = list;
@@ -309,7 +335,7 @@ namespace PvpXray
                 if (endS == -1)
                     return -1;
                 {
-                    value = DecodeString(json, idx, endS);
+                    value = DecodeString(json, idx, endS, context);
                     if (value == null)
                         return -1;
                 }
@@ -330,6 +356,16 @@ namespace PvpXray
             if (('0' <= c && c <= '9') || c == '-')
             {
                 var num = json.SpanOrSubstring(idx, endV - idx);
+                if (!context.PermitInvalidJson)
+                {
+                    var i = c == '-' ? 1 : 0;
+                    var period = num.IndexOf('.');
+                    var hasLeadingZero = num.Length >= i + 2 && num[i] == '0' && Net7Compat.IsAsciiDigit(num[i + 1]);
+                    var hasBadPeriod = period != -1 && (period == 0 || period == num.Length - 1 || !Net7Compat.IsAsciiDigit(num[period - 1]) || !Net7Compat.IsAsciiDigit(num[period + 1]));
+                    if (hasLeadingZero || hasBadPeriod)
+                        throw new SimpleJsonException(context.GetPathError("invalid JSON number syntax"), null);
+                }
+
                 if (double.TryParse(num, NumberStyles.Float, CultureInfo.InvariantCulture, out var result))
                 {
                     value = result;

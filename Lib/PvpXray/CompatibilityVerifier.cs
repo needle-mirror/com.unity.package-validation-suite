@@ -172,7 +172,7 @@ namespace PvpXray
             context.IsLegacyCheckerEmittingLegacyJsonErrors = true;
             _ = context.HttpClient; // Bail early if running offline.
 
-            var versionJson = context.Manifest["version"];
+            var versionJson = context.ManifestPermitInvalidJson["version"];
             if (!VersionTriple.TryParseIgnoringPrereleaseAndBuildInfo(versionJson.String, out var triple)
                 || triple.Major == uint.MaxValue
                 || triple.Minor == uint.MaxValue
@@ -182,7 +182,7 @@ namespace PvpXray
             // No compatibility requirements for a 0.x package.
             if (triple.Major == 0) return;
 
-            var underTestData = new ManifestData(context.Manifest);
+            var underTestData = new ManifestData(context.ManifestPermitInvalidJson);
             var previousQuery = Query(SemVerQuery.Op.LessThan, triple);
             var prevPatchData = GetData(previousQuery, requireSameMinor: true);
             var prevMinorData = GetData(previousQuery);

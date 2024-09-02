@@ -63,7 +63,8 @@ namespace PvpXray
             PackageFilePath = packageFilePath;
         }
 
-        public Json(string json, string packageFilePath) : this(SimpleJsonReader.Read(json, packageFilePath), null, null, packageFilePath) { }
+        public Json(string json, string packageFilePath, bool permitInvalidJson = false)
+            : this(SimpleJsonReader.Read(json, packageFilePath, permitInvalidJson), null, null, packageFilePath) { }
         internal Json(object root, string packageFilePath) : this(root, null, null, packageFilePath) { }
 
         internal SimpleJsonException GetException(string message)

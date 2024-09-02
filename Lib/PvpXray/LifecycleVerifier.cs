@@ -19,7 +19,7 @@ namespace PvpXray
         {
             try
             {
-                var versionJson = context.Manifest["version"];
+                var versionJson = context.ManifestPermitInvalidJson["version"];
 
                 string version;
                 try

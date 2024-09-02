@@ -69,7 +69,7 @@ namespace PvpXray
         public ManifestTypeVerifierV2(Verifier.Context context)
         {
             context.IsLegacyCheckerEmittingLegacyJsonErrors = true;
-            var manifest = context.Manifest;
+            var manifest = context.ManifestPermitInvalidJson;
 
             try
             {

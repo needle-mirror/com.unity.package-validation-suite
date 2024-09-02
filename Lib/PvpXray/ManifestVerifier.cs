@@ -243,7 +243,7 @@ namespace PvpXray
         public ManifestVerifier(Verifier.Context context)
         {
             context.IsLegacyCheckerEmittingLegacyJsonErrors = true;
-            var manifest = context.Manifest;
+            var manifest = context.ManifestPermitInvalidJson;
             var scratch = new StringBuilder();
 
             var arrayOfOne = new Json[1];

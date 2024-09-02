@@ -13,7 +13,7 @@ namespace PvpXray
         public ManifestTypeVerifierV3(Verifier.Context context)
         {
             m_Context = context;
-            Manifest(context.Manifest);
+            Manifest(context.ManifestPermitInvalidJson);
         }
 
         void Manifest(Json manifest)

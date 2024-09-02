@@ -76,7 +76,7 @@ namespace PvpXray
 
                 try
                 {
-                    Baseline.Manifest = new Json(manifestText, null);
+                    Baseline.Manifest = new Json(manifestText, null, permitInvalidJson: true);
                     Id = new PackageId(Baseline.Manifest);
                 }
                 catch (SimpleJsonException)
@@ -317,18 +317,24 @@ namespace PvpXray
         public string[] Components { get; }
         public string Filename { get; }
         public bool IsDirectory { get; } // usually false, as by default, directories are not enumerated
-        public bool IsHidden { get; }
         /// <summary>Do not use (except for backwards compatibility). Incorrectly treats plugin directories directories as importable.</summary>
         public bool IsHiddenLegacy { get; }
-        /// <summary>For specialized use only; prefer simply using <see cref="IsHidden"/>.</summary>
+        /// <summary>Do not use (except for backwards compatibility). Does not account for samples. Prefer <see cref="IsAsset"/>.</summary>
+        public bool IsHiddenLegacy2 { get; }
+        /// <summary>For specialized use only; prefer simply using <see cref="IsAsset"/>.</summary>
         public bool IsInsidePluginDirectory { get; }
+        /// <summary>Is this a (visible) regular asset (not inside Samples~)? Prefer <see cref="IsAsset"/>.</summary>
+        public bool IsRegularAsset { get; }
+        /// <summary>Is this a (visible) asset inside Samples~? Prefer <see cref="IsAsset"/>.</summary>
+        public bool IsSampleAsset { get; }
         public string Path { get; }
         public string PathWithCase { get; }
 
         public string DirectoryWithCase => Components.Length == 1 ? "" : PathWithCase.Substring(0, PathWithCase.Length - Filename.Length - 1);
-        public string FilenameWithCase => PathWithCase.Substring(PathWithCase.Length - Filename.Length);
+        public StringSlice FilenameWithCase => PathWithCase.Slice(PathWithCase.Length - Filename.Length);
+        public StringSlice FilenameWithCaseNoExtension => PathWithCase.Slice(PathWithCase.Length - Filename.Length, PathWithCase.Length - m_Extension.Length);
 
-        public PathEntry(string path, bool targetUnityImportsPluginDirs, bool isDirectory = false)
+        public PathEntry(string path, Verifier.AssetVisibility assetVisibility, bool isDirectory = false)
         {
             // Note: avoid .NET Path APIs here; they are poorly documented and may have platform-specific quirks.
 
@@ -342,30 +348,54 @@ namespace PvpXray
             // 'i > 0' because the extension of ".gitignore" is not ".gitignore".
             m_Extension = i > 0 ? Filename.Substring(i) : "";
 
-            // Files are considered "hidden" (and not imported by the asset pipeline) subject
-            // to the patterns given here: https://docs.unity3d.com/Manual/SpecialFolders.html
-            // (Implementation appears to be in Runtime/VirtualFileSystem/LocalFileSystem.h)
-            var hasHiddenComponent = Components.Any(name => name[0] == '.' || name[name.Length - 1] == '~' || name == "cvs");
-            IsHiddenLegacy = hasHiddenComponent || (!IsDirectory && m_Extension == ".tmp");
+            IsHiddenLegacy = !IsDirectory && m_Extension == ".tmp"; // updated below
 
-            // As of 2023.1.0a24 and corresponding backports (UUM-9421), Unity will ignore
-            // files inside directories with certain file extensions IF a plugin has been
-            // registered for that path. Whether files are "hidden" or not can thus no longer
-            // be determined from the path alone, but depends on the exact Unity patch version
-            // and runtime plugin config.
-            // But for PVP, we assume that such paths are always plugins. For details, see:
-            // - https://github.cds.internal.unity3d.com/unity/unity/pull/19042
-            // - PluginImporter::GetLoadableDirectoryExtensionTypes
-            IsInsidePluginDirectory = Components.Take(Components.Length - 1).Any(name =>
-                    name.EndsWith(".androidlib", StringComparison.OrdinalIgnoreCase) ||
-                    name.EndsWith(".bundle", StringComparison.OrdinalIgnoreCase) ||
-                    name.EndsWith(".framework", StringComparison.OrdinalIgnoreCase) ||
-                    name.EndsWith(".plugin", StringComparison.OrdinalIgnoreCase));
-            IsHidden = IsHiddenLegacy || (IsInsidePluginDirectory && !targetUnityImportsPluginDirs);
+            var samplePrefixLevels = assetVisibility.SingleTopLevelSample ? 1 : 2;
+            IsSampleAsset = Components.Length > samplePrefixLevels && Components[0] == "samples~"; // updated below
+
+            for (i = 0; i < Components.Length; i++)
+            {
+                var name = Components[i];
+                // Files are considered "hidden" (and not imported by the asset pipeline) subject
+                // to the patterns given here: https://docs.unity3d.com/Manual/SpecialFolders.html
+                // (Implementation appears to be in Runtime/VirtualFileSystem/LocalFileSystem.h)
+                if (name[0] == '.' || name[name.Length - 1] == '~' || name == "cvs")
+                {
+                    IsHiddenLegacy = true;
+                    if (i >= samplePrefixLevels) IsSampleAsset = false;
+                }
+
+                // As of 2023.1.0a24 and corresponding backports (UUM-9421), Unity will ignore
+                // files inside directories with certain file extensions IF a plugin has been
+                // registered for that path. Whether files are "hidden" or not can thus no longer
+                // be determined from the path alone, but depends on the exact Unity patch version
+                // and runtime plugin config.
+                // But for PVP, we assume that such paths are always plugins. For details, see:
+                // - https://github.cds.internal.unity3d.com/unity/unity/pull/19042
+                // - PluginImporter::GetLoadableDirectoryExtensionTypes
+                if (!IsInsidePluginDirectory && i != Components.Length - 1)
+                {
+                    // Note: we always ignore the last component (regardless of isDirectory), as
+                    // the plugin directory itself is still an asset (only its content is ignored).
+                    IsInsidePluginDirectory =
+                        name.EndsWithOrdinal(".androidlib") ||
+                        name.EndsWithOrdinal(".bundle") ||
+                        name.EndsWithOrdinal(".framework") ||
+                        name.EndsWithOrdinal(".plugin");
+
+                    if (IsInsidePluginDirectory && !assetVisibility.TargetUnityImportsPluginDirs && i >= samplePrefixLevels) IsSampleAsset = false;
+                }
+            }
+
+            IsHiddenLegacy2 = IsHiddenLegacy || (IsInsidePluginDirectory && !assetVisibility.TargetUnityImportsPluginDirsLegacy);
+            IsRegularAsset = !(IsHiddenLegacy || (IsInsidePluginDirectory && !assetVisibility.TargetUnityImportsPluginDirs));
         }
+
+        public bool IsAsset(bool includeSamples) => includeSamples ? IsSampleAsset || IsRegularAsset : IsRegularAsset;
 
         public bool HasComponent(params string[] components) => Components.Any(components.Contains);
         public bool HasDirectoryComponent(params string[] components) => Components.Take(Components.Length - 1).Any(components.Contains);
+        public bool HasExtension(string extension) => m_Extension == extension;
         public bool HasExtension(params string[] extensions) => extensions.Contains(m_Extension);
         public bool HasFilename(params string[] filenames) => filenames.Contains(Filename);
     }
@@ -415,10 +445,10 @@ namespace PvpXray
             readonly IPackageFile m_File;
             byte[] m_Content;
 
-            public PackageFile(IPackageFile file, bool targetUnityImportsPluginDirs)
+            public PackageFile(IPackageFile file, AssetVisibility assetVisibility)
             {
                 m_File = file;
-                Entry = new PathEntry(file.Path, targetUnityImportsPluginDirs, isDirectory: false);
+                Entry = new PathEntry(file.Path, assetVisibility, isDirectory: false);
                 Path = file.Path;
                 Size = file.Size;
 
@@ -545,21 +575,35 @@ namespace PvpXray
             }
         }
 
+        // Context that determines which files count as assets and which are
+        // hidden from the asset pipeline.
+        internal struct AssetVisibility
+        {
+            public bool SingleTopLevelSample;
+            public bool TargetUnityImportsPluginDirs;
+            public bool TargetUnityImportsPluginDirsLegacy;
+        }
+
         internal class Context
         {
+            public readonly AssetVisibility AssetVisibility;
             public Func<string, string> GetXrayEnv { get; }
             public IReadOnlyList<string> Files { get; }
             public bool IsLegacyCheckerEmittingLegacyJsonErrors { get; set; }
             public IReadOnlyList<PathEntry> PathEntries { get; }
             public IPvpHttpClient HttpClient => m_HttpClient ?? throw new SkipAllException("offline_requested");
-            public Json Manifest => m_Manifest ?? throw new FailAllException(m_ManifestError);
+            // note difference: the legacy `ManifestPermitInvalidJson` throws FailAllException, whereas
+            // the new `Manifest` throws SimpleJsonException as if it had actually just attempted to parse the manifest.
+            public Json Manifest => m_Manifest ?? throw new SimpleJsonException(m_ManifestJsonError, null) { PackageFilePath = "package.json" };
+            public Json ManifestPermitInvalidJson => m_ManifestPermitInvalidJson ?? throw new FailAllException(m_ManifestErrorPermitInvalidJson);
             public List<(string, string)> ManifestContextErrors { get; } = new List<(string, string)>();
-            public readonly bool TargetUnityImportsPluginDirs;
 
             readonly HashSet<string> m_CurrentBatchChecks;
             readonly IPvpHttpClient m_HttpClient;
             readonly Json m_Manifest;
-            readonly string m_ManifestError;
+            readonly Json m_ManifestPermitInvalidJson;
+            readonly string m_ManifestJsonError;
+            readonly string m_ManifestErrorPermitInvalidJson;
             readonly HashSet<string> m_PreviousErrors;
             readonly Dictionary<string, Dictionary<string, object>> m_ProductionRegistryVersions = new Dictionary<string, Dictionary<string, object>>();
             readonly ResultFileStub m_ResultFile;
@@ -606,7 +650,14 @@ namespace PvpXray
                 Files = verifierContext.Files;
                 m_HttpClient = verifierContext.HttpClient;
 
-                try
+                if (verifierContext.Manifest == null)
+                {
+                    m_ManifestJsonError = "manifest file not present";
+                    m_ManifestErrorPermitInvalidJson = "package.json manifest could not be read";
+                    ManifestContextErrors.Add(("PVP-100-1", m_ManifestErrorPermitInvalidJson));
+                    ManifestContextErrors.Add(("PVP-100-2", "package.json: could not be read"));
+                }
+                else
                 {
                     string text;
                     try
@@ -631,36 +682,70 @@ namespace PvpXray
                         text = text.Substring(1);
                     }
 
-                    m_Manifest = new Json(text, "package.json");
-                    m_ManifestError = null;
-
                     try
                     {
-                        var minVersion = m_Manifest["unity"].IfPresent?.String;
-                        int i;
-                        // The asset pipeline in Unity 2019.*, 2020.1, 2020.2, 2021.1, 2021.2, 2022.1
-                        // doesn't ignore Loadable Plugin Directories. Cf. PathEntry.IsHidden.
-                        TargetUnityImportsPluginDirs = minVersion == null || (
-                            (i = minVersion.IndexOf('.')) != -1 &&
-                            XrayUtils.TryParseUint(minVersion.SpanOrSubstring(0, i), out var major) &&
-                            XrayUtils.TryParseUint(minVersion.SpanOrSubstring(i + 1), out var minor) &&
-                            (major < 2020 || (major <= 2021 && minor < 3) || (major == 2022 && minor < 2))
-                        );
+                        try
+                        {
+                            m_Manifest = m_ManifestPermitInvalidJson = new Json(text, "package.json", permitInvalidJson: false);
+                            AssetVisibility.SingleTopLevelSample = HasSingleTopLevelSample(m_Manifest);
+                            AssetVisibility.TargetUnityImportsPluginDirs = AssetVisibility.TargetUnityImportsPluginDirsLegacy = GetTargetUnityImportsPluginDirs(m_Manifest);
+                        }
+                        catch (SimpleJsonException e)
+                        {
+                            m_ManifestJsonError = e.Message;
+                            m_ManifestPermitInvalidJson = new Json(text, "package.json", permitInvalidJson: true);
+                            AssetVisibility.TargetUnityImportsPluginDirsLegacy = GetTargetUnityImportsPluginDirs(m_ManifestPermitInvalidJson);
+                        }
                     }
-                    catch (SimpleJsonException)
+                    catch (SimpleJsonException e)
                     {
-                        TargetUnityImportsPluginDirs = false;
+                        m_ManifestErrorPermitInvalidJson = "package.json manifest is not valid JSON";
+                        ManifestContextErrors.Add(("PVP-100-1", m_ManifestErrorPermitInvalidJson));
+                        ManifestContextErrors.Add(("PVP-100-2", e.LegacyFullMessage));
                     }
-                }
-                catch (Exception e)
-                {
-                    m_Manifest = null;
-                    m_ManifestError = e is SimpleJsonException ? "package.json manifest is not valid JSON" : "package.json manifest could not be read";
-                    ManifestContextErrors.Add(("PVP-100-1", m_ManifestError));
-                    ManifestContextErrors.Add(("PVP-100-2", e is SimpleJsonException sje ? sje.LegacyFullMessage : "package.json: could not be read"));
                 }
 
-                PathEntries = Files.Select(p => new PathEntry(p, TargetUnityImportsPluginDirs)).ToList();
+                PathEntries = Files.Select(p => new PathEntry(p, AssetVisibility)).ToList();
+            }
+
+            internal static bool HasSingleTopLevelSample(Json manifest)
+            {
+                try
+                {
+                    var hasTopLevelSample = false;
+                    foreach (var sample in manifest["samples"].Elements)
+                    {
+                        if (hasTopLevelSample) return false; // multiple samples, can't be single top-level
+                        hasTopLevelSample = sample["path"].String.Equals("samples~", StringComparison.OrdinalIgnoreCase);
+                        if (!hasTopLevelSample) return false;
+                    }
+                    return hasTopLevelSample;
+                }
+                catch (SimpleJsonException)
+                {
+                    return false;
+                }
+            }
+
+            static bool GetTargetUnityImportsPluginDirs(Json manifest)
+            {
+                try
+                {
+                    var minVersion = manifest["unity"].IfPresent?.String;
+                    int i;
+                    // The asset pipeline in Unity 2019.*, 2020.1, 2020.2, 2021.1, 2021.2, 2022.1
+                    // doesn't ignore Loadable Plugin Directories. Cf. PathEntry.IsHidden.
+                    return minVersion == null || (
+                        (i = minVersion.IndexOf('.')) != -1 &&
+                        XrayUtils.TryParseUint(minVersion.SpanOrSubstring(0, i), out var major) &&
+                        XrayUtils.TryParseUint(minVersion.SpanOrSubstring(i + 1), out var minor) &&
+                        (major < 2020 || (major <= 2021 && minor < 3) || (major == 2022 && minor < 2))
+                    );
+                }
+                catch (SimpleJsonException)
+                {
+                    return false;
+                }
             }
 
             public void AddError(string checkId, string error)
@@ -686,11 +771,6 @@ namespace PvpXray
                 foreach (var checkId in checkIds) AddError(checkId, error);
             }
 
-            public void AddErrorForAll(string error) // TODO: remove
-            {
-                foreach (var checkId in m_CurrentBatchChecks) AddError(checkId, error);
-            }
-
             static bool CanFetchProductionRegistryVersions(string packageName)
             {
                 // Modules are only ever built-in, don't attempt queries for those.
@@ -706,14 +786,12 @@ namespace PvpXray
                 if (m_ProductionRegistryVersions.TryGetValue(packageName, out var versions)) return versions;
 
                 var url = "https://packages.unity.com/" + packageName;
-                var metadataJson = HttpClient.GetString(url, out var status);
-                if (status != 404)
+                var resp = HttpClient.GetCheckStatus(url, 200, 404);
+                if (resp.Status != 404)
                 {
-                    PvpHttpException.CheckHttpStatus(url, status, 200);
-
                     try
                     {
-                        var json = new Json(metadataJson, null);
+                        var json = new Json(resp.GetBaselineString(), null);
                         versions = json["versions"].RawObject;
                     }
                     catch (SimpleJsonException)
@@ -781,9 +859,9 @@ namespace PvpXray
                 }
             }
 
-            public void SetBlobBaseline(string id, byte[] buffer, int length)
+            public void SetBlobBaseline(string id, PvpHttpResponse response)
             {
-                var hash = XrayUtils.Sha256(buffer, length);
+                var hash = XrayUtils.Sha256(response.Buffer, response.Length);
                 SetBaseline($"blob:{id}", $"\"{hash}\"");
             }
 
@@ -831,28 +909,16 @@ namespace PvpXray
                 {
                     var url = "https://pkgprom-api.ds.unity3d.com/internal-api/editor-manifest/"
                         + WebUtility.UrlEncode(editorVersion);
-                    var stream = HttpClient.GetStream(url, out var status);
-                    if (status == 404)
+                    var resp = HttpClient.GetCheckStatus(url, 200, 404);
+                    if (resp.Status == 404)
                     {
                         SetBaseline($"blob:editor_manifest:{editorVersion}", "null");
                     }
                     else
                     {
-                        PvpHttpException.CheckHttpStatus(url, status, 200);
+                        SetBlobBaseline($"editor_manifest:{editorVersion}", resp);
 
-                        XrayUtils.GetStreamArray(stream, out var editorManifestArray, out var editorManifestLength);
-                        SetBlobBaseline($"editor_manifest:{editorVersion}", editorManifestArray, editorManifestLength);
-
-                        string editorManifestJson;
-                        try
-                        {
-                            editorManifestJson = XrayUtils.Utf8Strict.GetString(editorManifestArray, 0, editorManifestLength);
-                        }
-                        catch (DecoderFallbackException)
-                        {
-                            throw SkipAllException.InvalidBaseline;
-                        }
-
+                        var editorManifestJson = resp.GetBaselineString();
                         try
                         {
                             var json = new Json(editorManifestJson, null);
@@ -889,33 +955,30 @@ namespace PvpXray
                     try
                     {
                         const string url = "https://pkgprom-api.ds.unity3d.com/internal-api/supported-editors";
-                        using (var stream = HttpClient.GetStream(url, out var status))
+                        var response = HttpClient.GetCheckStatus(url).GetBaselineString();
+                        try
                         {
-                            PvpHttpException.CheckHttpStatus(url, status, 200);
-                            try
+                            var json = new Json(response, null);
+                            m_SupportedEditorsBaseline = new List<UnityMajor>(8);
+                            foreach (var e in json.Elements)
                             {
-                                var json = new Json(XrayUtils.ReadToString(stream), null);
-                                m_SupportedEditorsBaseline = new List<UnityMajor>(8);
-                                foreach (var e in json.Elements)
-                                {
-                                    m_SupportedEditorsBaseline.Add(UnityMajor.FromFull(e["latestUnityRelease"]["version"].String));
-                                }
+                                m_SupportedEditorsBaseline.Add(UnityMajor.FromFull(e["latestUnityRelease"]["version"].String));
+                            }
 
-                                m_SupportedEditorsBaseline.Sort();
-                                for (var i = 1; i < m_SupportedEditorsBaseline.Count; i++)
-                                {
-                                    if (m_SupportedEditorsBaseline[i].Equals(m_SupportedEditorsBaseline[i - 1]))
-                                        m_SupportedEditorsBaseline.RemoveAt(i--);
-                                }
-                            }
-                            catch (ArgumentException) // invalid UTF-8 or invalid UnityMajor string
+                            m_SupportedEditorsBaseline.Sort();
+                            for (var i = 1; i < m_SupportedEditorsBaseline.Count; i++)
                             {
-                                throw SkipAllException.InvalidBaseline;
+                                if (m_SupportedEditorsBaseline[i].Equals(m_SupportedEditorsBaseline[i - 1]))
+                                    m_SupportedEditorsBaseline.RemoveAt(i--);
                             }
-                            catch (SimpleJsonException)
-                            {
-                                throw SkipAllException.InvalidBaseline;
-                            }
+                        }
+                        catch (ArgumentException) // invalid UnityMajor string
+                        {
+                            throw SkipAllException.InvalidBaseline;
+                        }
+                        catch (SimpleJsonException)
+                        {
+                            throw SkipAllException.InvalidBaseline;
                         }
                     }
                     catch (SkipAllException e)
@@ -1063,7 +1126,7 @@ namespace PvpXray
                 throw new InvalidOperationException("All passes already finished");
             }
 
-            var checkerFile = new PackageFile(file, m_Context.TargetUnityImportsPluginDirs);
+            var checkerFile = new PackageFile(file, m_Context.AssetVisibility);
 
             foreach (var entry in m_Checkers)
             {

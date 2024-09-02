@@ -126,17 +126,10 @@ namespace UnityEditor.PackageManager.ValidationSuite
             httpClient = httpClient ?? k_HttpClient;
 
             var metadataUrl = NodeLauncher.ProductionRepositoryUrl + package.Name;
-            var metadataJson = httpClient.GetString(metadataUrl, out var metadataStatus);
-            if (metadataStatus == 404)
-            {
-                throw new Exception($"{package.Name} not found on production registry");
-            }
-            if (metadataStatus != 200)
-            {
-                throw new Exception($"Got HTTP status {metadataStatus} for URL: {metadataUrl}");
-            }
+            var resp = httpClient.GetCheckStatus(metadataUrl, 200, 404);
+            if (resp.Status == 404) throw new Exception($"{package.Name} not found on production registry");
 
-            var metadata = new Json(metadataJson, null);
+            var metadata = new Json(resp.GetString(metadataUrl), null);
             var versionMetadata = metadata["versions"][package.Version];
             if (!versionMetadata.IsPresent)
             {
@@ -144,49 +137,34 @@ namespace UnityEditor.PackageManager.ValidationSuite
             }
 
             var tarballUrl = versionMetadata["dist"]["tarball"].String;
-            using (var tarballBody = httpClient.GetStream(tarballUrl, out var tarballStatus))
+            var response = httpClient.GetCheckStatus(tarballUrl);
+
+            var tarballFilename = $"{package.Name}-{package.Version}.tgz";
+            var tarballPath = Path.Combine(workingDirectory, tarballFilename);
+            using (var tarballFile = File.Create(tarballPath))
             {
-                if (tarballStatus != 200)
-                {
-                    throw new Exception($"Got HTTP status {tarballStatus} for URL: {tarballUrl}");
-                }
-
-                var tarballFilename = $"{package.Name}-{package.Version}.tgz";
-                var tarballPath = Path.Combine(workingDirectory, tarballFilename);
-                using (var tarballFile = File.Create(tarballPath))
-                {
-                    tarballBody.CopyTo(tarballFile);
-                }
-
-                return tarballFilename;
+                tarballFile.Write(response.Buffer, 0, response.Length);
             }
+
+            return tarballFilename;
         }
 
-        internal static readonly PvpHttpClient k_HttpClient = new PvpHttpClient(VSuiteName);
+        internal static readonly PvpHttpClient k_HttpClient = new PvpHttpClient(VSuiteName, cache: false);
 
         public static List<string> GetPackageVersionsOnProduction(string packageName)
         {
             var url = NodeLauncher.ProductionRepositoryUrl + packageName;
-            var response = k_HttpClient.GetString(url, out var status);
+            var response = k_HttpClient.GetCheckStatus(url, 200, 404);
+            if (response.Status == 404) return null;
 
-            if (status == 404)
+            var metadata = SimpleJsonReader.ReadObject(response.GetString(url));
+            if (metadata != null &&
+                metadata.TryGetValue("versions", out var versions) &&
+                versions is Dictionary<string, object> versionDict)
             {
-                return null;
+                return versionDict.Keys.ToList();
             }
-
-            if (status == 200)
-            {
-                var metadata = SimpleJsonReader.ReadObject(response);
-                if (metadata != null &&
-                    metadata.TryGetValue("versions", out var versions) &&
-                    versions is Dictionary<string, object> versionDict)
-                {
-                    return versionDict.Keys.ToList();
-                }
-                throw new Exception($"NPM registry did not provide valid package metadata: {url}");
-            }
-
-            throw new Exception($"Got HTTP status {status} for URL: {url}");
+            throw new Exception($"NPM registry did not provide valid package metadata: {url}");
         }
 
         internal static bool PackageExistsOnProduction(PackageId package)

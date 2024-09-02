@@ -47,8 +47,8 @@ namespace PvpXray
                 try
                 {
                     var lowerNameInNotice = match.Groups["name"].Value.ToLowerInvariant();
-                    var lowerName = m_Context.Manifest["name"].String.ToLowerInvariant();
-                    var lowerDisplayName = m_Context.Manifest["displayName"].String.ToLowerInvariant();
+                    var lowerName = m_Context.ManifestPermitInvalidJson["name"].String.ToLowerInvariant();
+                    var lowerDisplayName = m_Context.ManifestPermitInvalidJson["displayName"].String.ToLowerInvariant();
                     if (lowerNameInNotice != lowerName && lowerNameInNotice != lowerDisplayName)
                     {
                         m_Context.AddError("PVP-31-1", $"{k_License}: name in copyright notice must match either name or displayName of package");

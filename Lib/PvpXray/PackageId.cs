@@ -6,7 +6,7 @@ namespace PvpXray
     /// A package "Name@Version" with minimal validation of the Name and Version
     /// (they must simply be non-empty, and '@' is banned to prevent ambiguity).
     /// In particular, Version does not need to be valid Semver.
-    public struct PackageId
+    public struct PackageId : IEquatable<PackageId>
     {
         public const string UnityModuleNamePrefix = "com.unity.modules.";
 
@@ -25,21 +25,21 @@ namespace PvpXray
 
         public PackageId(string id)
         {
-            var split = id.Split('@');
-            if (split.Length != 2 || split[0].Length == 0 || split[1].Length == 0)
+            var i = id.IndexOf('@');
+            if (i <= 0 || i == id.Length - 1 || id.IndexOf('@', i + 1) != -1)
                 throw new ArgumentException("Invalid package ID: " + id, nameof(id));
             Id = id;
-            Name = split[0];
-            Version = split[1];
+            Name = id.Substring(0, i);
+            Version = id.Substring(i + 1);
         }
 
         public PackageId(string name, string version)
         {
             Name = name ?? throw new ArgumentNullException(nameof(name));
             Version = version ?? throw new ArgumentNullException(nameof(version));
-            if (Name.Length == 0 || Name.IndexOf('@') != -1)
+            if (Name.Length == 0 || Name.Contains('@'))
                 throw new ArgumentException("Invalid package name: " + name, nameof(name));
-            if (Version.Length == 0 || Version.IndexOf('@') != -1)
+            if (Version.Length == 0 || Version.Contains('@'))
                 throw new ArgumentException("Invalid package version: " + version, nameof(version));
             Id = name + "@" + version;
         }
@@ -50,9 +50,9 @@ namespace PvpXray
             var versionJson = manifest["version"];
             Name = nameJson.String;
             Version = versionJson.String;
-            if (Name.Length == 0 || Name.IndexOf('@') != -1)
+            if (Name.Length == 0 || Name.Contains('@'))
                 throw nameJson.GetException("invalid package name");
-            if (Version.Length == 0 || Version.IndexOf('@') != -1)
+            if (Version.Length == 0 || Version.Contains('@'))
                 throw versionJson.GetException("invalid package version");
             Id = Name + "@" + Version;
         }

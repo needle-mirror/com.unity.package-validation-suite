@@ -44,7 +44,7 @@ namespace PvpXray
                 if (entry.Components[0] != expectedLower) return;
                 if (!entry.PathWithCase.StartsWithOrdinal(expected))
                 {
-                    var actualCasing = entry.PathWithCase.Split('/')[0];
+                    var actualCasing = entry.PathWithCase.SplitLeft('/').ToString();
                     m_Context.AddError("PVP-80-1", $"{actualCasing}: path has incorrect casing, should be {expected}");
                 }
 
@@ -72,7 +72,7 @@ namespace PvpXray
                     Json ret;
                     try
                     {
-                        ret = new Json(text, file.Path);
+                        ret = new Json(text, file.Path, permitInvalidJson: true);
                     }
                     catch (SimpleJsonException)
                     {
@@ -103,7 +103,7 @@ namespace PvpXray
 
         public void Finish()
         {
-            var manifest = m_Context.Manifest;
+            var manifest = m_Context.ManifestPermitInvalidJson;
 
             if (m_HasSamplesDir && m_HasSamplesTildeDir)
             {

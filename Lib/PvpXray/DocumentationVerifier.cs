@@ -21,7 +21,7 @@ namespace PvpXray
         public static int PassCount => 1;
 
         static List<string> GetTopLevelDirectories(IReadOnlyList<PathEntry> paths) =>
-            paths.Select(e => e.DirectoryWithCase.Split('/')[0])
+            paths.Select(e => e.DirectoryWithCase.SplitLeft('/').ToString())
                 .Where(p => !string.IsNullOrEmpty(p))
                 .Distinct().ToList();
 

@@ -35,7 +35,7 @@ namespace PvpXray
                         var directoryPath = pathBuilder.ToStringAndReset();
                         if (seenDirectories.Add(directoryPath))
                         {
-                            entries.Add(new PathEntry(directoryPath, context.TargetUnityImportsPluginDirs, isDirectory: true));
+                            entries.Add(new PathEntry(directoryPath, context.AssetVisibility, isDirectory: true));
                         }
                     }
                 }
@@ -55,12 +55,12 @@ namespace PvpXray
                 // ignore all files inside plugin directories, unless targeting old Unity version
                 // (This enables packages to bridge the gap between Unity versions requiring
                 // .meta files to be present inside plugin directories, and versions that don't.)
-                if (!context.TargetUnityImportsPluginDirs && entry.IsInsidePluginDirectory) continue;
+                if (!context.AssetVisibility.TargetUnityImportsPluginDirsLegacy && entry.IsInsidePluginDirectory) continue;
 
                 if (entry.HasExtension(k_MetaExtension))
                 {
                     // ignore .meta files inside hidden directories (like Samples~)
-                    if (entry.Components.Length > 1 && new PathEntry(entry.DirectoryWithCase, context.TargetUnityImportsPluginDirs, isDirectory: true).IsHidden) continue;
+                    if (entry.Components.Length > 1 && new PathEntry(entry.DirectoryWithCase, context.AssetVisibility, isDirectory: true).IsHiddenLegacy2) continue;
 
                     if (entry.IsDirectory)
                     {
@@ -73,7 +73,7 @@ namespace PvpXray
                         {
                             context.AddError(k_Check, $"{entry.PathWithCase}: Meta file without corresponding asset");
                         }
-                        else if (assetEntry.IsHidden)
+                        else if (assetEntry.IsHiddenLegacy2)
                         {
                             context.AddError(k_Check, $"{entry.PathWithCase}: Meta file for hidden asset");
                         }
@@ -83,7 +83,7 @@ namespace PvpXray
                         }
                     }
                 }
-                else if (!entry.IsHidden)
+                else if (!entry.IsHiddenLegacy2)
                 {
                     var metaPath = entry.PathWithCase + k_MetaExtension;
                     if (!entriesByPath.ContainsKey(metaPath))

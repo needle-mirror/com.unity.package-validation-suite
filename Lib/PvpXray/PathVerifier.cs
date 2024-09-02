@@ -82,6 +82,45 @@ namespace PvpXray
             ("PVP-62-1", e => e.Filename != "index.md" || e.Components[0] != "documentation~" || e.PathWithCase.EndsWithOrdinal("index.md")),
         };
 
+        static readonly (string, Func<Verifier.Context, PathEntry, bool>)[] k_ComplexSinglePathValidations = {
+            // PVP-38-2: Proper use of Resources system directory (US-0111)
+            ("PVP-38-2", IsNotAForbiddenResourceAsset),
+        };
+
+        static bool IsNotAForbiddenResourceAsset(Verifier.Context context, PathEntry entry)
+        {
+            // Skip meta-files and non-assets.
+            if (!entry.IsAsset(includeSamples: false) || entry.HasExtension(".meta")) return true;
+
+            var isEditorOnlyAsset = false;
+            var isResourceAsset = false;
+            var i = 0;
+            foreach (var component in entry.Components)
+            {
+                if (isResourceAsset)
+                {
+                    // *all* Editor-only resources are forbidden in favor of using AssetDatabase.LoadAssetAtPath
+                    if (isEditorOnlyAsset) return false;
+
+                    var componentEndOffset = i + component.Length;
+                    var isLeafComponent = componentEndOffset == entry.Path.Length;
+                    if (isLeafComponent) return false;
+
+                    // The first directory inside "Resources" must be named after the package,
+                    // to ensure proper namespacing.
+                    var componentWithCase = entry.PathWithCase.Slice(i, componentEndOffset);
+                    return componentWithCase.Equals(context.Manifest["name"].String);
+                }
+
+                i += component.Length + 1; // account for component string and slash
+
+                // "Editor" is only a special directory if it appears *outside* "Resources".
+                if (component == "editor") isEditorOnlyAsset = true;
+                else if (component == "resources") isResourceAsset = true;
+            }
+            return true;
+        }
+
         // REMEMBER: Checks must not be changed once added. Any modifications must be implemented as a NEW check.
         // Note: These path validations are run against all file paths in the package at once,
         // e.g. to check for the existence of a certain file.
@@ -93,21 +132,31 @@ namespace PvpXray
             ("PVP-50-1", paths => paths.Contains("README.md"), "Missing README.md file"),
         };
 
-        internal static readonly string[] SinglePathChecks = k_SinglePathValidations.Select(v => v.Item1).ToArray();
+        internal static readonly string[] SinglePathChecks = k_SinglePathValidations.Select(v => v.Item1)
+            .Concat(k_ComplexSinglePathValidations.Select(v => v.Item1))
+            .ToArray();
 
         public static string[] Checks { get; } = SinglePathChecks.Concat(k_AllPathsValidations.Select(v => v.Item1)).ToArray();
         public static int PassCount => 0;
 
         public PathVerifier(Verifier.Context context)
         {
-            context.IsLegacyCheckerEmittingLegacyJsonErrors = true;
             foreach (var entry in context.PathEntries)
             {
                 foreach (var (check, isValid) in k_SinglePathValidations)
                 {
-                    if (!isValid(entry))
+                    if (!isValid(entry)) context.AddError(check, entry.PathWithCase);
+                }
+
+                foreach (var (check, isValid) in k_ComplexSinglePathValidations)
+                {
+                    try
                     {
-                        context.AddError(check, entry.PathWithCase);
+                        if (!isValid(context, entry)) context.AddError(check, entry.PathWithCase);
+                    }
+                    catch (SimpleJsonException e)
+                    {
+                        context.AddError(check, e.FullMessage);
                     }
                 }
             }

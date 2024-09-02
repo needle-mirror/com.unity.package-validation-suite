@@ -38,7 +38,7 @@ namespace PvpXray
             Json json;
             try
             {
-                json = new Json(text, file.Path);
+                json = new Json(text, file.Path, permitInvalidJson: true);
             }
             catch (SimpleJsonException)
             {
@@ -48,12 +48,12 @@ namespace PvpXray
             var assemblyName = json["name"].String;
 
             var entry = file.Entry;
-            if (!entry.FilenameWithCase.Slice(0, entry.FilenameWithCase.Length - k_Extension.Length).Equals(assemblyName))
+            if (!entry.FilenameWithCaseNoExtension.Equals(assemblyName))
             {
                 m_Context.AddError("PVP-130-1", $"{file.Path}: assembly name does not match filename: {assemblyName}");
             }
 
-            if (m_Context.Manifest["name"].String.StartsWithOrdinal("com.unity."))
+            if (m_Context.ManifestPermitInvalidJson["name"].String.StartsWithOrdinal("com.unity."))
             {
                 if (!assemblyName.StartsWithOrdinal("Unity."))
                 {

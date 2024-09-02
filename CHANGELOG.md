@@ -4,6 +4,9 @@ All notable changes to this package will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## [0.76.0-preview] - 2024-09-02
+- PVP: Add x-ray check `PVP-38-2`, enforcing latest guidelines around the Resources folder. (PVS-211)
+
 ## [0.75.0-preview] - 2024-07-29
 - Fixed bug where test exceptions could not be exempted. (PVS-209)
 - Added env var to entirely bypass API validation, if need be. (PVS-209)

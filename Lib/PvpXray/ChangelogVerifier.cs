@@ -118,7 +118,7 @@ namespace PvpXray
                     {
                         try
                         {
-                            if (version != m_Context.Manifest["version"].String)
+                            if (version != m_Context.ManifestPermitInvalidJson["version"].String)
                             {
                                 AddErrorWithLocation("PVP-43-1", "version in first section header doesn't match version in package manifest");
                             }

@@ -36,9 +36,10 @@ static class Pvp
         }
         catch (Exception e)
         {
-            Console.Write($"Pvp.RunTests failed with exception: {e}");
+            Console.Write($"Pvp.RunTests failed with exception: {e}\n");
             EditorApplication.Exit(1);
         }
+        Debug.Log($"Pvp.RunTests ran to completion.");
         EditorApplication.Exit(0);
     }
 }
