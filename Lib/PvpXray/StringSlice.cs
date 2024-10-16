@@ -1,3 +1,4 @@
+using System;
 using System.Text;
 
 namespace PvpXray
@@ -15,7 +16,8 @@ namespace PvpXray
             set => End = Start + value;
         }
 
-        public bool Equals(StringSlice other) => Length == other.Length && string.Compare(String, Start, other.String, other.Start, Length) == 0;
+        public bool Equals(StringSlice other) => Length == other.Length && string.CompareOrdinal(String, Start, other.String, other.Start, Length) == 0;
+        public bool EqualsIgnoreCase(StringSlice other) => Length == other.Length && string.Compare(String, Start, other.String, other.Start, Length, StringComparison.OrdinalIgnoreCase) == 0;
 
         public StringSlice Slice(int start, int end) => new StringSlice { String = String, Start = Start + start, End = Start + end };
 
@@ -49,6 +51,28 @@ namespace PvpXray
             {
                 if (slice.Equals(array[i])) return true;
             }
+            return false;
+        }
+
+        public static bool TryIndexOfIgnoreCase(this string[] array, StringSlice slice, out int i)
+        {
+            for (i = 0; i < array.Length; i++)
+            {
+                if (slice.EqualsIgnoreCase(array[i])) return true;
+            }
+            return false;
+        }
+
+        /// Try removing the given prefix from this string. Returns true if prefix was found.
+        /// Sets `rest` to remaining string after removal (or entire string).
+        public static bool TryStripPrefix(this string self, string prefix, out StringSlice rest)
+        {
+            if (self.StartsWithOrdinal(prefix))
+            {
+                rest = self.Slice(prefix.Length);
+                return true;
+            }
+            rest = self;
             return false;
         }
     }

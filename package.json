@@ -1,25 +1,25 @@
 {
   "name": "com.unity.package-validation-suite",
   "displayName": "Package Validation Suite",
-  "version": "0.76.0-preview",
+  "version": "0.77.0-preview",
   "unity": "2018.4",
   "description": "Unity Package Manager validation suite, used to evaluate a package's integrity before it's considered for publishing.  This is a Unity internal tool at the moment, no support will be provided for this package.",
   "dependencies": {
     "com.unity.nuget.mono-cecil": "0.1.6-preview.2"
   },
   "relatedPackages": {
-    "com.unity.package-validation-suite.tests": "0.76.0-preview"
+    "com.unity.package-validation-suite.tests": "0.77.0-preview"
   },
   "_upm": {
-    "changelog": "- PVP: Add x-ray check `PVP-38-2`, enforcing latest guidelines around the Resources folder. (PVS-211)"
+    "changelog": "- PVP: Fix inadvertent locale sensitivity affecting numerous PVP checks.\n- PVP: Add x-ray checks `PVP-{130,131,132,133}-2`, validating assembly definition files. (PVS-208)\n- Relax legacy PVS validation of 0.\\* package versions, to avoid false positive errors as of RFC-U0017. (PVS-214)\n- PVP: Add x-ray check `PVP-101-2`, enforcing registry manifest validation. (PVS-216)"
   },
   "upmCi": {
-    "footprint": "8b7a8e11251df3a10d0d48fbb5e23339c691437f"
+    "footprint": "f7e6a31d27ea4859071d3237d92894542853b3a8"
   },
-  "documentationUrl": "https://docs.unity3d.com/Packages/com.unity.package-validation-suite@0.76/manual/index.html",
+  "documentationUrl": "https://docs.unity3d.com/Packages/com.unity.package-validation-suite@0.77/manual/index.html",
   "repository": {
     "url": "https://github.cds.internal.unity3d.com/unity/com.unity.package-validation-suite.git",
     "type": "git",
-    "revision": "431c01f9eeca0bbd8eaaf80a8307d85965c211c5"
+    "revision": "29b473fa11e2824eef549a07cbcf763c361feafa"
   }
 }

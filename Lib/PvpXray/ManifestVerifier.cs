@@ -59,12 +59,13 @@ namespace PvpXray
                     if (!checkFunc(ctx.Target)) ctx.BeginError(error);
                 };
             }
+            public Requirement(string error, Regex regex) : this(error, json => regex.IsMatch(json.String)) { }
 
             // Allow implicit conversion from Regex, which (unlike a helper method) gets us proper syntax highlighting.
             public static implicit operator Requirement(Regex regex)
                 => new Requirement(
                     regex.Options.HasFlag(RegexOptions.IgnoreCase) ? $"must match {regex} (case insensitive)" : $"must match {regex}",
-                    json => regex.IsMatch(json.String)
+                    regex
                 );
 
             public bool TryGetError(Json target, StringBuilder scratch, out string error)
@@ -78,7 +79,31 @@ namespace PvpXray
 
         static Requirement Fail(string message) => new Requirement(ctx => ctx.BeginError(message));
 
+        static readonly Requirement k_Boolean = new Requirement(ctx => { _ = ctx.Target.Boolean; });
+        static readonly Requirement k_String = new Requirement(ctx => { _ = ctx.Target.String; });
+        static readonly Requirement k_Object = new Requirement(ctx => { _ = ctx.Target.RawObject; });
+        static readonly Requirement k_ObjectOrString = new Requirement(ctx =>
+        {
+            if (!ctx.Target.IsObject && !ctx.Target.IsString)
+                throw ctx.Target.GetException($"was {ctx.Target.KindName}, expected object or string");
+        });
+
         static readonly Requirement k_NonEmpty = new Requirement("must be a non-empty string", json => json.String != "");
+        static Requirement MaxLength(int max) => new Requirement($"must be a string with maximum length {max}", json => json.String.Length <= max);
+
+        static Requirement MustNotStartWith(string prefix, bool caseSensitive)
+        {
+            var comparison = caseSensitive ? StringComparison.Ordinal : StringComparison.OrdinalIgnoreCase;
+            var error = caseSensitive ? $"must not start with '{prefix}'" : $"must not start with '{prefix}' (case insensitive)";
+            return new Requirement(error, json => !json.String.StartsWith(prefix, comparison));
+        }
+
+        static Requirement MustNotEndWith(string suffix, bool caseSensitive)
+        {
+            var comparison = caseSensitive ? StringComparison.Ordinal : StringComparison.OrdinalIgnoreCase;
+            var error = caseSensitive ? $"must not end with '{suffix}'" : $"must not end with '{suffix}' (case insensitive)";
+            return new Requirement(error, json => !json.String.EndsWith(suffix, comparison));
+        }
 
         static readonly Requirement k_ValidCompany = new Regex(@"^(com\.unity\.|com\.autodesk\.|com\.havok\.|com\.ptc\.)");
 
@@ -136,6 +161,68 @@ namespace PvpXray
             {
                 ctx.BeginError("invalid URL prefix ").AppendAsJson(prefix.ToString()).Append(" in URL ").AppendAsJson(url);
             }
+        });
+
+        // https://github.com/hapijs/joi/blob/v17.13.3/lib/types/string.js#L649
+        // https://github.com/hapijs/address/blob/v4.1.5/lib/uri.js
+        static readonly Regex k_RegistryUrlRegex = new Regex(@"^(?=.)(?!https?:\/(?:$|[^/]))(?!https?:\/\/\/)(?!https?:[^/])(?:[a-zA-Z][a-zA-Z\d+-\.]*:(?:(?:\/\/(?:[\w-\.~%\dA-Fa-f!\$&'\(\)\*\+,;=:]*@)?(?:\[(?:(?:(?:[\dA-Fa-f]{1,4}:){6}(?:[\dA-Fa-f]{1,4}:[\dA-Fa-f]{1,4}|(?:(?:0{0,2}\d|0?[1-9]\d|1\d\d|2[0-4]\d|25[0-5])\.){3}(?:0{0,2}\d|0?[1-9]\d|1\d\d|2[0-4]\d|25[0-5]))|::(?:[\dA-Fa-f]{1,4}:){5}(?:[\dA-Fa-f]{1,4}:[\dA-Fa-f]{1,4}|(?:(?:0{0,2}\d|0?[1-9]\d|1\d\d|2[0-4]\d|25[0-5])\.){3}(?:0{0,2}\d|0?[1-9]\d|1\d\d|2[0-4]\d|25[0-5]))|(?:[\dA-Fa-f]{1,4})?::(?:[\dA-Fa-f]{1,4}:){4}(?:[\dA-Fa-f]{1,4}:[\dA-Fa-f]{1,4}|(?:(?:0{0,2}\d|0?[1-9]\d|1\d\d|2[0-4]\d|25[0-5])\.){3}(?:0{0,2}\d|0?[1-9]\d|1\d\d|2[0-4]\d|25[0-5]))|(?:(?:[\dA-Fa-f]{1,4}:){0,1}[\dA-Fa-f]{1,4})?::(?:[\dA-Fa-f]{1,4}:){3}(?:[\dA-Fa-f]{1,4}:[\dA-Fa-f]{1,4}|(?:(?:0{0,2}\d|0?[1-9]\d|1\d\d|2[0-4]\d|25[0-5])\.){3}(?:0{0,2}\d|0?[1-9]\d|1\d\d|2[0-4]\d|25[0-5]))|(?:(?:[\dA-Fa-f]{1,4}:){0,2}[\dA-Fa-f]{1,4})?::(?:[\dA-Fa-f]{1,4}:){2}(?:[\dA-Fa-f]{1,4}:[\dA-Fa-f]{1,4}|(?:(?:0{0,2}\d|0?[1-9]\d|1\d\d|2[0-4]\d|25[0-5])\.){3}(?:0{0,2}\d|0?[1-9]\d|1\d\d|2[0-4]\d|25[0-5]))|(?:(?:[\dA-Fa-f]{1,4}:){0,3}[\dA-Fa-f]{1,4})?::[\dA-Fa-f]{1,4}:(?:[\dA-Fa-f]{1,4}:[\dA-Fa-f]{1,4}|(?:(?:0{0,2}\d|0?[1-9]\d|1\d\d|2[0-4]\d|25[0-5])\.){3}(?:0{0,2}\d|0?[1-9]\d|1\d\d|2[0-4]\d|25[0-5]))|(?:(?:[\dA-Fa-f]{1,4}:){0,4}[\dA-Fa-f]{1,4})?::(?:[\dA-Fa-f]{1,4}:[\dA-Fa-f]{1,4}|(?:(?:0{0,2}\d|0?[1-9]\d|1\d\d|2[0-4]\d|25[0-5])\.){3}(?:0{0,2}\d|0?[1-9]\d|1\d\d|2[0-4]\d|25[0-5]))|(?:(?:[\dA-Fa-f]{1,4}:){0,5}[\dA-Fa-f]{1,4})?::[\dA-Fa-f]{1,4}|(?:(?:[\dA-Fa-f]{1,4}:){0,6}[\dA-Fa-f]{1,4})?::)|v[\dA-Fa-f]+\.[\w-\.~!\$&'\(\)\*\+,;=:]+)\]|(?:(?:0{0,2}\d|0?[1-9]\d|1\d\d|2[0-4]\d|25[0-5])\.){3}(?:0{0,2}\d|0?[1-9]\d|1\d\d|2[0-4]\d|25[0-5])|[\w-\.~%\dA-Fa-f!\$&'\(\)\*\+,;=]{1,255})(?::\d*)?(?:\/[\w-\.~%\dA-Fa-f!\$&'\(\)\*\+,;=:@]*)*)|\/(?:[\w-\.~%\dA-Fa-f!\$&'\(\)\*\+,;=:@]+(?:\/[\w-\.~%\dA-Fa-f!\$&'\(\)\*\+,;=:@]*)*)?|[\w-\.~%\dA-Fa-f!\$&'\(\)\*\+,;=:@]+(?:\/[\w-\.~%\dA-Fa-f!\$&'\(\)\*\+,;=:@]*)*|(?:\/\/\/[\w-\.~%\dA-Fa-f!\$&'\(\)\*\+,;=:@]*(?:\/[\w-\.~%\dA-Fa-f!\$&'\(\)\*\+,;=:@]*)*)))(?:\?[\w-\.~%\dA-Fa-f!\$&'\(\)\*\+,;=:@\/\?]*(?=#|$))?(?:#[\w-\.~%\dA-Fa-f!\$&'\(\)\*\+,;=:@\/\?]*)?$", RegexOptions.ECMAScript);
+        internal static readonly Requirement MustSatisfyPackageRegistryUrlCheck = new Requirement("must be a valid RFC 3986 URI string", json => k_RegistryUrlRegex.IsMatch(json.String));
+
+        // https://github.com/hapijs/joi/blob/v17.13.3/lib/types/string.js#L290
+        // https://github.com/hapijs/address/blob/v4.1.5/lib/email.js
+        static readonly Regex k_NonAsciiRegex = new Regex(@"[^\x00-\x7f]", RegexOptions.ECMAScript);
+        static readonly Regex k_AtextRegex = new Regex(@"^[\w!#\$%&'\*\+\-/=\?\^`\{\|\}~]+$", RegexOptions.ECMAScript);
+        static readonly Regex k_AtomRegex = new Regex(@"(?:[\xc2-\xdf][\x80-\xbf])|(?:\xe0[\xa0-\xbf][\x80-\xbf])|(?:[\xe1-\xec][\x80-\xbf]{2})|(?:\xed[\x80-\x9f][\x80-\xbf])|(?:[\xee-\xef][\x80-\xbf]{2})|(?:\xf0[\x90-\xbf][\x80-\xbf]{2})|(?:[\xf1-\xf3][\x80-\xbf]{3})|(?:\xf4[\x80-\x8f][\x80-\xbf]{2})", RegexOptions.ECMAScript);
+        static readonly Regex k_DomainControlRegex = new Regex(@"[\x00-\x20@\:\/\\#!\$&\'\(\)\*\+,;=\?]", RegexOptions.ECMAScript);
+        static readonly Regex k_DomainSegmentRegex = new Regex("^[a-zA-Z0-9](?:[a-zA-Z0-9\\-]*[a-zA-Z0-9])?$", RegexOptions.ECMAScript);
+        static readonly Regex k_TldSegmentRegex = new Regex("^[a-zA-Z](?:[a-zA-Z0-9\\-]*[a-zA-Z0-9])?$", RegexOptions.ECMAScript);
+        internal static readonly Requirement MustSatisfyPackageRegistryEmailCheck = new Requirement("must be a valid RFC 5321 email string", json =>
+        {
+            var email = json.String;
+            if (email.Length == 0) return false;
+            var ascii = !k_NonAsciiRegex.IsMatch(email);
+            if (ascii) email = email.Normalize();
+            if (email.Length > 254) return false;
+            var localLen = email.IndexOf('@');
+            if (localLen <= 0) return false;
+            if (email.IndexOf('@', localLen + 1) != -1) return false;
+            if (Encoding.UTF8.GetByteCount(email, 0, localLen) > 64) return false;
+            var utf8 = ascii ? null : new byte[4];
+            for (int start = 0, end; start <= localLen; start = end + 1)
+            {
+                var i = email.IndexOf('.', start);
+                end = i == -1 || i >= localLen ? localLen : i;
+                if (start == end) return false;
+                if (ascii)
+                {
+                    if (!k_AtextRegex.Match(email, start, end - start).Success) return false;
+                    continue;
+                }
+                for (i = start; i < end; i++)
+                {
+                    if (k_AtextRegex.Match(email, i, 1).Success) continue;
+                    var count = Encoding.UTF8.GetBytes(email, i, 1, utf8, 0);
+                    var utf8CodeUnits = new StringBuilder(count);
+                    for (var j = 0; j < count; j++) utf8CodeUnits.Append((char)utf8[j]);
+                    if (!k_AtomRegex.IsMatch(utf8CodeUnits.ToString())) return false;
+                }
+            }
+            var domainStart = localLen + 1;
+            if (domainStart == email.Length) return false;
+            if (k_DomainControlRegex.Match(email, domainStart, email.Length - domainStart).Success) return false;
+            // discrepancy: no punycode conversion
+            // discrepancy: no hardcoded TLD allow-list: https://github.com/hapijs/address/blob/v4.1.5/lib/tlds.js
+            for (int start = domainStart, end; start <= email.Length; start = end + 1)
+            {
+                var i = email.IndexOf('.', start);
+                if (start == domainStart && i == -1) return false;
+                end = i == -1 ? email.Length : i;
+                if (start == end) return false;
+                if (end - start > 63) return false;
+                var regex = end == email.Length ? k_TldSegmentRegex : k_DomainSegmentRegex;
+                if (!regex.Match(email, start, end - start).Success) return false;
+            }
+            return true;
         });
 
         static readonly (string, string, string, string)[] k_NameAffixes = {
@@ -237,7 +324,50 @@ namespace PvpXray
             ("PVP-114-1", m => m, k_ValidTypeForName),
         };
 
-        public static string[] Checks { get; } = k_LocationChecks.Select(v => v.Item1).Distinct().ToArray();
+        // Similar k_LocationChecks, but with the following changes:
+        // - Emits an error for each item of an enumerable location throwing SimpleJsonException.
+        // - Emits .FullMessage instead of .LegacyMessage as error on thrown SimpleJsonException.
+        // - Error (from requirement.TryGetError) is prefixed with "package.json: ".
+        static readonly (string, Func<Json, object>, Requirement)[] k_LocationChecksV2 =
+        {
+            // https://github.com/Unity-Technologies/assetstore-upm-registry/blob/v10.3.0/server/models/upm/package-manifest.ts#L83
+            ("PVP-101-2", m => m["name"], PackageId.ValidName),
+            ("PVP-101-2", m => m["name"], MustNotStartWith("com.unity.modules.", caseSensitive: true)),
+            ("PVP-101-2", m => m["name"], MustNotEndWith(".plugin", caseSensitive: false)),
+            ("PVP-101-2", m => m["name"], MustNotEndWith(".framework", caseSensitive: false)),
+            ("PVP-101-2", m => m["name"], MustNotEndWith(".bundle", caseSensitive: false)),
+            ("PVP-101-2", m => m["version"], new Requirement("must be valid SemVer", PackageId.ValidSemVer)),
+            ("PVP-101-2", m => m["description"].IfPresent, MaxLength(4096)),
+            ("PVP-101-2", m => m["displayName"].IfPresent, MaxLength(256)),
+            ("PVP-101-2", m => m["dependencies"].MembersIfPresent, k_String),
+            ("PVP-101-2", m => m["documentationUrl"].IfPresent, MustSatisfyPackageRegistryUrlCheck),
+            ("PVP-101-2", m => m["documentationUrl"].IfPresent, MaxLength(256)),
+            ("PVP-101-2", m => m["license"].IfPresent, MaxLength(256)),
+            ("PVP-101-2", m => m["licensesUrl"].IfPresent, MustSatisfyPackageRegistryUrlCheck),
+            ("PVP-101-2", m => m["licensesUrl"].IfPresent, MaxLength(256)),
+            ("PVP-101-2", m => m["keywords"].ElementsIfPresent, MaxLength(32)),
+            ("PVP-101-2", m => m["hideInEditor"].IfPresent, k_Boolean),
+            ("PVP-101-2", m => m["unity"].IfPresent, MaxLength(64)),
+            ("PVP-101-2", m => m["unityRelease"].IfPresent, MaxLength(64)),
+            ("PVP-101-2", m => m["author"].IfPresent, k_ObjectOrString),
+            ("PVP-101-2", m => m["author"].IfString, new Requirement("must be an object or a string with maximum length 64", json => json.String.Length <= 64)),
+            ("PVP-101-2", m => m["author"].IfObject?["name"].IfPresent, MaxLength(64)),
+            ("PVP-101-2", m => m["author"].IfObject?["email"].IfPresent, MustSatisfyPackageRegistryEmailCheck),
+            ("PVP-101-2", m => m["author"].IfObject?["email"].IfPresent, MaxLength(64)),
+            ("PVP-101-2", m => m["author"].IfObject?["url"].IfPresent, MustSatisfyPackageRegistryUrlCheck),
+            ("PVP-101-2", m => m["author"].IfObject?["url"].IfPresent, MaxLength(256)),
+            ("PVP-101-2", m => m["changelogUrl"].IfPresent, MustSatisfyPackageRegistryUrlCheck),
+            ("PVP-101-2", m => m["changelogUrl"].IfPresent, MaxLength(256)),
+            ("PVP-101-2", m => m["type"].IfPresent, MaxLength(32)),
+            ("PVP-101-2", m => m["samples"].ElementsIfPresent, k_Object),
+            ("PVP-101-2", m => m["samples"].ElementsIfPresent.Select(e => e.IfObject?["displayName"]), MaxLength(256)),
+            ("PVP-101-2", m => m["samples"].ElementsIfPresent.Select(e => e.IfObject?["description"]), MaxLength(4096)),
+            ("PVP-101-2", m => m["samples"].ElementsIfPresent.Select(e => e.IfObject?["path"]), MaxLength(512)),
+            ("PVP-101-2", m => m["_upm"].IfPresent?["gameService"].IfPresent, k_Object),
+            ("PVP-101-2", m => m["_upm"].IfPresent?["changelog"].IfPresent, MaxLength(4096)),
+        };
+
+        public static string[] Checks { get; } = k_LocationChecks.Select(v => v.Item1).Concat(k_LocationChecksV2.Select(v => v.Item1)).Distinct().ToArray();
         public static int PassCount => 0;
 
         public ManifestVerifier(Verifier.Context context)
@@ -273,6 +403,42 @@ namespace PvpXray
                 catch (SimpleJsonException e)
                 {
                     context.AddError(checkId, e.LegacyMessage);
+                }
+            }
+
+            foreach (var (checkId, locationFunc, requirement) in k_LocationChecksV2)
+            {
+                try
+                {
+                    var locations = locationFunc(manifest);
+
+                    var enumerable = locations as IEnumerable<Json>;
+                    if (enumerable == null)
+                    {
+                        // If locations is not an IEnumerable, it should be a single Json element (or null).
+                        arrayOfOne[0] = (Json)locations;
+                        enumerable = arrayOfOne;
+                    }
+
+                    foreach (var location in enumerable)
+                    {
+                        if (location == null) continue;
+                        try
+                        {
+                            if (requirement.TryGetError(location, scratch, out var error))
+                            {
+                                context.AddError(checkId, "package.json: " + error);
+                            }
+                        }
+                        catch (SimpleJsonException e)
+                        {
+                            context.AddError(checkId, e.FullMessage);
+                        }
+                    }
+                }
+                catch (SimpleJsonException e)
+                {
+                    context.AddError(checkId, e.FullMessage);
                 }
             }
         }

@@ -716,7 +716,7 @@ namespace PvpXray
                     foreach (var sample in manifest["samples"].Elements)
                     {
                         if (hasTopLevelSample) return false; // multiple samples, can't be single top-level
-                        hasTopLevelSample = sample["path"].String.Equals("samples~", StringComparison.OrdinalIgnoreCase);
+                        hasTopLevelSample = sample["path"].String.EqualsIgnoreCase("samples~");
                         if (!hasTopLevelSample) return false;
                     }
                     return hasTopLevelSample;

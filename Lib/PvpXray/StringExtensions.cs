@@ -24,5 +24,7 @@ namespace PvpXray
         public static int LastIndexOfOrdinal(this string str, string value) => str.LastIndexOf(value, StringComparison.Ordinal);
         public static int LastIndexOfOrdinal(this string str, string value, int startIndex) => str.LastIndexOf(value, startIndex, StringComparison.Ordinal);
         public static int LastIndexOfOrdinal(this string str, string value, int startIndex, int count) => str.LastIndexOf(value, startIndex, count, StringComparison.Ordinal);
+
+        internal static bool EqualsIgnoreCase(this string str, string value) => str.Equals(value, StringComparison.OrdinalIgnoreCase);
     }
 }

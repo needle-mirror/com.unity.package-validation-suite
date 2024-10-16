@@ -16,7 +16,7 @@ namespace PvpXray
         // The key of this JSON value in the parent object, or the index (as
         // a string) in the parent array, or null if this is the root value.
         public string Key { get; }
-        string PackageFilePath { get; }
+        public string PackageFilePath { get; }
 
         void BuildPath(StringBuilder sb)
         {
@@ -39,6 +39,8 @@ namespace PvpXray
         };
 
         Type Kind => m_Value == null ? typeof(void) : m_Value.GetType();
+
+        public string KindName => k_JsonTypeNames[Kind];
 
         T CheckKind<T>()
         {
@@ -70,14 +72,14 @@ namespace PvpXray
         internal SimpleJsonException GetException(string message)
             => new SimpleJsonException($"{Path}: {message}", null) { PackageFilePath = PackageFilePath };
 
-        // Enumerate elements of a JSON array.
+        /// Enumerate elements of a JSON array.
         public IEnumerable<Json> Elements
             => CheckKind<List<object>>().Select((elm, index) => new Json(elm, this, index.ToString(), PackageFilePath));
 
         public IEnumerable<Json> ElementsIfPresent
             => IfPresent?.Elements ?? Enumerable.Empty<Json>();
 
-        // Enumerate members of a JSON object.
+        /// Enumerate members of a JSON object.
         public IEnumerable<Json> Members
             => RawObject.Select(kv => new Json(kv.Value, this, kv.Key, PackageFilePath));
 
@@ -91,6 +93,9 @@ namespace PvpXray
         public bool IsObject => Kind == typeof(JsonObject);
         public bool IsPresent => !(m_Value is Undefined);
         public bool IsString => Kind == typeof(string);
+
+        public Json IfObject => IsObject ? this : null;
+        public Json IfString => IsString ? this : null;
 
         /// Returns the "location" of this element in the document as a jq-style path.
         public string Path
@@ -115,6 +120,28 @@ namespace PvpXray
         public bool Boolean => CheckKind<bool>();
         public string String => CheckKind<string>();
         public double Number => CheckKind<double>();
+
+        /// Checks that this is a JSON array of JSON strings (if present).
+        /// Limitations of .NET type system prevents returning the proper
+        /// generic type without allocating new list.
+        public IReadOnlyList<object> ArrayOfStringIfPresent
+        {
+            get
+            {
+                if (!IsPresent) return Array.Empty<string>();
+                var list = CheckKind<List<object>>();
+                for (var i = 0; i < list.Count; i++)
+                {
+                    var elm = list[i];
+                    if (!(elm is string))
+                    {
+                        new Json(elm, this, i.ToString(), PackageFilePath).CheckKind<string>();
+                    }
+                }
+
+                return list;
+            }
+        }
 
         public Json this[string key] => new Json(RawObject.TryGetValue(key, out var result) ? result : Undefined.Undefined, this, key, PackageFilePath);
     }

@@ -159,6 +159,8 @@ namespace PvpXray
                 // https://github.cds.internal.unity3d.com/unity/com.unity.package-starter-kit/blob/c6b39c2a8668fc16e544796bf498bf95a96ada6e/package.json
                 var keywords = m_Context.ManifestPermitInvalidJson["keywords"];
                 var keyKeywordSeen = false;
+                // BUG: type checks only part of the array, should use ArrayOfStringIfPresent
+                // (or possibly better yet, silently ignore non-string values as out of scope for this check).
                 foreach (var keyword in keywords.ElementsIfPresent)
                 {
                     var text = keyword.String;

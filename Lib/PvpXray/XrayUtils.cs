@@ -24,6 +24,18 @@ namespace PvpXray
         public static string[] Split(this string self, char separator, StringSplitOptions options = StringSplitOptions.None)
             => self.Split(separator == '/' ? k_ArrayOfSlash : new[] { separator }, options);
         public static bool StartsWith(this string self, char value) => self.Length != 0 && self[0] == value;
+
+        public static int GetByteCount(this Encoding self, string s, int index, int count)
+        {
+            if (s == null || index < 0 || count < 0 || index > s.Length - count) throw new ArgumentException();
+            unsafe
+            {
+                fixed (char* p = s)
+                {
+                    return self.GetByteCount(p + index, count);
+                }
+            }
+        }
     }
 
     /// New in .NET 7, but until then.
@@ -236,9 +248,9 @@ namespace PvpXray
         /// Reading streams into a byte array is limited by the maximum byte[]
         /// length. For Mono (and thus, Unity) the limit is Int32.MaxValue
         /// (2147483647) bytes (tested on 2019.2.21f1 and 2023.2.0a5), but .NET
-        /// Core (and thus, upm-pvp xray) is limited to only 2147483591 bytes.
-        /// For consistency, use this constant to always enforce the lower of
-        /// the two limits.
+        /// Core (and thus, upm-pvp xray) is limited to only 2147483591 bytes
+        /// (Array.MaxLength). For consistency, use this constant to always
+        /// enforce the lower of the two limits.
         public const int MaxByteArrayLength = 2147483591;
 
         /// .NET has an undocumented (probably runtime dependent) size limit

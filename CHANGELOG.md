@@ -4,6 +4,12 @@ All notable changes to this package will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## [0.77.0-preview] - 2024-10-16
+- PVP: Fix inadvertent locale sensitivity affecting numerous PVP checks.
+- PVP: Add x-ray checks `PVP-{130,131,132,133}-2`, validating assembly definition files. (PVS-208)
+- Relax legacy PVS validation of 0.\* package versions, to avoid false positive errors as of RFC-U0017. (PVS-214)
+- PVP: Add x-ray check `PVP-101-2`, enforcing registry manifest validation. (PVS-216)
+
 ## [0.76.0-preview] - 2024-09-02
 - PVP: Add x-ray check `PVP-38-2`, enforcing latest guidelines around the Resources folder. (PVS-211)
 
