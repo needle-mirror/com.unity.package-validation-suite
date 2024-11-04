@@ -49,7 +49,7 @@ namespace PvpXray
                 var sb = new StringBuilder(80);
                 AppendPathTo(sb);
                 var i = sb.Length;
-                var messageV1 = sb.Append($" was {k_JsonTypeNames[Kind]}, expected {k_JsonTypeNames[typeof(T)]}").ToString();
+                var messageV1 = sb.Append($" was {KindName}, expected {k_JsonTypeNames[typeof(T)]}").ToString();
                 var messageV2 = sb.Insert(i, ':').ToString();
                 throw new SimpleJsonException(messageV1, messageV2) { PackageFilePath = PackageFilePath };
             }
@@ -67,7 +67,10 @@ namespace PvpXray
 
         public Json(string json, string packageFilePath, bool permitInvalidJson = false)
             : this(SimpleJsonReader.Read(json, packageFilePath, permitInvalidJson), null, null, packageFilePath) { }
-        internal Json(object root, string packageFilePath) : this(root, null, null, packageFilePath) { }
+        internal Json(object root, string packageFilePath) : this(root, null, null, packageFilePath)
+        {
+            if (!k_JsonTypeNames.ContainsKey(Kind)) throw new ArgumentException("bad JSON root object type", nameof(root));
+        }
 
         internal SimpleJsonException GetException(string message)
             => new SimpleJsonException($"{Path}: {message}", null) { PackageFilePath = PackageFilePath };

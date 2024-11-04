@@ -4,6 +4,13 @@ All notable changes to this package will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## [0.78.0-preview] - 2024-11-04
+- PVP: Add x-ray check `PVP-165-1` and non-x-ray check `PVP-163-2` for verifying dependency consistency. (PVS-217, PETS-1582)
+- PVP: Add x-ray check `PVP-101-3` more closely matching package registry manifest validation. (PETS-1596)
+- PVP: Add x-ray check `PVP-60-2` tolerating missing documentation directory in feature set packages. (PETS-1587)
+- PVP: Add x-ray check `PVP-30-2` tolerating missing LICENSE.md file in feature set packages. (PETS-1587)
+- PVP: Add x-ray check `PVP-31-2` validating copyright notice in LICENSE.md file with improved error messages, if file is present. (PVS-218)
+
 ## [0.77.0-preview] - 2024-10-16
 - PVP: Fix inadvertent locale sensitivity affecting numerous PVP checks.
 - PVP: Add x-ray checks `PVP-{130,131,132,133}-2`, validating assembly definition files. (PVS-208)

@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Security.Cryptography;
@@ -36,6 +37,9 @@ namespace PvpXray
                 }
             }
         }
+
+        public static V GetValueOrDefault<K, V>(this Dictionary<K, V> dictionary, K key)
+            => dictionary.TryGetValue(key, out var value) ? value : default;
     }
 
     /// New in .NET 7, but until then.

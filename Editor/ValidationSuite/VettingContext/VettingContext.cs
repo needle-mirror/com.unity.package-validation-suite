@@ -210,23 +210,8 @@ namespace UnityEditor.PackageManager.ValidationSuite
             // Read manifest json data, and convert it.
             try
             {
-                var textManifestData = File.ReadAllText(manifestPath);
-
-                var parsedManifest = SimpleJsonReader.ReadObject(textManifestData);
-                if (parsedManifest == null)
-                    throw new ArgumentException("invalid JSON");
-
-                ManifestData manifest = new ManifestData();
-
-                var unmarshallingErrors = new List<UnmarshallingException>();
-                manifest = JsonUnmarshaller.GetValue<ManifestData>(parsedManifest, ref unmarshallingErrors);
-                manifest.decodingErrors.AddRange(unmarshallingErrors);
-
-                manifest.path = packagePath;
-                manifest.lifecycle = ManifestData.EvaluateLifecycle(manifest.version);
-
+                var manifest = GetManifestFromJsonText(packagePath, File.ReadAllText(manifestPath));
                 Profiler.EndSample();
-
                 return manifest;
             }
             catch (ArgumentException e)
@@ -234,6 +219,23 @@ namespace UnityEditor.PackageManager.ValidationSuite
                 Profiler.EndSample();
                 throw new Exception($"Could not parse json in file {manifestPath} because of: {e}");
             }
+        }
+
+        internal static ManifestData GetManifestFromJsonText(string packagePath, string textManifestData)
+        {
+            var parsedManifest = SimpleJsonReader.ReadObject(textManifestData);
+            if (parsedManifest == null)
+                throw new ArgumentException("invalid JSON");
+
+            ManifestData manifest = new ManifestData();
+
+            var unmarshallingErrors = new List<UnmarshallingException>();
+            manifest = JsonUnmarshaller.GetValue<ManifestData>(parsedManifest, ref unmarshallingErrors);
+            manifest.decodingErrors.AddRange(unmarshallingErrors);
+
+            manifest.path = packagePath;
+            manifest.lifecycle = ManifestData.EvaluateLifecycle(manifest.version);
+            return manifest;
         }
 
         internal VersionChangeType VersionChangeType

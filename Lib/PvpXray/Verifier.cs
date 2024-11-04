@@ -598,6 +598,21 @@ namespace PvpXray
             public Json ManifestPermitInvalidJson => m_ManifestPermitInvalidJson ?? throw new FailAllException(m_ManifestErrorPermitInvalidJson);
             public List<(string, string)> ManifestContextErrors { get; } = new List<(string, string)>();
 
+            public bool IsFeatureSetPackage
+            {
+                get
+                {
+                    try
+                    {
+                        return Manifest["type"].String == "feature";
+                    }
+                    catch (SimpleJsonException)
+                    {
+                        return false;
+                    }
+                }
+            }
+
             readonly HashSet<string> m_CurrentBatchChecks;
             readonly IPvpHttpClient m_HttpClient;
             readonly Json m_Manifest;

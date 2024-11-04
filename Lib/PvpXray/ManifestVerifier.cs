@@ -330,7 +330,9 @@ namespace PvpXray
         // - Error (from requirement.TryGetError) is prefixed with "package.json: ".
         static readonly (string, Func<Json, object>, Requirement)[] k_LocationChecksV2 =
         {
-            // https://github.com/Unity-Technologies/assetstore-upm-registry/blob/v10.3.0/server/models/upm/package-manifest.ts#L83
+            // https://github.com/Unity-Technologies/assetstore-upm-registry/blob/v10.3.2/server/models/upm/package-manifest.ts#L83
+            // discrepancy: (known) empty string values not flagged
+            // discrepancy: .dependencies[""] value not ignored
             ("PVP-101-2", m => m["name"], PackageId.ValidName),
             ("PVP-101-2", m => m["name"], MustNotStartWith("com.unity.modules.", caseSensitive: true)),
             ("PVP-101-2", m => m["name"], MustNotEndWith(".plugin", caseSensitive: false)),
@@ -365,6 +367,55 @@ namespace PvpXray
             ("PVP-101-2", m => m["samples"].ElementsIfPresent.Select(e => e.IfObject?["path"]), MaxLength(512)),
             ("PVP-101-2", m => m["_upm"].IfPresent?["gameService"].IfPresent, k_Object),
             ("PVP-101-2", m => m["_upm"].IfPresent?["changelog"].IfPresent, MaxLength(4096)),
+
+            // https://github.com/Unity-Technologies/assetstore-upm-registry/blob/v10.3.2/server/models/upm/package-manifest.ts#L83
+            // Note that ".string()" in that schema also implies non-empty: https://github.com/hapijs/joi/blob/v17.13.3/API.md#string
+            ("PVP-101-3", m => m["name"], PackageId.ValidName),
+            ("PVP-101-3", m => m["name"], MustNotStartWith("com.unity.modules.", caseSensitive: true)),
+            ("PVP-101-3", m => m["name"], MustNotEndWith(".plugin", caseSensitive: false)),
+            ("PVP-101-3", m => m["name"], MustNotEndWith(".framework", caseSensitive: false)),
+            ("PVP-101-3", m => m["name"], MustNotEndWith(".bundle", caseSensitive: false)),
+            ("PVP-101-3", m => m["version"], new Requirement("must be valid SemVer", PackageId.ValidSemVer)),
+            ("PVP-101-3", m => m["description"].IfPresent, MaxLength(4096)),
+            ("PVP-101-3", m => m["description"].IfPresent, k_NonEmpty),
+            ("PVP-101-3", m => m["displayName"].IfPresent, MaxLength(256)),
+            ("PVP-101-3", m => m["displayName"].IfPresent, k_NonEmpty),
+            ("PVP-101-3", m => m["dependencies"].MembersIfPresent.Where(e => e.Key != ""), k_NonEmpty), // The empty key is ignored.
+            ("PVP-101-3", m => m["documentationUrl"].IfPresent, MustSatisfyPackageRegistryUrlCheck), // Flags empty.
+            ("PVP-101-3", m => m["documentationUrl"].IfPresent, MaxLength(256)),
+            ("PVP-101-3", m => m["license"].IfPresent, MaxLength(256)),
+            ("PVP-101-3", m => m["license"].IfPresent, k_NonEmpty),
+            ("PVP-101-3", m => m["licensesUrl"].IfPresent, MustSatisfyPackageRegistryUrlCheck), // Flags empty.
+            ("PVP-101-3", m => m["licensesUrl"].IfPresent, MaxLength(256)),
+            ("PVP-101-3", m => m["keywords"].ElementsIfPresent, MaxLength(32)),
+            ("PVP-101-3", m => m["keywords"].ElementsIfPresent, k_NonEmpty),
+            ("PVP-101-3", m => m["hideInEditor"].IfPresent, k_Boolean),
+            ("PVP-101-3", m => m["unity"].IfPresent, MaxLength(64)),
+            ("PVP-101-3", m => m["unity"].IfPresent, k_NonEmpty),
+            ("PVP-101-3", m => m["unityRelease"].IfPresent, MaxLength(64)),
+            ("PVP-101-3", m => m["unityRelease"].IfPresent, k_NonEmpty),
+            ("PVP-101-3", m => m["author"].IfPresent, k_ObjectOrString),
+            ("PVP-101-3", m => m["author"].IfString, new Requirement("must be an object or a non-empty string with maximum length 64", json => { var len = json.String.Length; return len != 0 && len <= 64; })),
+            ("PVP-101-3", m => m["author"].IfObject?["name"].IfPresent, MaxLength(64)),
+            ("PVP-101-3", m => m["author"].IfObject?["name"].IfPresent, k_NonEmpty),
+            ("PVP-101-3", m => m["author"].IfObject?["email"].IfPresent, MustSatisfyPackageRegistryEmailCheck), // Flags empty.
+            ("PVP-101-3", m => m["author"].IfObject?["email"].IfPresent, MaxLength(64)),
+            ("PVP-101-3", m => m["author"].IfObject?["url"].IfPresent, MustSatisfyPackageRegistryUrlCheck), // Flags empty.
+            ("PVP-101-3", m => m["author"].IfObject?["url"].IfPresent, MaxLength(256)),
+            ("PVP-101-3", m => m["changelogUrl"].IfPresent, MustSatisfyPackageRegistryUrlCheck), // Flags empty.
+            ("PVP-101-3", m => m["changelogUrl"].IfPresent, MaxLength(256)),
+            ("PVP-101-3", m => m["type"].IfPresent, MaxLength(32)),
+            ("PVP-101-3", m => m["type"].IfPresent, k_NonEmpty),
+            ("PVP-101-3", m => m["samples"].ElementsIfPresent, k_Object),
+            ("PVP-101-3", m => m["samples"].ElementsIfPresent.Select(e => e.IfObject?["displayName"]), MaxLength(256)),
+            ("PVP-101-3", m => m["samples"].ElementsIfPresent.Select(e => e.IfObject?["displayName"]), k_NonEmpty),
+            ("PVP-101-3", m => m["samples"].ElementsIfPresent.Select(e => e.IfObject?["description"]), MaxLength(4096)),
+            ("PVP-101-3", m => m["samples"].ElementsIfPresent.Select(e => e.IfObject?["description"]), k_NonEmpty),
+            ("PVP-101-3", m => m["samples"].ElementsIfPresent.Select(e => e.IfObject?["path"]), MaxLength(512)),
+            ("PVP-101-3", m => m["samples"].ElementsIfPresent.Select(e => e.IfObject?["path"]), k_NonEmpty),
+            ("PVP-101-3", m => m["_upm"].IfPresent?["gameService"].IfPresent, k_Object),
+            ("PVP-101-3", m => m["_upm"].IfPresent?["changelog"].IfPresent, MaxLength(4096)),
+            ("PVP-101-3", m => m["_upm"].IfPresent?["changelog"].IfPresent, k_NonEmpty),
         };
 
         public static string[] Checks { get; } = k_LocationChecks.Select(v => v.Item1).Concat(k_LocationChecksV2.Select(v => v.Item1)).Distinct().ToArray();

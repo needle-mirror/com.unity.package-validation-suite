@@ -17,7 +17,13 @@ namespace PvpXray
 
     class DocumentationVerifier : Verifier.IChecker
     {
-        public static string[] Checks { get; } = { "PVP-60-1", "PVP-61-1" };
+        static readonly string[] k_Pvp60_1 = { "PVP-60-1" };
+        static readonly string[] k_Pvp60 = { "PVP-60-1", "PVP-60-2" }; // Compliant Documentation~ folder paths (US-0040)
+        public static string[] Checks { get; } = k_Pvp60
+            .Append("PVP-61-1") // Compliant Documentation~ file contents (US-0040)
+            .ToArray();
+
+
         public static int PassCount => 1;
 
         static List<string> GetTopLevelDirectories(IReadOnlyList<PathEntry> paths) =>
@@ -38,12 +44,13 @@ namespace PvpXray
 
             var topLevelDirectories = GetTopLevelDirectories(context.PathEntries);
 
-            if (topLevelDirectories.HasMultipleDocumentationDirs()) context.AddError("PVP-60-1", "Only one documentation directory is permitted per package");
-            if (topLevelDirectories.MissingRootUnityDocumentationDir()) context.AddError("PVP-60-1", "A folder named \"Documentation~\" is required to be present at the root of the package");
+            if (topLevelDirectories.HasMultipleDocumentationDirs()) context.AddError(k_Pvp60, "Only one documentation directory is permitted per package");
+            var missingRootUnityDocumentationDir = topLevelDirectories.MissingRootUnityDocumentationDir();
+            if (missingRootUnityDocumentationDir) context.AddError(context.IsFeatureSetPackage ? k_Pvp60_1 : k_Pvp60, "A folder named \"Documentation~\" is required to be present at the root of the package");
 
             m_MarkdownFiles = GetDocumentationMarkdownFiles(context.Files);
 
-            if (m_MarkdownFiles.Count == 0) context.AddError("PVP-60-1", "Documentation~ folder must contain markdown documentation files");
+            if (m_MarkdownFiles.Count == 0) context.AddError(context.IsFeatureSetPackage && missingRootUnityDocumentationDir ? k_Pvp60_1 : k_Pvp60, "Documentation~ folder must contain markdown documentation files");
         }
 
         public void CheckItem(Verifier.PackageFile file, int passIndex)
