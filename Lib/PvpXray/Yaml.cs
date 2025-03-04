@@ -160,17 +160,17 @@ namespace PvpXray
             sb.Append('"');
             foreach (var c in str)
             {
-                var raw = (c >= ' ' && c <= '~' && c != '"' && c != '\\') // Printable ASCII except '"' and '\'.
-                    || (c >= 0xa0 && c != 0xfeff && c != 0xfffe && c != 0xffff); // Effectively U+00A0-U+D7FF, U+E000-U+FEFE, U+FF00-U+FFFD, and U+10000-U+10FFFF.
+                // Any UTF-16 code unit except '"' and '\\', C0/C1 control chars, the BOM U+FEFF,
+                // and the non-characters U+FFFE/U+FFFF. (UTF-16 surrogates are passed through
+                // as-is, under the assumption that they're valid.)
+                var raw = !char.IsControl(c) && c != '"' && c != '\\' && c != 0xfeff && c < 0xfffe;
                 if (raw) sb.Append(c);
                 else
                 {
                     sb.Append('\\');
-                    var j = "\"\\\n\r\t\b\f".IndexOf(c);
-                    if (j >= 0)
-                        sb.Append("\"\\nrtbf"[j]);
-                    else
-                        sb.AppendFormat("u{0:X4}", (uint)c);
+                    var j = "\"\\\n\r\t\b\f".IndexOf(c) + 1;
+                    sb.Append("u\"\\nrtbf"[j]);
+                    if (j == 0) sb.Append($"{(uint)c:X4}");
                 }
             }
             sb.Append('"');

@@ -4,4 +4,5 @@ using System.Runtime.CompilerServices;
 [assembly: InternalsVisibleTo("Unity.PackageValidationSuite.Editor")]
 [assembly: InternalsVisibleTo("Unity.PackageValidationSuite.EditorTests")]
 [assembly: InternalsVisibleTo("UpmPvp")]
+[assembly: InternalsVisibleTo("UpmPvp.TestCli")]
 [assembly: InternalsVisibleTo("UpmPvp.Tests")]

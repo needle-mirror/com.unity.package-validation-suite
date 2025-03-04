@@ -128,6 +128,9 @@ namespace PvpXray
         {
             // PVP-28-1: Must have .signature file (US-0134)
             ("PVP-28-1", paths => paths.Contains(".signature"), "Missing .signature file"),
+            // PVP-28-3: Must have .signature and .attestation.p7m files
+            ("PVP-28-3", paths => paths.Contains(".attestation.p7m"), ".attestation.p7m: file not present"),
+            ("PVP-28-3", paths => paths.Contains(".signature"), ".signature: file not present"),
             // PVP-50-1: Must have README.md file
             ("PVP-50-1", paths => paths.Contains("README.md"), "Missing README.md file"),
         };
@@ -136,7 +139,7 @@ namespace PvpXray
             .Concat(k_ComplexSinglePathValidations.Select(v => v.Item1))
             .ToArray();
 
-        public static string[] Checks { get; } = SinglePathChecks.Concat(k_AllPathsValidations.Select(v => v.Item1)).ToArray();
+        public static string[] Checks { get; } = SinglePathChecks.Concat(k_AllPathsValidations.Select(v => v.Item1).Distinct()).ToArray();
         public static int PassCount => 0;
 
         public PathVerifier(Verifier.Context context)

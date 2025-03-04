@@ -876,7 +876,7 @@ namespace PvpXray
 
             public void SetBlobBaseline(string id, PvpHttpResponse response)
             {
-                var hash = XrayUtils.Sha256(response.Buffer, response.Length);
+                var hash = XrayUtils.Sha256(response.Body);
                 SetBaseline($"blob:{id}", $"\"{hash}\"");
             }
 
@@ -1040,30 +1040,22 @@ namespace PvpXray
                 {
                     action();
                 }
-                catch (FailAllException e)
+                catch (Exception e) when (AddCheckResultsFromException(checks, e))
                 {
-                    AddError(checks, e.Message);
                 }
-                catch (PvpHttpException)
-                {
-                    Skip(checks, "network_error");
-                }
-                catch (SimpleJsonException e) when (e.PackageFilePath != null)
-                {
-                    AddError(checks, IsLegacyCheckerEmittingLegacyJsonErrors ? e.LegacyFullMessage : e.FullMessage);
-                }
-                catch (YamlParseException e) when (e.PackageFilePath != null)
-                {
-                    AddError(checks, e.FullMessage);
-                }
-                catch (YamlAccessException e) when (e.PackageFilePath != null)
-                {
-                    AddError(checks, e.FullMessage);
-                }
-                catch (SkipAllException e)
-                {
-                    Skip(checks, e.Message);
-                }
+            }
+
+            public bool AddCheckResultsFromException(string[] checkIds, Exception e)
+            {
+                if (e is FailAllException) AddError(checkIds, e.Message);
+                else if (e is PvpHttpException) Skip(checkIds, "network_error");
+                else if (e is SimpleJsonException sje && sje.PackageFilePath != null)
+                    AddError(checkIds, IsLegacyCheckerEmittingLegacyJsonErrors ? sje.LegacyFullMessage : sje.FullMessage);
+                else if (e is YamlParseException ype && ype.PackageFilePath != null) AddError(checkIds, ype.FullMessage);
+                else if (e is YamlAccessException yae && yae.PackageFilePath != null) AddError(checkIds, yae.FullMessage);
+                else if (e is SkipAllException) Skip(checkIds, e.Message);
+                else return false;
+                return true;
             }
         }
 

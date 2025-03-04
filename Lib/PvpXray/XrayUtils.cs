@@ -8,8 +8,10 @@ using System.Text.RegularExpressions;
 
 #if NET5_0_OR_GREATER
 using SpanOrString = System.ReadOnlySpan<char>;
+using SpanOrArraySegment = System.ReadOnlySpan<byte>;
 #else
 using SpanOrString = System.String;
+using SpanOrArraySegment = System.ArraySegment<byte>;
 #endif
 
 namespace PvpXray
@@ -135,11 +137,13 @@ namespace PvpXray
         public static readonly Regex Sha1Regex = new Regex("^[0-9a-f]{40}$");
 
         /// Convert byte array to lowercase hex string.
+        public static string Hex(SpanOrArraySegment bytes)
 #if NET5_0_OR_GREATER
-        public static string Hex(ReadOnlySpan<byte> bytes) => Convert.ToHexString(bytes).ToLowerInvariant();
+            => Convert.ToHexString(bytes).ToLowerInvariant();
 #else
-        public static string Hex(byte[] bytes) => BitConverter.ToString(bytes).Replace("-", "").ToLowerInvariant();
+            => BitConverter.ToString(bytes.Array, bytes.Offset, bytes.Count).Replace("-", "").ToLowerInvariant();
 #endif
+        public static string Hex(byte[] bytes) => Hex(new SpanOrArraySegment(bytes));
 
         /// Read and dispose stream, return SHA-1 hash as a hex string.
         public static string Sha1(Stream stream)
@@ -152,39 +156,39 @@ namespace PvpXray
         }
 
         /// Return SHA-1 hash of byte array as a hex string.
-        public static string Sha1(byte[] buffer, int length)
+        public static string Sha1(SpanOrArraySegment bytes)
         {
 #if NET5_0_OR_GREATER
             Span<byte> digest = stackalloc byte[20];
-            SHA1.HashData(buffer.AsSpan(0, length), digest);
+            SHA1.HashData(bytes, digest);
             return Hex(digest);
 #else
             using (var hasher = SHA1.Create())
             {
-                return Hex(hasher.ComputeHash(buffer, 0, length));
+                return Hex(hasher.ComputeHash(bytes.Array, bytes.Offset, bytes.Count));
             }
 #endif
         }
 
-        public static string Sha1(byte[] buffer) => Sha1(buffer, buffer.Length);
+        public static string Sha1(byte[] buffer) => Sha1(new SpanOrArraySegment(buffer));
         public static string Sha1(string text) => Sha1(Utf8Strict.GetBytes(text));
 
         /// Return SHA-256 hash of byte array as a hex string.
-        public static string Sha256(byte[] buffer, int length)
+        public static string Sha256(SpanOrArraySegment bytes)
         {
 #if NET5_0_OR_GREATER
             Span<byte> digest = stackalloc byte[32];
-            SHA256.HashData(buffer.AsSpan(0, length), digest);
+            SHA256.HashData(bytes, digest);
             return Hex(digest);
 #else
             using (var hasher = SHA256.Create())
             {
-                return Hex(hasher.ComputeHash(buffer, 0, length));
+                return Hex(hasher.ComputeHash(bytes.Array, bytes.Offset, bytes.Count));
             }
 #endif
         }
 
-        public static string Sha256(byte[] buffer) => Sha256(buffer, buffer.Length);
+        public static string Sha256(byte[] buffer) => Sha256(new SpanOrArraySegment(buffer));
         public static string Sha256(string text) => Sha256(Utf8Strict.GetBytes(text));
 
         /// Strict parsing of non-negative integers (consisting of ASCII digits only, no leading zeros).
@@ -200,26 +204,26 @@ namespace PvpXray
 
         /// Decode UTF-8 bytes to .NET string, silently discarding UTF-8 BOM
         /// if present and replacing invalid UTF-8 sequences with '�'.
-        public static string DecodeUtf8Lax(byte[] bytes)
+        public static string DecodeUtf8Lax(byte[] bytes) => DecodeUtf8Lax(new ArraySegment<byte>(bytes));
+        public static string DecodeUtf8Lax(ArraySegment<byte> bytes)
         {
             const char replacementCharacter = '\ufffd';
 
-            if (bytes.Length > MaxUtf8BytesForString) throw new ArgumentException("Input too long for conversion to string", nameof(bytes));
+            if (bytes.Count > MaxUtf8BytesForString) throw new ArgumentException("Input too long for conversion to string", nameof(bytes));
 
             // Silently discard UTF-8 BOM if present.
-            var hasBom = bytes.Length >= 3 && bytes[0] == 0xEF && bytes[1] == 0xBB && bytes[2] == 0xBF;
-            var start = hasBom ? 3 : 0;
-            var length = hasBom ? bytes.Length - 3 : bytes.Length;
+            var hasBom = bytes.Count >= 3 && bytes.Array[bytes.Offset] == 0xEF && bytes.Array[bytes.Offset + 1] == 0xBB && bytes.Array[bytes.Offset + 2] == 0xBF;
+            if (hasBom) bytes = new ArraySegment<byte>(bytes.Array, bytes.Offset + 3, bytes.Count - 3);
 
             try
             {
                 // Attempt to decode UTF-8 string.
-                return Utf8Strict.GetString(bytes, start, length);
+                return Utf8Strict.GetString(bytes.Array, bytes.Offset, bytes.Count);
             }
             catch (DecoderFallbackException)
             {
                 // Decode UTF-8 string replacing invalid UTF-8 sequences with replacement characters.
-                var s = Encoding.UTF8.GetString(bytes, start, length);
+                var s = Encoding.UTF8.GetString(bytes.Array, bytes.Offset, bytes.Count);
 
                 // The number of replacement characters resulting from an invalid UTF-8 sequence is implementation specific.
                 // For consistency, collapse consecutive replacement character substrings to a single code point.

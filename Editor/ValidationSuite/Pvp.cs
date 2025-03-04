@@ -275,7 +275,12 @@ namespace UnityEditor.PackageManager.ValidationSuite
 
         public PvpRunner()
         {
-            m_PackageInfos = Utilities.UpmListOffline(); // perf: this could fairly easily run in parallel with below
+            // perf: this could fairly easily run in parallel with below
+#if UNITY_2021_1_OR_NEWER
+            m_PackageInfos = PackageInfo.GetAllRegisteredPackages();
+#else
+            m_PackageInfos = Utilities.UpmListOffline(); // Excludes "shim" packages.
+#endif
             m_PvsPackageInfo = GetPackageInfo(Utilities.VSuiteName);
 
             m_Validations = new List<IPvpChecker>();
