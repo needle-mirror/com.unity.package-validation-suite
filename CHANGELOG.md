@@ -4,6 +4,9 @@ All notable changes to this package will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## [0.80.0-preview] - 2025-03-07
+- PVP: Add x-ray check `PVP-171-3` flagging any change to `.unity` between patch versions. (PVS-224)
+
 ## [0.79.0-preview] - 2025-03-04
 - PVP: Allow shim package in `pvpPublishSet`/`pvpUnderTest` project manifest properties (Unity 2021.1+ only).
 - PVP: Add x-ray check `PVP-28-3`, checking that both the old and new package signatures are present. (PETS-1643)

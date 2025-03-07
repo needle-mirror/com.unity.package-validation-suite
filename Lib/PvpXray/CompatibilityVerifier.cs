@@ -9,11 +9,12 @@ namespace PvpXray
         public static string[] Checks { get; } = {
             "PVP-171-1", // Unity min-version patch release compatibility
             "PVP-171-2", // (ditto, permitting dropping support for unsupported releases)
+            "PVP-171-3", // (ditto, but only disallow changes to major version)
             "PVP-173-1", // Dependency version patch release compatibility
             "PVP-181-1", // Unity min-version minor release compatibility
             "PVP-181-2", // (ditto, permitting dropping support for unsupported releases)
         };
-        static readonly string[] k_171 = { "PVP-171-1", "PVP-171-2" };
+        static readonly string[] k_171_12 = { "PVP-171-1", "PVP-171-2" };
         static readonly string[] k_181 = { "PVP-181-1", "PVP-181-2" };
         static readonly string[] k_181_2 = { null, "PVP-181-2" };
 
@@ -113,7 +114,7 @@ namespace PvpXray
                 }
                 else if (!allowDecrease)
                 {
-                    // It is an error to lower the min-version in patch versions (PVP-171).
+                    // It is an error to lower the min-version in patch versions (PVP-171-{1,2}).
                     error = $"{next.PackageId} {next.m_UnityMinVersion.RequiresSuchAndSuch}, but {PackageId} {m_UnityMinVersion.RequiresSuchAndSuch}";
                 }
 
@@ -124,6 +125,20 @@ namespace PvpXray
                         if (checkId != null) context.AddError(checkId, error);
                         if (!emitV2) break; // Only add the PVP-*-1 error.
                     }
+                }
+            }
+
+            public void CheckUnityMinVersionMajorUpwards(ManifestData next, Verifier.Context context, string checkId)
+            {
+                if (this.m_UnityMinVersionError != null) context.AddError(checkId, this.m_UnityMinVersionError);
+                if (next.m_UnityMinVersionError != null) context.AddError(checkId, next.m_UnityMinVersionError);
+
+                if (!m_Present || !next.m_Present) return;
+
+                if (m_UnityMinVersion.Major != next.m_UnityMinVersion.Major)
+                {
+                    // It is an error to change the min-version major in patch versions (PVP-171-3).
+                    context.AddError(checkId, $"{next.PackageId} {next.m_UnityMinVersion.RequiresSuchAndSuch}, but {PackageId} {m_UnityMinVersion.RequiresSuchAndSuch}");
                 }
             }
 
@@ -200,8 +215,12 @@ namespace PvpXray
 
             // The Unity min-version checks are directional.
             // Note that 'prevPatch' and 'prevMinor' may be the same version.
-            prevPatchData.CheckUnityMinVersionUpwards(underTestData, context, k_171, allowDecrease: false);
-            underTestData.CheckUnityMinVersionUpwards(nextPatchData, context, k_171, allowDecrease: false);
+            prevPatchData.CheckUnityMinVersionUpwards(underTestData, context, k_171_12, allowDecrease: false);
+            underTestData.CheckUnityMinVersionUpwards(nextPatchData, context, k_171_12, allowDecrease: false);
+
+            // The Unity min-version major check is directional.
+            prevPatchData.CheckUnityMinVersionMajorUpwards(underTestData, context, "PVP-171-3");
+            underTestData.CheckUnityMinVersionMajorUpwards(nextPatchData, context, "PVP-171-3");
 
             // For consistency with the backwards looking check, also check PVP-181-2 for nextPatchData.
             prevMinorData.CheckUnityMinVersionUpwards(underTestData, context, k_181, allowDecrease: true);
