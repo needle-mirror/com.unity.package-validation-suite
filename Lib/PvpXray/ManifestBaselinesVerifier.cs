@@ -8,11 +8,13 @@ namespace PvpXray
     {
         public static string[] Checks { get; } = {
             "PVP-160-1", // Direct dependencies must have been promoted, if not built-in (and listed the editor manifest for the package's declared Unity min-version), or in the publish set.
+            "PVP-160-2",
             "PVP-161-1", // The editor min-version of recursive dependencies may not be higher than package's own min-version (ignoring built-in or missing packages).
             "PVP-162-1", // The recursive dependency chain of the package may not contain cycles (ignoring built-in or missing packages).
             "PVP-164-1", // Manifest's Unity min-version must exist
         };
         public static int PassCount => 0;
+        static readonly string[] k_Pvp160 = { "PVP-160-1", "PVP-160-2" };
 
         internal struct UnityVersionRequirement
         {
@@ -123,8 +125,8 @@ namespace PvpXray
             var packageUnderTestMinUnityExpanded = packageUnderTestMinUnity.Expand(".0f1");
             var path = new List<PackageId>();
 
-            IReadOnlyCollection<PackageId> editorManifestPackages = null;
-            if (!packageUnderTestMinUnity.IsAny && !context.TryFetchEditorManifestBaseline(packageUnderTestMinUnityExpanded, out editorManifestPackages))
+            Verifier.EditorManifest editorManifest = default;
+            if (!packageUnderTestMinUnity.IsAny && !context.TryFetchEditorManifestBaseline(packageUnderTestMinUnityExpanded, out editorManifest))
             {
                 var major = packageUnderTestMinUnity.Major;
                 var i = major.IndexOf('.');
@@ -138,18 +140,31 @@ namespace PvpXray
             WalkDependencies(packageUnderTest);
             return;
 
-            void CheckThatDirectDependencyIsBuiltIn(PackageId package)
+            void CheckThatDirectDependencyIsBuiltIn(PackageId dependency)
             {
                 if (!packageUnderTestMinUnity.IsAny)
                 {
-                    if (editorManifestPackages == null)
+                    if (!editorManifest.IsAvailable)
                     {
-                        context.AddError("PVP-160-1", $"Editor manifest for Unity {packageUnderTestMinUnityExpanded} is unavailable; built-in packages cannot be determined");
+                        context.AddError(k_Pvp160, $"Editor manifest for Unity {packageUnderTestMinUnityExpanded} is unavailable; built-in packages cannot be determined");
                     }
-                    else if (editorManifestPackages.Contains(package)) return;
+                    else if (editorManifest.Packages.TryGetValue(dependency.Name, out var emVersion))
+                    {
+                        if (dependency.Version == emVersion) return; // exact match trivially satisfies PVP-160-{1,2} both
+
+                        // PVP-160-1 requires exact matching version
+                        context.AddError("PVP-160-1", dependency.ToString());
+
+                        // PVP-160-2 requires compatible version
+                        var i = emVersion.IndexOf('.');
+                        var isSameMajor = i != -1 && dependency.Version.Length > i && string.CompareOrdinal(emVersion, 0, dependency.Version, 0, i + 1) == 0;
+                        var isCompatible = isSameMajor && SemVerCompare.Compare(emVersion, dependency.Version) >= 0;
+                        if (!isCompatible) context.AddError("PVP-160-2", $"{dependency} (Unity {packageUnderTestMinUnityExpanded} provides {dependency.Name}@{emVersion})");
+                        return;
+                    }
                 }
 
-                context.AddError("PVP-160-1", package.ToString());
+                context.AddError(k_Pvp160, dependency.ToString());
             }
 
             void WalkDependencies(PackageId package)
@@ -202,7 +217,7 @@ namespace PvpXray
                 catch (SimpleJsonException e)
                 {
                     var message = $"{package}: {e.LegacyMessage}";
-                    if (path.Count == 1) context.AddError("PVP-160-1", message);
+                    if (path.Count == 1) context.AddError(k_Pvp160, message);
                     context.AddError("PVP-161-1", message);
                     context.AddError("PVP-162-1", message);
                 }

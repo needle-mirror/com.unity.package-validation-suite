@@ -87,7 +87,6 @@ namespace PvpXray
 
         // Mandatory context (package under test)
         public List<string> Files { get; set; }
-        public List<long> Sizes { get; set; }
         public byte[] Manifest { get; set; }
 
         // Optional context
@@ -102,12 +101,10 @@ namespace PvpXray
         internal VerifierContext(IEnumerable<IPackageFile> files)
         {
             Files = new List<string>();
-            Sizes = new List<long>();
 
             foreach (var file in files)
             {
                 Files.Add(file.Path);
-                Sizes.Add(file.Size);
 
                 if (file.Path == "package.json")
                 {
@@ -584,6 +581,31 @@ namespace PvpXray
             public bool TargetUnityImportsPluginDirsLegacy;
         }
 
+        internal readonly struct EditorManifest
+        {
+            public bool IsAvailable => Packages != null;
+            public readonly IReadOnlyDictionary<string, string> Packages;
+
+            public EditorManifest(string editorManifestJson)
+            {
+                var packages = new Dictionary<string, string>();
+                Packages = packages;
+                try
+                {
+                    var json = new Json(editorManifestJson, null);
+                    foreach (var pkg in json["packages"].Members)
+                    {
+                        var version = pkg["version"];
+                        if (version.IsPresent) packages[pkg.Key] = version.String;
+                    }
+                }
+                catch (SimpleJsonException)
+                {
+                    throw SkipAllException.InvalidBaseline;
+                }
+            }
+        }
+
         internal class Context
         {
             public readonly AssetVisibility AssetVisibility;
@@ -623,7 +645,7 @@ namespace PvpXray
             readonly Dictionary<string, Dictionary<string, object>> m_ProductionRegistryVersions = new Dictionary<string, Dictionary<string, object>>();
             readonly ResultFileStub m_ResultFile;
             readonly Dictionary<PackageId, PackageBaseline> m_PublishSetBaselines = new Dictionary<PackageId, PackageBaseline>();
-            readonly Dictionary<string, HashSet<PackageId>> m_EditorManifestPackages = new Dictionary<string, HashSet<PackageId>>();
+            readonly Dictionary<string, EditorManifest> m_EditorManifests = new Dictionary<string, EditorManifest>();
             List<UnityMajor> m_SupportedEditorsBaseline;
             string m_SupportedEditorsBaselineSkipReason;
 
@@ -861,7 +883,7 @@ namespace PvpXray
                 foreach (var checkId in checkIds) Skip(checkId, reason);
             }
 
-            void SetBaseline(string id, string json)
+            public void SetBaseline(string id, string json)
             {
                 if (m_ResultFile.Baselines.TryGetValue(id, out var existing))
                 {
@@ -918,9 +940,9 @@ namespace PvpXray
                 return false;
             }
 
-            public bool TryFetchEditorManifestBaseline(string editorVersion, out IReadOnlyCollection<PackageId> editorManifestPackages)
+            public bool TryFetchEditorManifestBaseline(string editorVersion, out EditorManifest editorManifest)
             {
-                if (!m_EditorManifestPackages.TryGetValue(editorVersion, out var packages))
+                if (!m_EditorManifests.TryGetValue(editorVersion, out editorManifest))
                 {
                     var url = "https://pkgprom-api.ds.unity3d.com/internal-api/editor-manifest/"
                         + WebUtility.UrlEncode(editorVersion);
@@ -932,32 +954,12 @@ namespace PvpXray
                     else
                     {
                         SetBlobBaseline($"editor_manifest:{editorVersion}", resp);
-
-                        var editorManifestJson = resp.GetBaselineString();
-                        try
-                        {
-                            var json = new Json(editorManifestJson, null);
-                            packages = new HashSet<PackageId>();
-                            foreach (var pkg in json["packages"].Members)
-                            {
-                                var version = pkg["version"];
-                                if (version.IsPresent)
-                                {
-                                    packages.Add(new PackageId(pkg.Key, version.String));
-                                }
-                            }
-                        }
-                        catch (SimpleJsonException)
-                        {
-                            throw SkipAllException.InvalidBaseline;
-                        }
+                        editorManifest = new EditorManifest(resp.GetBaselineString());
                     }
-
-                    m_EditorManifestPackages[editorVersion] = packages;
+                    m_EditorManifests[editorVersion] = editorManifest;
                 }
 
-                editorManifestPackages = packages;
-                return packages != null;
+                return editorManifest.IsAvailable;
             }
 
             public bool HasSupportedEditorsInRange(UnityMajor startInclusive, UnityMajor endExclusive)

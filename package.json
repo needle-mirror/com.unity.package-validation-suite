@@ -1,25 +1,25 @@
 {
   "name": "com.unity.package-validation-suite",
   "displayName": "Package Validation Suite",
-  "version": "0.80.0-preview",
+  "version": "0.81.0-preview",
   "unity": "2018.4",
   "description": "Unity Package Manager validation suite, used to evaluate a package's integrity before it's considered for publishing.  This is a Unity internal tool at the moment, no support will be provided for this package.",
   "dependencies": {
     "com.unity.nuget.mono-cecil": "0.1.6-preview.2"
   },
   "relatedPackages": {
-    "com.unity.package-validation-suite.tests": "0.80.0-preview"
+    "com.unity.package-validation-suite.tests": "0.81.0-preview"
   },
   "_upm": {
-    "changelog": "- PVP: Add x-ray check `PVP-171-3` flagging any change to `.unity` between patch versions. (PVS-224)"
+    "changelog": "- PVP: Add x-ray check `PVP-160-2`, relaxing the requirements for built-in package dependencies. (PVS-226)"
   },
   "upmCi": {
-    "footprint": "c6049ebd14f934d4f37f8862b8045464c0e7fe76"
+    "footprint": "c1ce3bd22eeeba590369007636ce160fff13753b"
   },
-  "documentationUrl": "https://docs.unity3d.com/Packages/com.unity.package-validation-suite@0.80/manual/index.html",
+  "documentationUrl": "https://docs.unity3d.com/Packages/com.unity.package-validation-suite@0.81/manual/index.html",
   "repository": {
     "url": "https://github.cds.internal.unity3d.com/unity/com.unity.package-validation-suite.git",
     "type": "git",
-    "revision": "98079fd51650e8d8cdf0ae1024ccf44e441e0ea6"
+    "revision": "8f08a2609ccecd25b752e38c08c1cecbe808903c"
   }
 }
