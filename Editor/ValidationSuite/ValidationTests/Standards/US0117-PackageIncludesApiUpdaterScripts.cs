@@ -1,9 +1,11 @@
-using JetBrains.Annotations;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
+using JetBrains.Annotations;
+using PvpXray;
 using UnityEditor.Compilation;
 using UnityEngine;
 
@@ -16,8 +18,6 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests.Standards
         public override string StandardCode => "US-0117";
 
         public override StandardVersion Version => new StandardVersion(1, 0, 0);
-
-        private static readonly string LegacyApiUpdaterValidationPath = Path.Combine(EditorApplication.applicationContentsPath, "Tools/ScriptUpdater/APIUpdater.ConfigurationValidator.exe");
 
         public void Check(AssemblyInfo[] info, string packagePath, string packageName)
         {
@@ -45,21 +45,16 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests.Standards
         [CanBeNull]
         static string GetValidatorPath()
         {
-            // We check for the validator in the legacy (original) folder to support Unity versions before ApiUpdater move to Unity-Compiler repo.
-            var validatorPath = LegacyApiUpdaterValidationPath;
-            if (!File.Exists(validatorPath))
+            var searchPaths = new[]
             {
-
-                //When we stop supporting the last version of Unity (2023.2 ?) that expects ApiUpdater to be under Tools/ScriptUpdater folder
-                //we can probe only the path below. We can also do that when/if a PVS version requires Unity > 2023.2
-                validatorPath = Path.Combine(EditorApplication.applicationContentsPath, "Tools/Compilation/ApiUpdater/APIUpdater.ConfigurationValidator.dll");
-                if (!File.Exists(validatorPath))
-                {
-                    return null;
-                }
-            }
-
-            return validatorPath;
+                EditorApplication.applicationContentsPath + "/Resources/BuildPipeline/Compilation/ApiUpdater/APIUpdater.ConfigurationValidator.dll", // macOS
+                EditorApplication.applicationContentsPath + "/Tools/BuildPipeline/Compilation/ApiUpdater/APIUpdater.ConfigurationValidator.dll", // Linux/Windows
+                // Check paths prior to PLAT-13025/PLAT-13084 relocation.
+                // We check for the validator in the legacy (original) folder to support Unity versions before ApiUpdater move to Unity-Compiler repo.
+                EditorApplication.applicationContentsPath + "/Tools/ScriptUpdater/APIUpdater.ConfigurationValidator.exe",
+                EditorApplication.applicationContentsPath + "/Tools/Compilation/ApiUpdater/APIUpdater.ConfigurationValidator.dll",
+            };
+            return searchPaths.FirstOrDefault(File.Exists);
         }
 
         // Subject to PVP stability guarantee.
@@ -116,15 +111,30 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests.Standards
             return exitCode != 0 ? output : null;
         }
 
+#if UNITY_2022_1_OR_NEWER
+        static string GetDotnetRuntimeDir(out string preArguments)
+        {
+            var searchPaths = new[]
+            {
+                EditorApplication.applicationContentsPath + "/Resources/Scripting/NetCoreRuntime",
+                // Check paths prior to PLAT-13025/PLAT-13084 relocation.
+                EditorApplication.applicationContentsPath + "/DotNetSdk",
+                EditorApplication.applicationContentsPath + "/NetCoreRuntime",
+            };
+            var runtimeDir = searchPaths.FirstOrDefault(Directory.Exists) ?? throw new Exception(".NET runtime directory not found:\n" + string.Join('\n', searchPaths));
+
+            // In newer versions, the .NET SDK is in a new location and is invoked slightly differently.
+            preArguments = runtimeDir.EndsWithOrdinal("/DotNetSdk") ? "--roll-forward Major" : "";
+
+            return runtimeDir;
+        }
+#endif
+
         static void InvokeApiUpdaterForThisUnityVersion(string validatorPath, string argumentsForValidator, string responseFilePath, out int exitCode, out string output)
         {
 #if UNITY_2022_1_OR_NEWER
             // Starting in 2022.1 ConfigurationValidator is compiled to NET 5.0
-            // In newer versions, the .NET SDK is in a new location and is invoked slightly differently.
-            var dotNetRuntimePath = EditorApplication.applicationContentsPath + "/DotNetSdk";
-            var isDotNetInNewPath = Directory.Exists(dotNetRuntimePath);
-            if (!isDotNetInNewPath) dotNetRuntimePath = EditorApplication.applicationContentsPath + "/NetCoreRuntime";
-            var preArguments = isDotNetInNewPath ? "--roll-forward Major" : "";
+            var dotNetRuntimePath = GetDotnetRuntimeDir(out var preArguments);
             var psi = new ProcessStartInfo
             {
                 CreateNoWindow = true,

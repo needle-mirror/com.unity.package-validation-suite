@@ -192,9 +192,8 @@ namespace UnityEditor.PackageManager.ValidationSuite
                 {
                     return;
                 }
-                catch (IOException e) when (++attempts < 4)
+                catch (IOException) when (++attempts < 4)
                 {
-                    Debug.LogError($"IO error when {operation} (attempt #{attempts}, will retry): {e}");
                     Thread.Sleep(1000 * attempts);
                 }
             }
@@ -314,8 +313,14 @@ namespace UnityEditor.PackageManager.ValidationSuite
 
         public static string GetMonoPath()
         {
-            var monoPath = Path.Combine(EditorApplication.applicationContentsPath, "MonoBleedingEdge/bin", Application.platform == RuntimePlatform.WindowsEditor ? "mono.exe" : "mono");
-            return monoPath;
+            var filename = Application.platform == RuntimePlatform.WindowsEditor ? "mono.exe" : "mono";
+            var searchPaths = new[]
+            {
+                EditorApplication.applicationContentsPath + "/Resources/Scripting/MonoBleedingEdge/bin/" + filename,
+                // Check path prior to PLAT-13025/PLAT-13084 relocation.
+                EditorApplication.applicationContentsPath + "/MonoBleedingEdge/bin/" + filename,
+            };
+            return searchPaths.FirstOrDefault(File.Exists) ?? throw new Exception("Mono executable not found:\n" + string.Join("\n", searchPaths));
         }
 
         public static string GetOSAgnosticPath(string filePath)

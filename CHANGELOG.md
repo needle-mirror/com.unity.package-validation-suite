@@ -4,6 +4,11 @@ All notable changes to this package will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## [0.82.0-preview] - 2025-07-03
+- Retry IO without logging warning message that fails validation. (PVS-227)
+- Fix incorrect mono path in PVP-20-1/XmlDocValidation. (PVS-228)
+- Fix incorrect dotnet/validator path in PVP-140-1/UpdateConfigurationValidation. (PVS-228)
+
 ## [0.81.0-preview] - 2025-04-23
 - PVP: Add x-ray check `PVP-160-2`, relaxing the requirements for built-in package dependencies. (PVS-226)
 
