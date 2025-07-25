@@ -4,6 +4,9 @@ All notable changes to this package will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## [0.83.0-preview] - 2025-07-25
+- Fix incorrect 7-Zip path with Unity 6000.3 on macOS. (PVS-229)
+
 ## [0.82.0-preview] - 2025-07-03
 - Retry IO without logging warning message that fails validation. (PVS-227)
 - Fix incorrect mono path in PVP-20-1/XmlDocValidation. (PVS-228)

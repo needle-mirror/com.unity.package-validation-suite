@@ -70,10 +70,13 @@ namespace UnityEditor.PackageManager.ValidationSuite
 #else
             string execFilename = "7z.exe";
 #endif
-            string zipper = EditorApplication.applicationContentsPath + "/Tools/" + execFilename;
-            if (!File.Exists(zipper))
-                throw new FileNotFoundException("Could not find " + zipper);
-            return zipper;
+            var searchPaths = new[]
+            {
+                EditorApplication.applicationContentsPath + "/Helpers/" + execFilename,
+                EditorApplication.applicationContentsPath + "/Tools/" + execFilename,
+            };
+            return searchPaths.FirstOrDefault(File.Exists)
+                ?? throw new FileNotFoundException("7-Zip executable not found: " + string.Join("\n", searchPaths));
         }
 
         internal static bool Unzip(string zipFilePath, string destPath)

@@ -1,25 +1,25 @@
 {
   "name": "com.unity.package-validation-suite",
   "displayName": "Package Validation Suite",
-  "version": "0.82.0-preview",
+  "version": "0.83.0-preview",
   "unity": "2018.4",
   "description": "Unity Package Manager validation suite, used to evaluate a package's integrity before it's considered for publishing.  This is a Unity internal tool at the moment, no support will be provided for this package.",
   "dependencies": {
     "com.unity.nuget.mono-cecil": "0.1.6-preview.2"
   },
   "relatedPackages": {
-    "com.unity.package-validation-suite.tests": "0.82.0-preview"
+    "com.unity.package-validation-suite.tests": "0.83.0-preview"
   },
   "_upm": {
-    "changelog": "- Retry IO without logging warning message that fails validation. (PVS-227)\n- Fix incorrect mono path in PVP-20-1/XmlDocValidation. (PVS-228)\n- Fix incorrect dotnet/validator path in PVP-140-1/UpdateConfigurationValidation. (PVS-228)"
+    "changelog": "- Fix incorrect 7-Zip path with Unity 6000.3 on macOS. (PVS-229)"
   },
   "upmCi": {
-    "footprint": "29e191e671b79515d802c1833d791cdf707d8514"
+    "footprint": "4c459a38610ecc4663143e03c6b02b9fce7c0ad9"
   },
-  "documentationUrl": "https://docs.unity3d.com/Packages/com.unity.package-validation-suite@0.82/manual/index.html",
+  "documentationUrl": "https://docs.unity3d.com/Packages/com.unity.package-validation-suite@0.83/manual/index.html",
   "repository": {
     "url": "https://github.cds.internal.unity3d.com/unity/com.unity.package-validation-suite.git",
     "type": "git",
-    "revision": "b66d66bccd3cfc8f84344dfad749d8c6311ee66b"
+    "revision": "d4c827ead39e9d1ad70669f1c38006a331887ae5"
   }
 }
