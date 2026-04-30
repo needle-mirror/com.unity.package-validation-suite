@@ -1,4 +1,5 @@
 using System.IO;
+using System.Linq;
 
 namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests.Standards
 {
@@ -8,30 +9,34 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests.Standards
 
         public override StandardVersion Version => new StandardVersion(1, 0, 0);
 
-        static readonly string k_DocsFilePath = "primed_library_validation_error.html";
-        static readonly string k_LibraryPath = Path.Combine("ProjectData~", "Library");
-        static readonly string[] k_PrimedLibraryPaths =
-        {
-            "ArtifactDB",
-            "Artifacts",
-            "SourceAssetDB",
-        };
+        static readonly string k_DocumentationLink =
+            ErrorDocumentation.GetLinkMessage("primed_library_validation_error.html", "template-is-missing-primed-library-path");
 
         public void Check(string path)
         {
             // Check that Library directory of template contains primed paths
-            foreach (var primedLibraryPath in k_PrimedLibraryPaths)
-            {
-                var packageRelativePath = Path.Combine(k_LibraryPath, primedLibraryPath);
-                var fullPath = Path.Combine(path, packageRelativePath);
+            RequireExactlyOne(path, "ArtifactDB");
+            RequireExactlyOne(path, "Artifacts", "DataStore");
+            RequireExactlyOne(path, "SourceAssetDB");
+        }
 
-                if (!(File.Exists(fullPath) || Directory.Exists(fullPath)))
-                {
-                    var documentationLink = ErrorDocumentation.GetLinkMessage(
-                        k_DocsFilePath, "template-is-missing-primed-library-path");
-                    AddError($"Template is missing primed library path at {packageRelativePath}. " +
-                        $"It should have been added automatically in the CI packing process. {documentationLink}");
-                }
+        void RequireExactlyOne(string packageRoot, params string[] mutexPrimedLibraryPaths)
+        {
+            var packageRelativePaths = mutexPrimedLibraryPaths.Select(path => "ProjectData~/Library/" + path).ToList();
+            var existingPaths = packageRelativePaths.Where(path =>
+            {
+                var fullPath = $"{packageRoot}/{path}";
+                return File.Exists(fullPath) || Directory.Exists(fullPath);
+            }).ToList();
+
+            if (existingPaths.Count == 0)
+            {
+                AddError($"Template is missing primed library path at {string.Join(" or ", packageRelativePaths)}. " +
+                    $"It should have been added automatically in the CI packing process. {k_DocumentationLink}");
+            }
+            else if (existingPaths.Count != 1)
+            {
+                AddError($"Template has mutually exclusive primed library paths at {string.Join(" and ", existingPaths)}.");
             }
         }
     }

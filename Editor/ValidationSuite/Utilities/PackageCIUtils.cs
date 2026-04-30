@@ -11,7 +11,9 @@ namespace UnityEditor.PackageManager.ValidationSuite
         {
 #if UNITY_2019_3_OR_NEWER
             Profiler.BeginSample("Pack");
+#pragma warning disable CS0618
             var packRequest = Client.Pack(path, destinationPath);
+#pragma warning restore CS0618
             while (!packRequest.IsCompleted)
             {
                 Thread.Sleep(100);
