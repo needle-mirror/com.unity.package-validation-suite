@@ -1,25 +1,25 @@
 {
   "name": "com.unity.package-validation-suite",
   "displayName": "Package Validation Suite",
-  "version": "0.84.0-preview",
+  "version": "0.85.0-preview",
   "unity": "2018.4",
   "description": "Unity Package Manager validation suite, used to evaluate a package's integrity before it's considered for publishing.  This is a Unity internal tool at the moment, no support will be provided for this package.",
   "dependencies": {
     "com.unity.nuget.mono-cecil": "0.1.6-preview.2"
   },
   "relatedPackages": {
-    "com.unity.package-validation-suite.tests": "0.84.0-preview"
+    "com.unity.package-validation-suite.tests": "0.85.0-preview"
   },
   "_upm": {
-    "changelog": "- PrimedLibraryValidation will now also accept Library/DataStore instead of Library/Artifacts, but not both at the same time. (PETS-1853)"
+    "changelog": "- Remove RestrictedFilesValidation; it's covered by `PVP-{23,24,25}-1` checks."
   },
   "upmCi": {
-    "footprint": "5ca690ef77971df2da7c329fdc47f4d1107ba975"
+    "footprint": "16fc892a9bb135a915a83cba69ff8af1168d40d9"
   },
-  "documentationUrl": "https://docs.unity3d.com/Packages/com.unity.package-validation-suite@0.84/manual/index.html",
+  "documentationUrl": "https://docs.unity3d.com/Packages/com.unity.package-validation-suite@0.85/manual/index.html",
   "repository": {
     "url": "https://github.cds.internal.unity3d.com/unity/com.unity.package-validation-suite.git",
     "type": "git",
-    "revision": "00aefdd6666b2becf4ba0a878fbd0cc46a04e0af"
+    "revision": "bc6d7bb571cb97d11d8df3cc7e9062aaf4d57955"
   }
 }

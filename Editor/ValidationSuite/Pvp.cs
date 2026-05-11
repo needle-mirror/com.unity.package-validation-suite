@@ -284,7 +284,7 @@ namespace UnityEditor.PackageManager.ValidationSuite
             m_PvsPackageInfo = GetPackageInfo(Utilities.VSuiteName);
 
             m_Validations = new List<IPvpChecker>();
-            foreach (var assembly in AppDomain.CurrentDomain.GetAssemblies())
+            foreach (var assembly in Utilities.GetLoadedAssemblies())
             {
                 m_Validations.AddRange(
                     Utilities.GetTypesSafe(assembly)

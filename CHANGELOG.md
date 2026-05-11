@@ -4,6 +4,9 @@ All notable changes to this package will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## [0.85.0-preview] - 2026-05-11
+- Remove RestrictedFilesValidation; it's covered by `PVP-{23,24,25}-1` checks.
+
 ## [0.84.0-preview] - 2026-04-30
 - PrimedLibraryValidation will now also accept Library/DataStore instead of Library/Artifacts, but not both at the same time. (PETS-1853)
 

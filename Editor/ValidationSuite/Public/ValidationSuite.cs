@@ -291,7 +291,7 @@ namespace UnityEditor.PackageManager.ValidationSuite
 
             // Use reflection to discover all Validation Tests in the project with base type == BaseValidation.
             List<BaseValidation> testList = new List<BaseValidation>();
-            Assembly[] currentDomainAssemblies = AppDomain.CurrentDomain.GetAssemblies();
+            var currentDomainAssemblies = Utilities.GetLoadedAssemblies();
             foreach (Assembly assembly in currentDomainAssemblies)
             {
                 try
@@ -319,7 +319,7 @@ namespace UnityEditor.PackageManager.ValidationSuite
         {
             Profiler.BeginSample("CallSuiteHandler." + handlerAttributeType.Name);
 
-            foreach (Assembly assembly in AppDomain.CurrentDomain.GetAssemblies())
+            foreach (Assembly assembly in Utilities.GetLoadedAssemblies())
             {
                 try
                 {

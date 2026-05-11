@@ -225,7 +225,7 @@ namespace UnityEditor.PackageManager.ValidationSuite.ValidationTests
 
                 if (info.assembly != null)
                 {
-                    var extraSearchFolder = Path.GetDirectoryName(typeof(System.ObsoleteAttribute).Assembly.Location);
+                    var extraSearchFolder = Path.GetDirectoryName(Utilities.GetLoadedAssemblyPath(typeof(ObsoleteAttribute).Assembly));
                     var assemblySearchFolder = new[]
                     {
                         extraSearchFolder, // System assemblies folder

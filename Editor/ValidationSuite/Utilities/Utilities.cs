@@ -596,5 +596,19 @@ namespace UnityEditor.PackageManager.ValidationSuite
         // Note: This is distinct from `new PackageId(info.packageId)`,
         // as `packageId` may be a string like "com.unity.example@file:/foo/bar".
         internal static PackageId PackageIdFromInfo(PackageInfo info) => new PackageId(info.name, info.version);
+
+        internal static IEnumerable<System.Reflection.Assembly> GetLoadedAssemblies()
+#if UNITY_6000_4_OR_NEWER
+            => UnityEngine.Assemblies.CurrentAssemblies.GetLoadedAssemblies();
+#else
+            => AppDomain.CurrentDomain.GetAssemblies();
+#endif
+
+        internal static string GetLoadedAssemblyPath(System.Reflection.Assembly assembly)
+#if UNITY_6000_4_OR_NEWER
+            => assembly.GetLoadedAssemblyPath();
+#else
+            => assembly.Location;
+#endif
     }
 }
