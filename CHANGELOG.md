@@ -4,6 +4,9 @@ All notable changes to this package will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## [0.87.0-preview] - 2026-10-16
+- Remove special behavior that avoids extraction of the package manifest for package names containing ".samples". (PETS-1920)
+
 ## [0.86.0-preview] - 2026-08-18
 - Remove API Update Configuration Validation. It is broken, and will be supersed by a future `PVP-140-2` check. (PETS-1887)
 

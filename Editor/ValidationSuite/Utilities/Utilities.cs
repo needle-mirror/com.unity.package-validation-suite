@@ -270,8 +270,7 @@ namespace UnityEditor.PackageManager.ValidationSuite
                 foreach (var file in Directory.GetFiles(packageFolderPath))
                 {
                     if (file.Contains("package.json") &&
-                        !fullPackagePath.Contains(".tests") &&
-                        !fullPackagePath.Contains(".samples") ||
+                        !fullPackagePath.Contains(".tests") ||
                         !file.Contains("package.json"))
                     {
                         var dest = Path.Combine(outputDirectory, Path.GetFileName(file));

@@ -1,25 +1,25 @@
 {
   "name": "com.unity.package-validation-suite",
   "displayName": "Package Validation Suite",
-  "version": "0.86.0-preview",
+  "version": "0.87.0-preview",
   "unity": "2018.4",
   "description": "Unity Package Manager validation suite, used to evaluate a package's integrity before it's considered for publishing.  This is a Unity internal tool at the moment, no support will be provided for this package.",
   "dependencies": {
     "com.unity.nuget.mono-cecil": "0.1.6-preview.2"
   },
   "relatedPackages": {
-    "com.unity.package-validation-suite.tests": "0.86.0-preview"
+    "com.unity.package-validation-suite.tests": "0.87.0-preview"
   },
   "_upm": {
-    "changelog": "- Remove API Update Configuration Validation. It is broken, and will be supersed by a future `PVP-140-2` check. (PETS-1887)"
+    "changelog": "- Remove special behavior that avoids extraction of the package manifest for package names containing \".samples\". (PETS-1920)"
   },
   "upmCi": {
-    "footprint": "70723a8291165c601db1005a1fa28fb697037c4e"
+    "footprint": "08d9939f026aa7dbc39c8b949636cf2b75eb874e"
   },
-  "documentationUrl": "https://docs.unity3d.com/Packages/com.unity.package-validation-suite@0.86/manual/index.html",
+  "documentationUrl": "https://docs.unity3d.com/Packages/com.unity.package-validation-suite@0.87/manual/index.html",
   "repository": {
     "url": "https://github.cds.internal.unity3d.com/unity/com.unity.package-validation-suite.git",
     "type": "git",
-    "revision": "93adda09cda8c6e7b8dc93bae3118ebd4cbae22e"
+    "revision": "32cc3b589b911e117d7aec14b119e286710419b7"
   }
 }
